@@ -1,0 +1,4 @@
+name = "OptimalTransportNetworks"
+uuid = "e2b46e68-897f-4e4e-ba36-a93c9789fd96"
+authors = ["Sebastian Krantz <sebastian.krantz@graduateinstitute.ch>"]
+version = "0.1.0"
