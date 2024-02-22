@@ -19,7 +19,7 @@ Initialize the underlying graph, population and productivity parameters.
 - `region`: Vector indicating region of each location (only for partial mobility)
 """
 function create_graph(param, w, h; kwargs...)
-    options = retrieve_options(param, w, h, kwargs...)
+    options = retrieve_options(param, w, h; kwargs...)
 
     if options[:type] == "map"
         graph = create_map(w, h)

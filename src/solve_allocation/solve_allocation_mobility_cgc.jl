@@ -36,6 +36,7 @@ end
 function create_nlp(x0, auxdata, verbose)
     graph = auxdata.graph
     param = auxdata.param
+    utility = param.u
 
     nlp = Model(solver=IpoptSolver(print_level=verbose ? 5 : 0))
     @variable(nlp, -Inf <= x[1:length(x0)] <= Inf)
@@ -46,7 +47,7 @@ function create_nlp(x0, auxdata, verbose)
 
     @NLobjective(nlp, Min, -x[1])
 
-    @NLconstraint(nlp, cons_u[j=1:graph.J], x[1] * x[end - graph.J + j] - param.u(x[1 + j], param.Hj[j]) == 0)
+    @NLconstraint(nlp, cons_u[j=1:graph.J], x[1] * x[end - graph.J + j] - utility(x[1 + j], param.Hj[j]) == 0)
     @NLconstraint(nlp, cons_C[j=1:graph.J], x[1 + j] + cost_direct[j] + cost_indirect[j] - Dj[j] == 0)
     @NLconstraint(nlp, cons_Q[j=1:graph.J, n=1:param.N], Djn[j, n] + A * Qin_direct[:, n] - A * Qin_indirect[:, n] - Yjn[j, n] == 0)
     @NLconstraint(nlp, cons_L, sum(x[end - graph.J + 1:end]) - 1 == 0)

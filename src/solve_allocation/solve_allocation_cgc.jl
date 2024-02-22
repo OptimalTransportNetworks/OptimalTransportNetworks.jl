@@ -1,5 +1,6 @@
 
 using Ipopt
+using JuMP
 using LinearAlgebra
 using SparseArrays
 
@@ -30,6 +31,7 @@ end
 function createProblem(x0, auxdata, verbose)
     graph = auxdata.graph
     param = auxdata.param
+    utility = param.u
 
     lb = [1e-8*ones(graph.J); 1e-6*ones(graph.J*param.N); 1e-8*ones(2*graph.ndeg*param.N)]
     ub = [Inf*ones(graph.J); Inf*ones(graph.J*param.N); Inf*ones(2*graph.ndeg*param.N)]
@@ -38,7 +40,7 @@ function createProblem(x0, auxdata, verbose)
 
     model = Model(with_optimizer(Ipopt.Optimizer, print_level=verbose ? 5 : 0, max_iter=2000))
     @variable(model, lb[i] <= x[i=1:length(x0)] <= ub[i])
-    @NLobjective(model, Min, -sum(param.omegaj .* param.Lj .* param.u(x[1:graph.J], param.hj)))
+    @NLobjective(model, Min, -sum(param.omegaj .* param.Lj .* utility(x[1:graph.J], param.hj)))
     @NLconstraint(model, [i=1:graph.J], x[i]*param.Lj[i] + cost_direct[i] + cost_indirect[i] - Dj[i] == 0)
     @NLconstraint(model, [i=1:graph.J, n=1:param.N], Djn[i, n] + A*Qin_direct[:, n] - A*Qin_indirect[:, n] - Yjn[i, n] == 0)
 

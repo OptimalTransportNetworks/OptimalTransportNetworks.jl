@@ -1,4 +1,34 @@
 
+"""
+ ==============================================================
+ OPTIMAL TRANSPORT NETWORKS IN SPATIAL EQUILIBRIUM
+ by P. Fajgelbaum, E. Schaal, D. Henricot, C. Mantovani 2017-19
+ ================================================ version 1.0.4
+
+optimal_network.m: solve for the optimal network by solving the inner problem (dual if no mobility and
+no cross good congestion, primal otherwise) and the outer problem by iterating over the FOCs
+
+Arguments:
+- param: structure that contains the model's parameters
+- graph: structure that contains the underlying graph (created by create_graph function)
+- I0: (optional) provides the initial guess for the iterations (matrix JxJ)
+- Il: (optional) exogenous lower bound on infrastructure levels (matrix JxJ)
+- Iu: (optional) exogenous upper bound on infrastructure levels (matrix JxJ)
+- verbose: (optional) tell IPOPT to display results
+- x0: (optional) provide initial condition for IPOPT
+
+-----------------------------------------------------------------------------------
+REFERENCE: "Optimal Transport Networks in Spatial Equilibrium" (2019) by Pablo D.
+Fajgelbaum and Edouard Schaal.
+
+Copyright (c) 2017-2019, Pablo D. Fajgelbaum, Edouard Schaal
+pfajgelbaum@ucla.edu, eschaal@crei.cat
+
+This code is distributed under BSD-3 License. See LICENSE.txt for more information.
+-----------------------------------------------------------------------------------
+"""
+
+
 using LinearAlgebra
 
 function optimal_network(param, graph, I0=nothing, Il=nothing, Iu=nothing, verbose=false, x0=nothing)
@@ -36,7 +66,7 @@ function optimal_network(param, graph, I0=nothing, Il=nothing, Iu=nothing, verbo
     x0 = x0 === nothing ? [] : x0
 
     if param[:mobility] || param[:beta] > 1 || param[:cong]
-        Il = max(1e-6 * graph[:adjacency], Il)
+        Il = max.(1e-6 * graph[:adjacency], Il)
     end
 
     # --------------
