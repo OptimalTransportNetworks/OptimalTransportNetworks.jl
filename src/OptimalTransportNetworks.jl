@@ -2,7 +2,7 @@
 
 module OptimalTransportNetworks
 
-using LinearAlgebra
+using LinearAlgebra, Statistics, Ipopt, JuMP
 
 # Function to include all .jl files in a directory
 function include_directory(directory)
@@ -14,13 +14,14 @@ function include_directory(directory)
 end
 
 # Include all .jl files in a specific directory
-include_directory("objective/")
-include_directory("constraints/")
-include_directory("solve_allocation/")
-include_directory("main/")
+include_directory("src/objective")
+include_directory("src/constraints")
+include_directory("src/solve_allocation")
+include_directory("src/main")
 
 # Defining exports
-export init_parameters, optimal_network, apply_geography, create_graph, plot_graph, create_auxdata, call_adigator
-export find_node, remove_node, add_node
+export init_parameters, create_graph, plot_graph, create_auxdata, 
+export optimal_network, annealing, solve_allocation, call_adigator
+export add_node, find_node, remove_node, apply_geography
 
 end
