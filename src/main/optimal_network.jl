@@ -29,11 +29,12 @@ This code is distributed under BSD-3 License. See LICENSE.txt for more informati
 """
 
 
-using LinearAlgebra
+# using LinearAlgebra
+# I0=nothing; Il=nothing; Iu=nothing; verbose=false; x0=nothing
 
 function optimal_network(param, graph, I0=nothing, Il=nothing, Iu=nothing, verbose=false, x0=nothing)
 
-    J = graph[:J]
+    J = graph.J
     save_before_it_crashes = false
     TOL_I_BOUNDS = 1e-7
     error_status = false
@@ -49,24 +50,22 @@ function optimal_network(param, graph, I0=nothing, Il=nothing, Iu=nothing, verbo
         error("nu has to be larger or equal to one for the problem to be guaranteed convex.")
     end
 
-    debug_file_str = "debug.mat"
-
     if I0 === nothing
         I0 = zeros(J, J)
         for i in 1:J
-            for j in graph[:nodes][i][:neighbors]
+            for j in graph.nodes[i][:neighbors]
                 I0[i, j] = 1
             end
         end
-        I0 = param[:K] * I0 / sum(graph[:delta_i] .* I0)
+        I0 = param[:K] * I0 / sum(graph.delta_i .* I0)
     end
 
-    Il = Il === nothing ? zeros(graph[:J], graph[:J]) : Il
-    Iu = Iu === nothing ? Inf * ones(graph[:J], graph[:J]) : Iu
+    Il = Il === nothing ? zeros(graph.J, graph.J) : Il
+    Iu = Iu === nothing ? Inf * ones(graph.J, graph.J) : Iu
     x0 = x0 === nothing ? [] : x0
 
     if param[:mobility] || param[:beta] > 1 || param[:cong]
-        Il = max.(1e-6 * graph[:adjacency], Il)
+        Il = max.(1e-6 * graph.adjacency, Il)
     end
 
     # --------------
@@ -74,7 +73,7 @@ function optimal_network(param, graph, I0=nothing, Il=nothing, Iu=nothing, verbo
 
     # CUSTOMIZATION 1: provide here the initial point of optimization for custom case
     if param[:custom]
-        x0 = [1e-6 * ones(Int64, graph[:J] * param[:N]); zeros(Int64, graph[:ndeg] * param[:N]); sum(param[:Lj]) / (graph[:J] * param[:N]) * ones(Int64, graph[:J] * param[:N])]
+        x0 = [1e-6 * ones(Int64, graph.J * param[:N]); zeros(Int64, graph.ndeg * param[:N]); sum(param[:Lj]) / (graph.J * param[:N]) * ones(Int64, graph.J * param[:N])]
         # Based on the primal case with immobile and no cross-good congestion, to
         # be customized
     end
@@ -130,7 +129,7 @@ function optimal_network(param, graph, I0=nothing, Il=nothing, Iu=nothing, verbo
     has_converged = false
     counter = 0
     weight_old = 0.5
-    I1 = zeros(graph[:J], graph[:J])
+    I1 = zeros(graph.J, graph.J)
 
     while (!has_converged && counter < param[:MAX_ITER_KAPPA]) || counter <= 20
 
@@ -139,6 +138,7 @@ function optimal_network(param, graph, I0=nothing, Il=nothing, Iu=nothing, verbo
         auxdata = create_auxdata(param, graph, I0)
 
         if save_before_it_crashes
+            debug_file_str = "debug.mat"
             save(debug_file_str, "param", "graph", "kappa", "x0", "I0", "I1", "counter")
         end
 
@@ -158,33 +158,33 @@ function optimal_network(param, graph, I0=nothing, Il=nothing, Iu=nothing, verbo
         end
 
         if !param[:cong]
-            Pjkn = repeat(permutedims(results[:Pjn], [1, 3, 2]), 1, graph[:J], 1)
+            Pjkn = repeat(permutedims(results[:Pjn], [1, 3, 2]), 1, graph.J, 1)
             PQ = Pjkn .* results[:Qjkn] .^ (1 + param[:beta])
             PQ = PQ + permutedims(PQ, [2, 1, 3])
             PQ = sum(PQ, dims=3)
-            I1 = (graph[:delta_tau] ./ graph[:delta_i] .* PQ) .^ (1 / (1 + param[:gamma]))
-            I1[graph[:adjacency].==false] .= 0
+            I1 = (graph.delta_tau ./ graph.delta_i .* PQ) .^ (1 / (1 + param[:gamma]))
+            I1[graph.adjacency.==false] .= 0
             I1[PQ.==0] .= 0
-            I1[graph[:delta_i].==0] .= 0
+            I1[graph.delta_i.==0] .= 0
         else
-            PCj = repeat(results[:PCj], 1, graph[:J])
-            matm = permutedims(repeat(param[:m], 1, graph[:J], graph[:J]), 2)
+            PCj = repeat(results[:PCj], 1, graph.J)
+            matm = permutedims(repeat(param[:m], 1, graph.J, graph.J), 2)
             cost = sum(matm .* results[:Qjkn] .^ param[:nu], dims=3) .^ ((param[:beta] + 1) / param[:nu])
             PQ = PCj .* cost
             PQ = PQ + PQ'
-            I1 = (graph[:delta_tau] ./ graph[:delta_i] .* PQ) .^ (1 / (param[:gamma] + 1))
-            I1[graph[:adjacency].==false] .= 0
+            I1 = (graph.delta_tau ./ graph.delta_i .* PQ) .^ (1 / (param[:gamma] + 1))
+            I1[graph.adjacency.==false] .= 0
             I1[PQ.==0] .= 0
-            I1[graph[:delta_i].==0] .= 0
+            I1[graph.delta_i.==0] .= 0
         end
 
-        I1 = param[:K] * I1 / sum(graph[:delta_i] .* I1)
+        I1 = param[:K] * I1 / sum(graph.delta_i .* I1)
         distance_lb = max(maximum(Il - I1), 0)
         distance_ub = max(maximum(I1 - Iu), 0)
         counter_rescale = 0
         while distance_lb + distance_ub > TOL_I_BOUNDS && counter_rescale < 100
             I1 = max(min(I1, Iu), Il)
-            I1 = param[:K] * I1 / sum(graph[:delta_i] .* I1)
+            I1 = param[:K] * I1 / sum(graph.delta_i .* I1)
             distance_lb = max(maximum(Il - I1), 0)
             distance_ub = max(maximum(I1 - Iu), 0)
             counter_rescale += 1
@@ -194,7 +194,7 @@ function optimal_network(param, graph, I0=nothing, Il=nothing, Iu=nothing, verbo
             println("Warning! Could not impose bounds on network properly.")
         end
 
-        distance = max(abs.(I1 - I0)) / (param[:K] / mean(graph[:delta_i][graph[:adjacency].==1]))
+        distance = max(abs.(I1 - I0)) / (param[:K] / mean(graph.delta_i[graph.adjacency.==1]))
         has_converged = distance < param[:tol_kappa]
         counter += 1
 

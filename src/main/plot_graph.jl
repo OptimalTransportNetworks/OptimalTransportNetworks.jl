@@ -92,7 +92,7 @@ function plot_graph(param, graph, edges; kwargs...)
             xi = vec_x[i]
             yi = vec_y[i]
 
-            for j in graph.nodes[i].neighbors
+            for j in graph.nodes[i]
                 xj = vec_x[j]
                 yj = vec_y[j]
 
@@ -107,7 +107,7 @@ function plot_graph(param, graph, edges; kwargs...)
             xi = vec_x[i]
             yi = vec_y[i]
 
-            for j in graph.nodes[i].neighbors
+            for j in graph.nodes[i]
                 xj = vec_x[j]
                 yj = vec_y[j]
 

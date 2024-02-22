@@ -34,7 +34,7 @@ function create_graph(param, w, h; kwargs...)
         graph = create_custom(options[:adjacency], options[:x], options[:y])
     end
 
-    param[:J] = graph[:J]
+    param[:J] = graph.J
 
     if param[:mobility] == false
         param[:Lj] = ones(param[:J]) / param[:J]
@@ -49,7 +49,7 @@ function create_graph(param, w, h; kwargs...)
     elseif param[:mobility] == 0.5
         param[:Zjn] = ones(param[:J], param[:N])
         param[:Hj] = ones(param[:J])
-        graph[:region] = options[:region]
+        graph.region = options[:region]
         param[:nregions] = options[:nregions]
         param[:omegar] = options[:omega]
         param[:Lr] = ones(options[:nregions]) / options[:nregions]
@@ -164,7 +164,7 @@ dimensions and diagonals)
 """
 function create_map(w, h)
     J = w * h
-    nodes = [Dict(:neighbors => Vector{Int64}()) for _ in 1:J]
+    nodes = [Vector{Int64}() for _ in 1:J]
 
     delta = zeros(J, J)
     x = zeros(Int64, J)
@@ -208,19 +208,19 @@ function create_map(w, h)
             delta[x[i] + w * (y[i] - 1), x[i] - 1 + w * (y[i] - 1 - 1)] = sqrt(2)
         end
 
-        nodes[i][:neighbors] = neighbors
+        nodes[i] = neighbors
     end
 
     adjacency = falses(J, J)
     for i in 1:J
-        for j in nodes[i][:neighbors]
+        for j in nodes[i]
             adjacency[i, j] = 1
         end
     end
 
     ndeg = sum(tril(adjacency))
 
-    return Dict(:J => J, :x => x, :y => y, :nodes => nodes, :adjacency => adjacency, :delta_i => delta, :delta_tau => delta, :ndeg => ndeg)
+    return (J=J, x=x, y=y, nodes=nodes, adjacency=adjacency, delta_i=delta, delta_tau=delta, ndeg=ndeg, region = nothing)
 end
 
 
@@ -246,7 +246,7 @@ function create_triangle(w, h)
     rows_inner = Int(ceil(h / 2) - 1)
     J = Int(w * rows_outer + (w - 1) * rows_inner)
 
-    nodes = [Dict(:neighbors => Vector{Int64}()) for _ in 1:J]
+    nodes = [Vector{Int64}() for _ in 1:J]
 
     delta = falses(J, J)
     x = zeros(J) # Needs to be Float64
@@ -285,7 +285,7 @@ function create_triangle(w, h)
                 end
             end
 
-            nodes[id][:neighbors] = neighbors
+            nodes[id] = neighbors
         end
     end
 
@@ -314,21 +314,22 @@ function create_triangle(w, h)
             push!(neighbors, id - w)
             delta[id, id - w] = 1
 
-            nodes[id][:neighbors] = neighbors
+            nodes[id] = neighbors
         end
     end
 
     adjacency = falses(J, J)
     for i in 1:J
-        for j in nodes[i][:neighbors]
+        for j in nodes[i]
             adjacency[i, j] = 1
         end
     end
 
     ndeg = sum(tril(adjacency))
 
-    return Dict(:J => J, :x => x, :y => y, :nodes => nodes, :adjacency => adjacency, :delta_i => delta, :delta_tau => delta, :ndeg => ndeg)
+    return (J=J, x=x, y=y, nodes=nodes, adjacency=adjacency, delta_i=delta, delta_tau=delta, ndeg=ndeg, region = nothing)
 end
+
 
 
 """
@@ -346,7 +347,7 @@ dimension), must be an integer
 """
 function create_square(w, h)
     J = w * h
-    nodes = [Dict(:neighbors => []) for _ in 1:J]
+    nodes = [Vector{Int64}() for _ in 1:J]
 
     delta = falses(J, J)
     x = zeros(Int64, J)
@@ -374,20 +375,21 @@ function create_square(w, h)
             delta[x[i] + w * (y[i] - 1), x[i] + w * (y[i] - 1 - 1)] = 1
         end
 
-        nodes[i][:neighbors] = neighbors
+        nodes[i] = neighbors
     end
 
     adjacency = falses(J, J)
     for i in 1:J
-        for j in nodes[i][:neighbors]
+        for j in nodes[i]
             adjacency[i, j] = 1
         end
     end
 
     ndeg = sum(tril(adjacency))
 
-    return Dict(:J => J, :x => x, :y => y, :nodes => nodes, :adjacency => adjacency, :delta_i => delta, :delta_tau => delta, :ndeg => ndeg)
+    return (J=J, x=x, y=y, nodes=nodes, adjacency=adjacency, delta_i=delta, delta_tau=delta, ndeg=ndeg, region = nothing)
 end
+
 
 """
     create_custom(adjacency, x, y)
@@ -402,11 +404,11 @@ of coordinates.
 """
 function create_custom(adjacency, x, y)
     J = length(x)
-    nodes = [Dict(:neighbors => Vector{Int64}()) for _ in 1:J]
+    nodes = [Vector{Int64}() for _ in 1:J]
 
     for i in 1:J
         neighbors = findall(adjacency[i, :] .== 1)
-        nodes[i][:neighbors] = neighbors
+        nodes[i] = neighbors
     end
 
     ndeg = sum(tril(adjacency)) # TODO: check if this is correct
@@ -417,6 +419,7 @@ function create_custom(adjacency, x, y)
     delta = sqrt.((xx .- xx').^2 + (yy .- yy').^2)
     delta[adjacency .== 0] .= 0.0
 
-    return Dict(:J => J, :x => x, :y => y, :nodes => nodes, :adjacency => adjacency, :delta_i => delta, :delta_tau => delta, :ndeg => ndeg)
+    return (J=J, x=x, y=y, nodes=nodes, adjacency=adjacency, delta_i=delta, delta_tau=delta, ndeg=ndeg, region = nothing)
 end
+
 

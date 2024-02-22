@@ -11,7 +11,7 @@ create_map, create_rectangle or create_triangle functions)
 - `y`: y coordinate on the graph between 1 and h
 """
 function find_node(graph, x, y)
-    distance = (graph[:x] .- x).^2 + (graph[:y] .- y).^2
+    distance = (graph.x .- x).^2 + (graph.y .- y).^2
     _, id = findmin(distance)
     return id
 end

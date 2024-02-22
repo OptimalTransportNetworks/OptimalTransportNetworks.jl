@@ -29,7 +29,7 @@ function call_adigator(param, graph, I, verbose=false)
 
     if param[:mobility] && param[:cong] && !param[:custom]
         setup = Dict(
-            :numvar => 1 + graph[:J] * param[:N] + 2 * graph[:ndeg] * param[:N] + graph[:J] + graph[:J] + graph[:J] * param[:N],
+            :numvar => 1 + graph.J * param[:N] + 2 * graph.ndeg * param[:N] + graph.J + graph.J + graph.J * param[:N],
             :objective => "objective_mobility_cgc",
             :auxdata => auxdata,
             :order => 2,
@@ -37,7 +37,7 @@ function call_adigator(param, graph, I, verbose=false)
         )
     elseif !param[:mobility] && param[:cong] && !param[:custom]
         setup = Dict(
-            :numvar => graph[:J] * param[:N] + 2 * graph[:ndeg] * param[:N] + graph[:J] + graph[:J] * param[:N],
+            :numvar => graph.J * param[:N] + 2 * graph.ndeg * param[:N] + graph.J + graph.J * param[:N],
             :objective => "objective_cgc",
             :auxdata => auxdata,
             :order => 2,
@@ -45,7 +45,7 @@ function call_adigator(param, graph, I, verbose=false)
         )
     elseif param[:mobility] && !param[:cong] && !param[:custom]
         setup = Dict(
-            :numvar => 1 + graph[:J] * param[:N] + graph[:ndeg] * param[:N] + graph[:J] + graph[:J] * param[:N],
+            :numvar => 1 + graph.J * param[:N] + graph.ndeg * param[:N] + graph.J + graph.J * param[:N],
             :objective => "objective_mobility",
             :auxdata => auxdata,
             :order => 2,
@@ -53,14 +53,14 @@ function call_adigator(param, graph, I, verbose=false)
         )
     elseif (!param[:mobility] && !param[:cong] && !param[:custom]) && (param[:beta] <= 1 && param[:a] < 1)
         setup = Dict(
-            :numvar => graph[:J] * param[:N],
+            :numvar => graph.J * param[:N],
             :objective => "objective_duality",
             :auxdata => auxdata,
             :order => 2
         )
     elseif (!param[:mobility] && !param[:cong] && !param[:custom]) && (param[:beta] > 1 || param[:a] == 1)
         setup = Dict(
-            :numvar => graph[:J] * param[:N] + graph[:ndeg] * param[:N] + graph[:J] * param[:N],
+            :numvar => graph.J * param[:N] + graph.ndeg * param[:N] + graph.J * param[:N],
             :objective => "objective",
             :auxdata => auxdata,
             :order => 2,
