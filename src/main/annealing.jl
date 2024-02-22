@@ -48,7 +48,7 @@ function annealing(param, graph, I0; kwargs...)
     TOL_I_BOUNDS = 1e-7
 
     # Retrieve optional parameters
-    options = retrieve_options(param, graph; kwargs...)
+    options = retrieve_options_annealing(param, graph; kwargs...)
     Iu = options.Iu
     Il = options.Il
 
@@ -348,7 +348,7 @@ end
 
 
 
-function retrieve_options(param, graph; kwargs...)
+function retrieve_options_annealing(param, graph; kwargs...)
     # Set up default options with lowercase names
     options = Dict{Symbol, Any}(
         :perturbation_method => "random rebranching",
