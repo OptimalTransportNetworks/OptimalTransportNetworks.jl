@@ -3,6 +3,7 @@
 module OptimalTransportNetworks
 
 using LinearAlgebra, Ipopt, JuMP, Plots
+using SparseArrays: sparse
 
 # Function to include all .jl files in a directory
 function include_directory(directory)
