@@ -1,6 +1,6 @@
 
-using Ipopt
-using LinearAlgebra
+# using Ipopt
+# using LinearAlgebra
 
 function solve_allocation_partial_mobility(x0, auxdata, verbose=true)
 

@@ -1,6 +1,6 @@
 
-using Ipopt
-using LinearAlgebra
+# using Ipopt
+# using LinearAlgebra
 
 function solve_allocation_by_duality_with_inefficiency(x0, auxdata, verbose=true)
 

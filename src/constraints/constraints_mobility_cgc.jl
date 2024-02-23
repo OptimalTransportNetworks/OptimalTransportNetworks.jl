@@ -1,5 +1,5 @@
 
-using LinearAlgebra
+# using LinearAlgebra
 
 function constraints_mobility_cgc(x, auxdata)
 

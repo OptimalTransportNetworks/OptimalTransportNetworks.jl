@@ -27,7 +27,7 @@ function create_auxdata(param, graph, I)
     id = 1
     for j in 1:graph.J
         for k in 1:length(graph.nodes[j])
-            if graph.nodes[j][:neighbors][k] > j
+            if graph.nodes[j][k] > j
                 A[j, id] = 1
                 A[graph.nodes[j][k], id] = -1
                 id += 1

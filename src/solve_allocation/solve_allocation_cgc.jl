@@ -1,8 +1,8 @@
 
-using Ipopt
-using JuMP
-using LinearAlgebra
-using SparseArrays
+# using Ipopt
+# using JuMP
+# using LinearAlgebra
+# using SparseArrays
 
 function solve_allocation_cgc(x0, auxdata, verbose=true)
     graph = auxdata.graph

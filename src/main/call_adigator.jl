@@ -80,7 +80,7 @@ function call_adigator(param, graph, I, verbose=false)
         println("\n-------------------")
         println("CALLING ADIGATOR...\n")
     end
-
+    
     setup[:options] = adigatorOptions("ECHO" => verbose, "OVERWRITE" => 1)
 
     funcs = adigatorGenFiles4Ipopt(setup)

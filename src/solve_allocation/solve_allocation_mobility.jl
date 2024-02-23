@@ -1,7 +1,7 @@
 
-using Ipopt
-using LinearAlgebra
-using SparseArrays
+# using Ipopt
+# using LinearAlgebra
+# using SparseArrays
 
 function solve_allocation_mobility(x0, auxdata, verbose=true)
 

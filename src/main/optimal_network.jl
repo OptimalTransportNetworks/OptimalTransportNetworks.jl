@@ -53,7 +53,7 @@ function optimal_network(param, graph, I0=nothing, Il=nothing, Iu=nothing, verbo
     if I0 === nothing
         I0 = zeros(J, J)
         for i in 1:J
-            for j in graph.nodes[i][:neighbors]
+            for j in graph.nodes[i]
                 I0[i, j] = 1
             end
         end

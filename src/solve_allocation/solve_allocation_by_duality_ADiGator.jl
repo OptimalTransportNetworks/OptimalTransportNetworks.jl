@@ -1,6 +1,6 @@
 
-using Ipopt
-using ForwardDiff
+# using Ipopt
+# using ForwardDiff
 
 function solve_allocation_by_duality_ADiGator(x0, auxdata, funcs, verbose=true)
 

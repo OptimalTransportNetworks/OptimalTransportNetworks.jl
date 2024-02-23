@@ -1,7 +1,7 @@
 
-using Ipopt
-using LinearAlgebra
-using SparseArrays
+# using Ipopt
+# using LinearAlgebra
+# using SparseArrays
 
 function solve_allocation_partial_mobility_cgc(x0, auxdata, verbose=true)
 

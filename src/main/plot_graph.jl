@@ -1,7 +1,7 @@
 
-using Plots
-using Interpolations
-using Colors
+# using Plots
+# using Interpolations
+# using Colors
 
 function plot_graph(param, graph, edges; kwargs...)
     options = retrieve_options_plot_graph(param, graph, edges; kwargs...)

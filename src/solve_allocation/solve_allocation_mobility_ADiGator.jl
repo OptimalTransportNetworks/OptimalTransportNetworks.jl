@@ -1,5 +1,5 @@
 
-using Ipopt
+# using Ipopt
 
 function solve_allocation_mobility_ADiGator(x0, auxdata, funcs, verbose=true)
 

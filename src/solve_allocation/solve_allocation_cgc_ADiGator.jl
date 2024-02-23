@@ -1,6 +1,6 @@
 
-using Ipopt
-using LinearAlgebra
+# using Ipopt
+# using LinearAlgebra
 
 function solve_allocation_cgc_ADiGator(x0, auxdata, funcs, verbose=true)
 

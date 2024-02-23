@@ -1,6 +1,6 @@
 
-using Ipopt
-using LinearAlgebra
+# using Ipopt
+# using LinearAlgebra
 
 function solve_allocation_primal(x0, auxdata, verbose=true)
     graph = auxdata.graph

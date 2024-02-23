@@ -404,7 +404,7 @@ function retrieve_options_annealing(param, graph; kwargs...)
     return options
 end
 
-using Random
+# using Random
 
 # This function adds #NbRandomPerturbations random links to the network and
 # applies a Gaussian smoothing to prevent falling too quickly in a local optimum
@@ -416,8 +416,8 @@ function random_perturbation(param, graph, I0, res, options)
     link_list = shuffle(1:graph.J)[1:options[:nb_random_perturbations]]
 
     for i in link_list
-        j = rand(1:length(graph.nodes[i][:neighbors]))
-        neighbor = graph.nodes[i][:neighbors][j]
+        j = rand(1:length(graph.nodes[i]))
+        neighbor = graph.nodes[i][j]
         I1[i, neighbor] = size_perturbation * exp(randn()) / exp(0.5)
     end
 
@@ -450,7 +450,7 @@ function smooth_network(param, graph, I0)
     for i = 1:J
         vec_x[i] = graph.x[i]
         vec_y[i] = graph.y[i]
-        for neighbor in graph.nodes[i][:neighbors]
+        for neighbor in graph.nodes[i]
             feasible_edge[i, neighbor] = true
         end
     end
@@ -460,7 +460,7 @@ function smooth_network(param, graph, I0)
 
     # Proceed to Gaussian kernel smoothing
     for i = 1:J
-        for neighbor in graph.nodes[i][:neighbors]
+        for neighbor in graph.nodes[i]
             x0 = edge_x[i, neighbor]
             y0 = edge_y[i, neighbor]
 
@@ -513,7 +513,7 @@ function shake_network(param, graph, I0, res, options)
 
     # Proceed to Gaussian kernel smoothing
     for i = 1:J
-        for neighbor in graph.nodes[i][:neighbors]
+        for neighbor in graph.nodes[i]
             x0 = edge_x[i, neighbor]
             y0 = edge_y[i, neighbor]
 
@@ -559,7 +559,7 @@ function rebranch_network(param, graph, I0, res, options)
 
     # Rebranch each location to its lowest price parent
     for i = 1:J
-        neighbors = graph.nodes[i][:neighbors]
+        neighbors = graph.nodes[i]
         parents = neighbors[ res[:PCj][neighbors] .< res[:PCj][i] ]
         
         if length(parents) >= 2
@@ -605,7 +605,7 @@ function random_rebranch_network(param, graph, I0, res, options)
 
     # Rebranch each selected location to its lowest price parent
     for i in link_list
-        neighbors = graph.nodes[i][:neighbors]
+        neighbors = graph.nodes[i]
         parents = neighbors[res[:PCj][neighbors] .< res[:PCj][i]]
         
         if length(parents) >= 2
@@ -667,7 +667,7 @@ function hybrid(param, graph, I0, res, options)
 
     id = 1
     for j in 1:J
-        for k in graph.nodes[j][:neighbors]
+        for k in graph.nodes[j]
             if id in remove_list  # if link is in the list to remove
                 I1[j, k] = 1e-6
                 I1[k, j] = 1e-6
@@ -705,7 +705,7 @@ function hybrid(param, graph, I0, res, options)
 
     id = 1
     for j in 1:J
-        for k in graph.nodes[j][:neighbors]
+        for k in graph.nodes[j]
             if id == add_link # if link is the one to add
                 I2[j, k] = param[:K] / (2 * graph.ndeg)
                 I2[k, j] = param[:K] / (2 * graph.ndeg)
@@ -737,7 +737,7 @@ function kappa_extract(graph, kappa)
     kappa_ex = zeros(graph.ndeg)
     id = 1
     for i in 1:graph.J
-        for j in graph.nodes[i][:neighbors]
+        for j in graph.nodes[i]
             if j > i
                 kappa_ex[id] = kappa[i, j]
                 id += 1
