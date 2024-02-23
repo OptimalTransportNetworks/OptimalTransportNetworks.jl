@@ -48,11 +48,11 @@ function apply_geography(graph, geography; kwargs...)
 
     # Embed geographical barriers into network building costs
     for i in 1:graph.J
-        for j in 1:length(graph.nodes[i].neighbors)
-            distance = sqrt((graph.x[i] - graph.x[graph.nodes[i].neighbors[j]])^2 + (graph.y[i] - graph.y[graph.nodes[i].neighbors[j]])^2)
-            Delta_z = geography.z[graph.nodes[i].neighbors[j]] - geography.z[i]
-            graph.delta_i[i, graph.nodes[i].neighbors[j]] = distance * (1 + options["AlphaUp_i"] * max(0, Delta_z )^options["BetaUp_i"] + options["AlphaDown_i"] * max(0, -Delta_z )^options["BetaDown_i"])
-            graph.delta_tau[i, graph.nodes[i].neighbors[j]] = distance * (1 + options["AlphaUp_tau"] * max(0, Delta_z )^options["BetaUp_tau"] + options["AlphaDown_tau"] * max(0, -Delta_z )^options["BetaDown_tau"])
+        for j in 1:length(graph.nodes[i])
+            distance = sqrt((graph.x[i] - graph.x[graph.nodes[i][j]])^2 + (graph.y[i] - graph.y[graph.nodes[i][j]])^2)
+            Delta_z = geography.z[graph.nodes[i][j]] - geography.z[i]
+            graph.delta_i[i, graph.nodes[i][j]] = distance * (1 + options["AlphaUp_i"] * max(0, Delta_z )^options["BetaUp_i"] + options["AlphaDown_i"] * max(0, -Delta_z )^options["BetaDown_i"])
+            graph.delta_tau[i, graph.nodes[i][j]] = distance * (1 + options["AlphaUp_tau"] * max(0, Delta_z )^options["BetaUp_tau"] + options["AlphaDown_tau"] * max(0, -Delta_z )^options["BetaDown_tau"])
         end
     end
 
@@ -66,7 +66,7 @@ function apply_geography(graph, geography; kwargs...)
     delta_tau = graph.delta_tau
 
     for i in 1:graph.J
-        neighbors = graph.nodes[i].neighbors
+        neighbors = graph.nodes[i]
         for j in 1:length(neighbors)
             # check if edge (i,j) intersects any of the obstacles
             k = 1
@@ -88,10 +88,10 @@ function apply_geography(graph, geography; kwargs...)
 
                     if (val1 <= 0 && val2 <= 0)  && normvec' * (Z2_obj - Z1_obj) != 0 # if the two edges intersect and are not colinears
                         if isinf(options["AcrossObstacleDelta_i"]) || isinf(options["AcrossObstacleDelta_tau"]) # remove the edge
-                            deleteat!(graph.nodes[neighbors[j]].neighbors, findfirst(==(i), graph.nodes[neighbors[j]].neighbors))
+                            deleteat!(graph.nodes[neighbors[j]], findfirst(==(i), graph.nodes[neighbors[j]]))
                             graph.adjacency[i, neighbors[j]] = 0
                             graph.adjacency[neighbors[j], i] = 0
-                            deleteat!(graph.nodes[i].neighbors, findfirst(==(neighbors[j]), graph.nodes[i].neighbors))
+                            deleteat!(graph.nodes[i], findfirst(==(neighbors[j]), graph.nodes[i]))
                             has_been_destroyed = true
                         else
                             # or make it costly to cross
@@ -121,8 +121,8 @@ function apply_geography(graph, geography; kwargs...)
             graph.across_obstacle[geography.obstacles[i, 1], geography.obstacles[i, 2]] = false
             graph.across_obstacle[geography.obstacles[i, 2], geography.obstacles[i, 1]] = false
         else # if infinite, remove edge
-            deleteat!(graph.nodes[geography.obstacles[i, 1]].neighbors, findfirst(==(geography.obstacles[i, 2]), graph.nodes[geography.obstacles[i, 1]].neighbors))
-            deleteat!(graph.nodes[geography.obstacles[i, 2]].neighbors, findfirst(==(geography.obstacles[i, 1]), graph.nodes[geography.obstacles[i, 2]].neighbors))
+            deleteat!(graph.nodes[geography.obstacles[i, 1]], findfirst(==(geography.obstacles[i, 2]), graph.nodes[geography.obstacles[i, 1]]))
+            deleteat!(graph.nodes[geography.obstacles[i, 2]], findfirst(==(geography.obstacles[i, 1]), graph.nodes[geography.obstacles[i, 2]]))
             graph.adjacency[geography.obstacles[i, 1], geography.obstacles[i, 2]] = 0
             graph.adjacency[geography.obstacles[i, 2], geography.obstacles[i, 1]] = 0
         end
