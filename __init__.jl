@@ -1,2 +1,2 @@
 include("src/OptimalTransportNetworks.jl")
-using .OptimalTransportNetworks
+# using .OptimalTransportNetworks
