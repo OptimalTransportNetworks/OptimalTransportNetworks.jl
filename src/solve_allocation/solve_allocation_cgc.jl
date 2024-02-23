@@ -80,10 +80,10 @@ function recover_allocation(model, auxdata)
     Qjkn = zeros(graph.J, graph.J, param.N)
     id = 1
     for i=1:graph.J
-        for j=1:length(graph.nodes[i].neighbors)
-            if graph.nodes[i].neighbors[j] > i
-                Qjkn[i, graph.nodes[i].neighbors[j], :] = max(Qin[id, :], 0)
-                Qjkn[graph.nodes[i].neighbors[j], i, :] = max(-Qin[id, :], 0)
+        for j=1:length(graph.nodes[i])
+            if graph.nodes[i][j] > i
+                Qjkn[i, graph.nodes[i][j], :] = max(Qin[id, :], 0)
+                Qjkn[graph.nodes[i][j], i, :] = max(-Qin[id, :], 0)
                 id += 1
             end
         end
