@@ -14,9 +14,9 @@ function solve_allocation_by_duality_with_inefficiency(x0, auxdata, verbose=true
 
     # Init functions
     funcs = Dict(
-        :objective => (x) -> objective(x, auxdata),
-        :gradient => (x) -> gradient(x, auxdata),
-        :hessian => (x, sigma_hess, lambda_hess) -> hessian(x, auxdata, sigma_hess, lambda_hess),
+        :objective => (x) -> objective_duality_with_inefficiency(x, auxdata),
+        :gradient => (x) -> gradient_duality_with_inefficiency(x, auxdata),
+        :hessian => (x, sigma_hess, lambda_hess) -> hessian_duality_with_inefficiency(x, auxdata, sigma_hess, lambda_hess),
         :hessianstructure => () -> sparse(tril(repeat(I, param.N, param.N) + kron(I, graph.adjacency)))
     )
 
@@ -34,7 +34,7 @@ function solve_allocation_by_duality_with_inefficiency(x0, auxdata, verbose=true
 
     # Return results
     flag = info
-    results = recover_allocation(x, auxdata)
+    results = recover_allocation_duality_with_inefficiency(x, auxdata)
 
     # Compute missing fields
     results[:hj] = param.hj
@@ -45,13 +45,13 @@ function solve_allocation_by_duality_with_inefficiency(x0, auxdata, verbose=true
     return results, flag, x
 end
 
-function objective(x, auxdata)
+function objective_duality_with_inefficiency(x, auxdata)
     # Recover parameters
     param = auxdata.param
     graph = auxdata.graph
     kappa = auxdata.kappa
 
-    res = recover_allocation(x, auxdata)
+    res = recover_allocation_duality_with_inefficiency(x, auxdata)
 
     x = reshape(x, graph.J, param.N)
 
@@ -63,13 +63,13 @@ function objective(x, auxdata)
     return sum(param.omegaj .* param.Lj .* param.u(res.cj, param.hj) - cons)
 end
 
-function gradient(x, auxdata)
+function gradient_duality_with_inefficiency(x, auxdata)
     # Recover parameters
     param = auxdata.param
     graph = auxdata.graph
     kappa = auxdata.kappa
 
-    res = recover_allocation(x, auxdata)
+    res = recover_allocation_duality_with_inefficiency(x, auxdata)
 
     cost = graph.delta_tau_spillover .* res.Qjkn .^ (1 + param.beta) ./ repeat(kappa, outer=(1, 1, param.N))
     cost[res.Qjkn .== 0] .= 0  # Deal with cases Qjkn=kappa=0
@@ -79,14 +79,14 @@ function gradient(x, auxdata)
     return -cons[:]
 end
 
-function hessian(x, auxdata, sigma_hess, lambda_hess)
+function hessian_duality_with_inefficiency(x, auxdata, sigma_hess, lambda_hess)
     # Recover parameters
     param = auxdata.param
     graph = auxdata.graph
     kappa = auxdata.kappa
 
     # Recover allocation and format
-    res = recover_allocation(x, auxdata)
+    res = recover_allocation_duality_with_inefficiency(x, auxdata)
     Lambda = repeat(x, outer=(1, graph.J * param.N))
     lambda = reshape(x, graph.J, param.N)
 
@@ -98,7 +98,7 @@ function hessian(x, auxdata, sigma_hess, lambda_hess)
     return sparse(tril(h))
 end
 
-function recover_allocation(x, auxdata)
+function recover_allocation_duality_with_inefficiency(x, auxdata)
     # Extract parameters
     param = auxdata.param
     graph = auxdata.graph

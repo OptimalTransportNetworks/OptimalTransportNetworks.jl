@@ -126,7 +126,7 @@ function solve_allocation_mobility(x0, auxdata, verbose=true)
 
     flag = info
 
-    results = recover_allocation(x, auxdata)
+    results = recover_allocation_mobility(x, auxdata)
 
     results.Pjn = reshape(info.lambda[graph.J+1:graph.J+graph.J*param.N], graph.J, param.N)
     results.PCj = sum(results.Pjn.^(1-param.sigma), dims=2).^(1/(1-param.sigma))
@@ -134,7 +134,7 @@ function solve_allocation_mobility(x0, auxdata, verbose=true)
     return results, flag, x
 end
 
-function recover_allocation(x, auxdata)
+function recover_allocation_mobility(x, auxdata)
     param = auxdata.param
     graph = auxdata.graph
 

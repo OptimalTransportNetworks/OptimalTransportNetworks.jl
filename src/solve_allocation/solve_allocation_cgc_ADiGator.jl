@@ -44,7 +44,7 @@ function solve_allocation_cgc_ADiGator(x0, auxdata, funcs, verbose=true)
 
     # Return results
     flag = info
-    results = recover_allocation(param, graph, x)
+    results = recover_allocation_cgc_ADiGator(param, graph, x)
     results.welfare = -funcs["objective"](x)    # Total economy welfare
     results.Pjn = reshape(info.lambda[1:graph.J*param.N], graph.J, param.N) # Price vector
     results.PCj = (sum(results.Pjn.^(1-param.sigma), dims=2)).^(1/(1-param.sigma)) # Price of tradeable
@@ -52,7 +52,7 @@ function solve_allocation_cgc_ADiGator(x0, auxdata, funcs, verbose=true)
     return results, flag, x
 end
 
-function recover_allocation(param, graph, x)
+function recover_allocation_cgc_ADiGator(param, graph, x)
 
     # Domestic absorption per good per location
     results = Dict()

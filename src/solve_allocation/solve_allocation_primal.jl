@@ -1,40 +1,113 @@
+#=
+==============================================================
+ OPTIMAL TRANSPORT NETWORKS IN SPATIAL EQUILIBRIUM
+ by P. Fajgelbaum, E. Schaal, D. Henricot, C. Mantovani 2017-19
+ ================================================ version 1.0.4
+
+solve_allocation_primal(...): 
+this function solves the full allocation of Qjkn and Cj given a matrix of
+kappa (=I^gamma/delta_tau). It solves the case without labor mobility with
+a primal approach (quasiconcave) (used when dual is not
+twice-differentiable).
+It DOES NOT use the autodifferentiation package Adigator to generate the 
+functional inputs for IPOPT.
+
+Arguments:
+- x0: initial seed for the solver
+- auxdata: contains the model parameters (param, graph, kappa, kappa_ex, A)
+- verbose: {true | false} tells IPOPT to display results or not
+
+Results:
+- results: structure of results (Cj,Qjkn,etc.)
+- flag: flag returned by IPOPT
+- x: returns the 'x' variable returned by IPOPT (useful for warm start)
+
+REFERENCE: "Optimal Transport Networks in Spatial Equilibrium" (2019) by Pablo D.
+Fajgelbaum and Edouard Schaal.
+
+Copyright (c) 2017-2019, Pablo D. Fajgelbaum, Edouard Schaal
+pfajgelbaum@ucla.edu, eschaal@crei.cat
+
+This code is distributed under BSD-3 License. See LICENSE.txt for more information.
+=#
 
 # using Ipopt
 # using LinearAlgebra
 
 function solve_allocation_primal(x0, auxdata, verbose=true)
-    graph = auxdata.graph
-    param = auxdata.param
 
-    if any(sum(param.Zjn .> 0, dims=2) .> 1)
-        error("This code only supports one good at most per location. Use the ADiGator version instead.")
+    # ==================
+    # RECOVER PARAMETERS
+    # ==================
+    
+    graph = auxdata[:graph]
+    param = auxdata[:param]
+
+    # check compatibility
+    if any(sum(param[:Zjn] .> 0, dims=2) .> 1)
+        error("this code only supports one good at most per location. Use the ADiGator version instead.")
     end
 
     if isempty(x0)
-        x0 = [1e-6*ones(graph.J*param.N); zeros(graph.ndeg*param.N)]
+        x0 = [1e-6 * ones(graph.J * param[:N]); zeros(graph.ndeg * param[:N])]
+        # only the case with at most one good produced per location is
+        # coded when ADiGator is not used: no optimization on Ljn
     end
 
-    model = createModel(auxdata)
-    addVar!(model, x0, [1e-8*ones(graph.J*param.N); -Inf*ones(graph.ndeg*param.N)], [Inf*ones(graph.J*param.N); Inf*ones(graph.ndeg*param.N)])
-    addConstr!(model, -Inf*ones(graph.J*param.N), zeros(graph.J*param.N))
+    # =================
+    # PARAMETRIZE IPOPT
+    # =================
 
-    if verbose
-        setPrintLevel!(model, 5)
-    else
-        setPrintLevel!(model, 0)
-    end
+    # Init functions
+    objective_function = x -> objective_primal(x, auxdata)
+    gradient_function = x -> gradient_primal(x, auxdata)
+    constraint_function = x -> constraints_primal(x, auxdata)
+    jacobian_function = x -> jacobian_primal(x, auxdata)
+    jacobianstructure_function = () -> sparse(I, 1:graph.J * param[:N], 1:graph.J * param[:N], graph.J * param[:N], graph.J * param[:N] + graph.ndeg * param[:N])
 
-    x, info = solveModel!(model)
+    hessian_function = (x, sigma, lambda) -> hessian_primal(x, auxdata, sigma, lambda)
+    hessianstructure_function = () -> sparse(tril(ones(graph.J * param[:N] + graph.ndeg * param[:N], graph.J * param[:N] + graph.ndeg * param[:N])))
 
-    results = recover_allocation(x, auxdata)
-    results.Pjn = reshape(info.lambda[1:graph.J*param.N], graph.J, param.N)
-    results.PCj = sum(results.Pjn .^ (1-param.sigma), dims=2) .^ (1/(1-param.sigma))
-    results.welfare = -objective(x, auxdata)
+    # Options
+    lb = [1e-8 * ones(graph.J * param[:N]); -Inf * ones(graph.ndeg * param[:N])]
+    ub = [Inf * ones(graph.J * param[:N]); Inf * ones(graph.ndeg * param[:N])]
+    cl = -Inf * ones(graph.J * param[:N]) # lower bound on constraint function
+    cu = 0 * ones(graph.J * param[:N])    # upper bound on constraint function
 
-    return results, info, x
+    # Ipopt options setup
+    ipopt_options = Dict(
+        "hessian_approximation" => "limited-memory",
+        "max_iter" => 2000,
+        "ma57_pre_alloc" => 3.0,
+        "print_level" => verbose ? 5 : 0
+    )
+
+    # =========
+    # RUN IPOPT
+    # =========
+    x, info = ipopt(x0, objective_function, gradient=gradient_function, hessian=hessian_function, 
+                    constraints=(constraint_function, cl, cu), jacobian=jacobian_function,
+                    hess_structure=hessianstructure_function, jac_structure=jacobianstructure_function, 
+                    lb=lb, ub=ub, options=ipopt_options)
+
+    # ==============
+    # RETURN RESULTS
+    # ==============
+    
+    # return allocation
+    flag = info.status
+
+    results = recover_allocation_primal(x, auxdata)
+
+    results.Pjn = reshape(info.lambda[1:graph.J * param[:N]], (graph.J, param[:N])) # vector of prices
+    results.PCj = sum(results.Pjn .^ (1 - param[:sigma]), dims=2) .^ (1 / (1 - param[:sigma])) # price of tradeable
+    results.welfare = -objective_function(x)
+
+    return results, flag, x
 end
 
-function recover_allocation(x, auxdata)
+
+function recover_allocation_primal(x, auxdata)
     graph = auxdata.graph
     param = auxdata.param
 
@@ -67,27 +140,27 @@ function recover_allocation(x, auxdata)
     return results
 end
 
-function objective(x, auxdata)
+function objective_primal(x, auxdata)
     param = auxdata.param
-    results = recover_allocation(x, auxdata)
+    results = recover_allocation_primal(x, auxdata)
 
     return -sum(param.omegaj .* results["Lj"] .* param.u(results["cj"], results["hj"]))
 end
 
-function gradient(x, auxdata)
+function gradient_primal(x, auxdata)
     param = auxdata.param
     graph = auxdata.graph
-    results = recover_allocation(x, auxdata)
+    results = recover_allocation_primal(x, auxdata)
 
     return [-repeat(param.omegaj .* param.uprime(results["cj"], results["hj"]), param.N) .* results["Cjn"] .^ (-1/param.sigma) .* repeat(results["Cj"] .^ (1/param.sigma), param.N); zeros(graph.ndeg*param.N)]
 end
 
-function constraints(x, auxdata)
+function constraints_primal(x, auxdata)
     param = auxdata.param
     graph = auxdata.graph
     A = auxdata.A
     kappa_ex = auxdata.kappa_ex
-    results = recover_allocation(x, auxdata)
+    results = recover_allocation_primal(x, auxdata)
     Qin = reshape(x[graph.J*param.N+1:end], graph.ndeg, param.N)
 
     cons_Q = zeros(graph.J, param.N)
@@ -99,12 +172,12 @@ function constraints(x, auxdata)
     return cons_Q[:]
 end
 
-function jacobian(x, auxdata)
+function jacobian_primal(x, auxdata)
     param = auxdata.param
     graph = auxdata.graph
     A = auxdata.A
     kappa_ex = auxdata.kappa_ex
-    results = recover_allocation(x, auxdata)
+    results = recover_allocation_primal(x, auxdata)
     Qin = reshape(x[graph.J*param.N+1:end], graph.ndeg, param.N)
 
     cons_Q = zeros(graph.J*param.N, graph.ndeg*param.N)
@@ -118,12 +191,12 @@ function jacobian(x, auxdata)
     return sparse(cons_Q)
 end
 
-function hessian(x, auxdata, sigma_IPOPT, lambda_IPOPT)
+function hessian_primal(x, auxdata, sigma_IPOPT, lambda_IPOPT)
     param = auxdata.param
     graph = auxdata.graph
     A = auxdata.A
     kappa_ex = auxdata.kappa_ex
-    results = recover_allocation(x, auxdata)
+    results = recover_allocation_primal(x, auxdata)
     Qin = reshape(x[graph.J*param.N+1:end], graph.ndeg, param.N)
     Pjn = reshape(lambda_IPOPT[1:graph.J*param.N], graph.J, param.N)
 

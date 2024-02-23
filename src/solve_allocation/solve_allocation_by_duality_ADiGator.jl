@@ -24,13 +24,13 @@ function solve_allocation_by_duality_ADiGator(x0, auxdata, funcs, verbose=true)
 
     # Return results
     flag = info
-    results = recover_allocation(x, auxdata)
+    results = recover_allocation_duality_ADiGator(x, auxdata)
     results[:welfare] = funcs.objective(x)
 
     return results, flag, x
 end
 
-function recover_allocation(x, auxdata)
+function recover_allocation_duality_ADiGator(x, auxdata)
 
     # Extract parameters
     param = auxdata.param

@@ -40,7 +40,7 @@ function solve_allocation_custom_ADiGator(x0, auxdata, funcs, verbose=true)
 
     # Return results
     flag = info
-    results = recover_allocation(x, auxdata)
+    results = recover_allocation_custom_ADiGator(x, auxdata)
     results.Pjn = reshape(info.lambda[1:graph.J*param.N], graph.J, param.N)
     results.PCj = sum(results.Pjn.^(1-param.sigma), dims=2).^(1/(1-param.sigma))
     results.welfare = -funcs[:objective](x)
@@ -48,7 +48,7 @@ function solve_allocation_custom_ADiGator(x0, auxdata, funcs, verbose=true)
     return results, flag, x
 end
 
-function recover_allocation(x, auxdata)
+function recover_allocation_custom_ADiGator(x, auxdata)
     param = auxdata.param
     graph = auxdata.graph
 

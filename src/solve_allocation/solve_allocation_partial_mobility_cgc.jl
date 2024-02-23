@@ -23,7 +23,7 @@ function solve_allocation_partial_mobility_cgc(x0, auxdata, verbose=true)
         location[i, :] = (graph.region .== i)
     end
 
-    nlp = create_nlp(x0, auxdata, location)
+    nlp = create_nlp_partial_mobility_cgc(x0, auxdata, location)
 
     options = Ipopt.Options()
     options["max_iter"] = 2000
@@ -35,10 +35,10 @@ function solve_allocation_partial_mobility_cgc(x0, auxdata, verbose=true)
     flag = getterminationstatus(nlp)
     x = getvalue(nlp)
 
-    return recover_allocation(x, auxdata), flag, x
+    return recover_allocation_partial_mobility_cgc(x, auxdata), flag, x
 end
 
-function create_nlp(x0, auxdata, location)
+function create_nlp_partial_mobility_cgc(x0, auxdata, location)
     param = auxdata.param
     graph = auxdata.graph
 
@@ -62,7 +62,7 @@ function create_nlp(x0, auxdata, location)
     return nlp
 end
 
-function recover_allocation(x, auxdata)
+function recover_allocation_partial_mobility_cgc(x, auxdata)
     graph = auxdata.graph
     param = auxdata.param
 

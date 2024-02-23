@@ -20,7 +20,7 @@ function solve_allocation_cgc(x0, auxdata, verbose=true)
     model = createProblem(x0, auxdata, verbose)
     status = solveProblem(model, x0)
 
-    results = recover_allocation(model, auxdata)
+    results = recover_allocation_cgc(model, auxdata)
     results.welfare = -objective(model, x0)
     results.Pjn = reshape(getduals(model), (graph.J, param.N))
     results.PCj = sum(results.Pjn .^ (1-param.sigma), dims=2) .^ (1/(1-param.sigma))
@@ -53,7 +53,7 @@ function solveProblem(model, x0)
     return termination_status(model)
 end
 
-function recover_allocation(model, auxdata)
+function recover_allocation_cgc(model, auxdata)
     graph = auxdata.graph
     param = auxdata.param
     x = getvalue(model)

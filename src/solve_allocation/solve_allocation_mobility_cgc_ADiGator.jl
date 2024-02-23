@@ -40,7 +40,7 @@ function solve_allocation_mobility_cgc_ADiGator(x0, auxdata, funcs, verbose=true
     # Return results
     flag = info
 
-    results = recover_allocation(param, graph, x)
+    results = recover_allocation_mobility_cgc_ADiGator(param, graph, x)
 
     results.Pjn = reshape(info.lambda[graph.J+1:graph.J+graph.J*param.N], graph.J, param.N) # Price vector
     results.PCj = info.lambda[graph.J+graph.J*param.N+2:graph.J+graph.J*param.N+1+graph.J] # Price of tradeable bundle
@@ -48,7 +48,7 @@ function solve_allocation_mobility_cgc_ADiGator(x0, auxdata, funcs, verbose=true
     return results, flag, x
 end
 
-function recover_allocation(param, graph, x)
+function recover_allocation_mobility_cgc_ADiGator(param, graph, x)
     # Welfare
     results = Dict(:welfare => x[1])
 

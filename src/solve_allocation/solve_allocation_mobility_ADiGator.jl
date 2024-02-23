@@ -36,14 +36,14 @@ function solve_allocation_mobility_ADiGator(x0, auxdata, funcs, verbose=true)
     x, info = ipopt(x0, funcs, options)
 
     flag = info
-    results = recover_allocation(x, auxdata)
+    results = recover_allocation_mobility_ADiGator(x, auxdata)
     results.Pjn = reshape(info.lambda[graph.J+1:graph.J+graph.J*param.N], graph.J, param.N)
     results.PCj = sum(results.Pjn.^(1-param.sigma), dims=2).^(1/(1-param.sigma))
 
     return results, flag, x
 end
 
-function recover_allocation(x, auxdata)
+function recover_allocation_mobility_ADiGator(x, auxdata)
     param = auxdata.param
     graph = auxdata.graph
 

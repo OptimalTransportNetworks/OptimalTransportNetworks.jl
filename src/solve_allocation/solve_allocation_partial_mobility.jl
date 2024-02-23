@@ -19,7 +19,7 @@ function solve_allocation_partial_mobility(x0, auxdata, verbose=true)
     end
 
     # Parametrize Ipopt
-    nlp = create_nlp(x0, auxdata, verbose)
+    nlp = create_nlp_partial_mobility(x0, auxdata, verbose)
 
     # Run Ipopt
     solver = IpoptSolver(print_level=verbose ? 5 : 0)
@@ -35,7 +35,7 @@ function solve_allocation_partial_mobility(x0, auxdata, verbose=true)
     return results, flag, x
 end
 
-function create_nlp(x0, auxdata, verbose)
+function create_nlp_partial_mobility(x0, auxdata, verbose)
     # Init functions
     funcs = Dict(
         :objective => (x) -> objective(x, auxdata),

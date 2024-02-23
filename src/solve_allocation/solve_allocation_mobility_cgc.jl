@@ -17,13 +17,13 @@ function solve_allocation_mobility_cgc(x0, auxdata, verbose=true)
         x0 = vcat(0, fill(C / L, graph.J), fill(C, graph.J * param.N), fill(1e-6, 2 * graph.ndeg * param.N), fill(L, graph.J))
     end
 
-    nlp = create_nlp(x0, auxdata, verbose)
+    nlp = create_nlp_mobility_cgc(x0, auxdata, verbose)
     solver = IpoptSolver(print_level=verbose ? 5 : 0, max_iter=2000)
     res = solve(nlp, solver)
 
     x = getvalue(nlp.x)
     flag = getterminationstatus(nlp)
-    results = recover_allocation(x, auxdata)
+    results = recover_allocation_mobility_cgc(x, auxdata)
     results.omegaj = getdual(nlp.c)[1:graph.J]
     results.Pjn = reshape(getdual(nlp.c)[2 * graph.J + 1:2 * graph.J + graph.J * param.N], graph.J, param.N)
     results.PCj = (sum(results.Pjn .^ (1 - param.sigma), dims=2) .^ (1 / (1 - param.sigma)))
@@ -33,7 +33,7 @@ function solve_allocation_mobility_cgc(x0, auxdata, verbose=true)
     return results, flag, x
 end
 
-function create_nlp(x0, auxdata, verbose)
+function create_nlp_mobility_cgc(x0, auxdata, verbose)
     graph = auxdata.graph
     param = auxdata.param
     utility = param.u
@@ -55,7 +55,7 @@ function create_nlp(x0, auxdata, verbose)
     return nlp
 end
 
-function recover_allocation(x, auxdata)
+function recover_allocation_mobility_cgc(x, auxdata)
     graph = auxdata.graph
     param = auxdata.param
 
