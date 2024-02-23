@@ -14,7 +14,7 @@ function solve_allocation_by_duality(x0, auxdata, verbose=true)
 
     # Init functions
     funcs = Dict(
-        :objective => (x) -> objective_duality(x, auxdata),
+        :objective => (x) -> objective_by_duality(x, auxdata),
         :gradient => (x) -> gradient_duality(x, auxdata),
         :hessian => (x, sigma_hess, lambda_hess) -> hessian_duality(x, auxdata, sigma_hess, lambda_hess),
         :hessianstructure => () -> sparse(tril(repeat(I, param.N, param.N) + kron(I, graph.adjacency)))
@@ -43,7 +43,7 @@ function solve_allocation_by_duality(x0, auxdata, verbose=true)
     return results, flag, x
 end
 
-function objective_duality(x, auxdata)
+function objective_by_duality(x, auxdata)
     # Recover parameters
     param = auxdata.param
     graph = auxdata.graph
