@@ -2,7 +2,7 @@
 
 module OptimalTransportNetworks
 
-using LinearAlgebra, Ipopt, JuMP
+using LinearAlgebra, Ipopt, JuMP, Plots
 
 # Function to include all .jl files in a directory
 function include_directory(directory)
