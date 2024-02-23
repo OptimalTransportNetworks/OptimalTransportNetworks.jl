@@ -174,7 +174,7 @@ function solve_allocation_mobility_cgc_inefficiency(x0, auxdata, verbose=true)
     
         if param[:nu] > 1  # if nu=1, diagonal term disappears
             matpos = repeat((1+param[:beta]) * (param[:nu]-1) * (Apos' * lambda) .* costpos.^((param[:beta]+1)/param[:nu]-1) .* graph.delta_tau_spillover_ex_direct ./ kappa_ex, outer=(1, param[:N])) .* repeat(param[:m]', outer=(graph.ndeg, 1)) .* Qin_direct.^(param[:nu]-2)
-            matneg = repeat((1+param[:beta]) * (param[:nu]-1) * (Aneg' * lambda) .* costneg.^((param[:beta]+1)/param[:nu]-1) .* graph.delta_tau_spillover_ex_indirect ./ kappa_ex, outer=(1, param[:N])) .* repeat(param[:m]', outer=(graph.ndeg,1)]);
+            matneg = repeat((1+param[:beta]) * (param[:nu]-1) * (Aneg' * lambda) .* costneg.^((param[:beta]+1)/param[:nu]-1) .* graph.delta_tau_spillover_ex_indirect ./ kappa_ex, outer=(1, param[:N])) .* repeat(param[:m]', outer=(graph.ndeg,1));
             xpos = x+graph.J*param[:N]+1
             ypos = xpos
             H[sub2ind(sz, (xpos):(xpos+graph.ndeg*param[:N]-1), (ypos):(ypos+graph.ndeg*param[:N]-1))] = matpos[:]
