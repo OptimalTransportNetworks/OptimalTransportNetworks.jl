@@ -2,8 +2,9 @@
 
 module OptimalTransportNetworks
 
-using LinearAlgebra, Ipopt, JuMP, Plots
+using LinearAlgebra, Plots # Ipopt, JuMP,
 using SparseArrays: sparse
+import Ipopt, ForwardDiff # Try to replace with Enzyme.jl
 
 # Function to include all .jl files in a directory
 function include_directory(directory)
@@ -21,7 +22,6 @@ function include_directory(directory)
         error("Directory does not exist: $dir_path")
     end
 end
-
 
 # Include all .jl files in a specific directory
 include_directory("objective")
