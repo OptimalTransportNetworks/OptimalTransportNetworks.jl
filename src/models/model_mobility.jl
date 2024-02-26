@@ -9,16 +9,16 @@ function model_mobility(optimizer, auxdata)
     A = auxdata[:A]
     psigma = (param.sigma - 1) / param.sigma
     Hj = param.Hj
-    Yjn = param.Zjn .* Ljn.^param.a
 
     # Model
     model = Model(optimizer)
+    set_string_names_on_creation(model, false)
 
     # Variables + bounds
     @variable(model, u)                                    # Overall utility
     @variable(model, Cjn[1:graph.J, 1:param.N] >= 1e-8)    # Good specific consumption
     @variable(model, Qin[1:graph.ndeg, 1:param.N])         # Good specific flow
-    @variable(model, 1e-8 <= Lj[1:graph.J] <= 1)           # Total Labour
+    @variable(model, 1e-8 <= Lj[1:graph.J] <= 1)           # Total labour
     @variable(model, Ljn[1:graph.J] >= 1e-8)               # Good specific labour
 
     # If custom: set start values
@@ -40,6 +40,8 @@ function model_mobility(optimizer, auxdata)
     end
 
     # balanced flow constraints
+    # Yjn = @expression(model, param.Zjn .* Ljn .^ param.a) # Same thing
+    @expression(model, Yjn[j=1:graph.J, n=1:param.N], param.Zjn[j, n] * Ljn[j, n]^param.a)
     @constraint(model, [n in 1:param.N, j in 1:param.J],
         Cjn[j, n] + sum(A[j, i] * Qin[i, n] for i in 1:graph.ndeg) -
         Yjn[j, n] + sum(
