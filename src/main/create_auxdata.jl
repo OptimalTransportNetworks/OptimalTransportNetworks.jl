@@ -36,16 +36,16 @@ function create_auxdata(param, graph, I)
     end
 
     # Store in auxdata
-    auxdata = Dict(
-        :param => param,
-        :graph => graph,
-        :kappa => kappa,
-        :kappa_ex => kappa_ex,
-        :Iex => kappa_extract(graph, I),
-        :delta_tau_ex => kappa_extract(graph, graph.delta_tau),
-        :A => A,
-        :Apos => max.(A, 0),
-        :Aneg => max.(-A, 0)
+    auxdata = (
+        param = param,
+        graph = graph,
+        kappa = kappa,
+        kappa_ex = kappa_ex,
+        Iex = kappa_extract(graph, I),
+        delta_tau_ex = kappa_extract(graph, graph.delta_tau),
+        A = A,
+        Apos = max.(A, 0),
+        Aneg = max.(-A, 0)
     )
 
     return auxdata
