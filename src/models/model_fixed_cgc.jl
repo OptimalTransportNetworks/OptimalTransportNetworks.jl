@@ -17,11 +17,12 @@ function model_fixed_cgc(optimizer, auxdata)
     set_string_names_on_creation(model, false)
 
     # Variables
-    @variable(model, Djn[1:graph.J, 1:param.N]) # Consumption per good pre-transport cost (Dj)
-    @variable(model, Qin_direct[1:graph.ndeg, 1:param.N])
-    @variable(model, Qin_indirect[1:graph.ndeg, 1:param.N])
-    @variable(model, Ljn[1:graph.J, 1:param.N])
-    @variable(model, cj[1:graph.J])
+    @variable(model, u)                                    # Overall utility
+    @variable(model, Djn[1:graph.J, 1:param.N])            # Consumption per good pre-transport cost (Dj)
+    @variable(model, Qin_direct[1:graph.ndeg, 1:param.N])  # Direct aggregate flow
+    @variable(model, Qin_indirect[1:graph.ndeg, 1:param.N])# Indirect aggregate flow
+    @variable(model, Ljn[1:graph.J, 1:param.N])            # Good specific labour
+    @variable(model, cj[1:graph.J])                        # Overall consumption bundle, including transport costs
 
     # Defining Utility Funcion: from cj + parameters (by operator overloading)
     Uj = @expression(model, ((cj / param.alpha) .^ param.alpha .* (param.hj / (1-param.alpha)) .^ (1-param.alpha)) .^ (1-param.rho) / (1-param.rho))
