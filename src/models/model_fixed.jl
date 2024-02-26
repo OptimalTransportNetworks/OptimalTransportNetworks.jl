@@ -1,6 +1,6 @@
 # The primal case, no mobility, no cross-good congestion
 
-function model_baseline(optimizer, auxdata)
+function model_fixed(optimizer, auxdata)
 
     # Extract parameters
     param = dict_to_namedtuple(auxdata[:param])
