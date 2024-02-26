@@ -41,4 +41,6 @@ function model_baseline(optimizer, auxdata)
 
     # Local labor availability constraints ( sum Ljn <= Lj )
     @constraint(model, -1e-8 .<= sum(Ljn, dims=2) .- Lj .<= 1e-8)
+
+    return model
 end
