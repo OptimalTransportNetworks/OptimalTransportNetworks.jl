@@ -43,18 +43,18 @@ function create_nlp_partial_mobility_cgc(x0, auxdata, location)
     graph = auxdata.graph
 
     nlp = Model(solver=IpoptSolver(print_level=0))
-    @variable(nlp, x[1:length(x0)])
-    setvalue(x, x0)
+    # @variable(nlp, x[1:length(x0)])
+    # setvalue(x, x0)
 
-    @NLobjective(nlp, Min, -sum(param.omegar .* param.Lr .* x[1:param.nregions]))
+    # @NLobjective(nlp, Min, -sum(param.omegar .* param.Lr .* x[1:param.nregions]))
 
-    @NLconstraint(nlp, x[1:param.nregions] .== ((x[param.nregions+1:param.nregions+graph.J] / param.alpha) .^ param.alpha .* (param.Hj / (1-param.alpha)) .^ (1-param.alpha)) ./ x[param.nregions+graph.J+graph.J*param.N+2*graph.ndeg*param.N+1:end])
+    # @NLconstraint(nlp, x[1:param.nregions] .== ((x[param.nregions+1:param.nregions+graph.J] / param.alpha) .^ param.alpha .* (param.Hj / (1-param.alpha)) .^ (1-param.alpha)) ./ x[param.nregions+graph.J+graph.J*param.N+2*graph.ndeg*param.N+1:end])
 
-    @NLconstraint(nlp, x[param.nregions+1:param.nregions+graph.J] .+ Apos * (sum(repmat(param.m', graph.ndeg, 1) .* x[param.nregions+graph.J+graph.J*param.N+1:param.nregions+graph.J+graph.J*param.N+graph.ndeg*param.N] .^ param.nu, dims=2) .^ ((param.beta+1) / param.nu) ./ kappa_ex) + Aneg * (sum(repmat(param.m', graph.ndeg, 1) .* x[param.nregions+graph.J+graph.J*param.N+graph.ndeg*param.N+1:param.nregions+graph.J+graph.J*param.N+2*graph.ndeg*param.N] .^ param.nu, dims=2) .^ ((param.beta+1) / param.nu) ./ kappa_ex) .== sum(reshape(x[param.nregions+graph.J+1:param.nregions+graph.J+graph.J*param.N], graph.J, param.N) .^ ((param.sigma-1) / param.sigma), dims=2) .^ (param.sigma / (param.sigma-1)))
+    # @NLconstraint(nlp, x[param.nregions+1:param.nregions+graph.J] .+ Apos * (sum(repmat(param.m', graph.ndeg, 1) .* x[param.nregions+graph.J+graph.J*param.N+1:param.nregions+graph.J+graph.J*param.N+graph.ndeg*param.N] .^ param.nu, dims=2) .^ ((param.beta+1) / param.nu) ./ kappa_ex) + Aneg * (sum(repmat(param.m', graph.ndeg, 1) .* x[param.nregions+graph.J+graph.J*param.N+graph.ndeg*param.N+1:param.nregions+graph.J+graph.J*param.N+2*graph.ndeg*param.N] .^ param.nu, dims=2) .^ ((param.beta+1) / param.nu) ./ kappa_ex) .== sum(reshape(x[param.nregions+graph.J+1:param.nregions+graph.J+graph.J*param.N], graph.J, param.N) .^ ((param.sigma-1) / param.sigma), dims=2) .^ (param.sigma / (param.sigma-1)))
 
-    @NLconstraint(nlp, [j=1:graph.J, n=1:param.N], reshape(x[param.nregions+graph.J+1:param.nregions+graph.J+graph.J*param.N], graph.J, param.N)[j, n] + A * x[param.nregions+graph.J+graph.J*param.N+(n-1)*graph.ndeg+1:param.nregions+graph.J+graph.J*param.N+n*graph.ndeg] - A * x[param.nregions+graph.J+graph.J*param.N+graph.ndeg*param.N+(n-1)*graph.ndeg+1:param.nregions+graph.J+graph.J*param.N+graph.ndeg*param.N+n*graph.ndeg] .== param.Zjn[j, n] * x[param.nregions+graph.J+graph.J*param.N+2*graph.ndeg*param.N+j] .^ param.a)
+    # @NLconstraint(nlp, [j=1:graph.J, n=1:param.N], reshape(x[param.nregions+graph.J+1:param.nregions+graph.J+graph.J*param.N], graph.J, param.N)[j, n] + A * x[param.nregions+graph.J+graph.J*param.N+(n-1)*graph.ndeg+1:param.nregions+graph.J+graph.J*param.N+n*graph.ndeg] - A * x[param.nregions+graph.J+graph.J*param.N+graph.ndeg*param.N+(n-1)*graph.ndeg+1:param.nregions+graph.J+graph.J*param.N+graph.ndeg*param.N+n*graph.ndeg] .== param.Zjn[j, n] * x[param.nregions+graph.J+graph.J*param.N+2*graph.ndeg*param.N+j] .^ param.a)
 
-    @NLconstraint(nlp, sum(location .* x[param.nregions+graph.J+graph.J*param.N+2*graph.ndeg*param.N+1:end]', dims=2) .== param.Lr)
+    # @NLconstraint(nlp, sum(location .* x[param.nregions+graph.J+graph.J*param.N+2*graph.ndeg*param.N+1:end]', dims=2) .== param.Lr)
 
     setlowerbound(x, fill(-Inf, param.nregions), fill(1e-6, graph.J), fill(1e-6, graph.J*param.N), fill(1e-8, 2*graph.ndeg*param.N), fill(1e-8, graph.J))
     setupperbound(x, fill(Inf, length(x)))

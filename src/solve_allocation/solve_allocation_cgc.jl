@@ -39,10 +39,10 @@ function createProblem(x0, auxdata, verbose)
     cu = zeros(graph.J*(1+param.N))
 
     model = Model(with_optimizer(Ipopt.Optimizer, print_level=verbose ? 5 : 0, max_iter=2000))
-    @variable(model, lb[i] <= x[i=1:length(x0)] <= ub[i])
-    @NLobjective(model, Min, -sum(param.omegaj .* param.Lj .* utility(x[1:graph.J], param.hj)))
-    @NLconstraint(model, [i=1:graph.J], x[i]*param.Lj[i] + cost_direct[i] + cost_indirect[i] - Dj[i] == 0)
-    @NLconstraint(model, [i=1:graph.J, n=1:param.N], Djn[i, n] + A*Qin_direct[:, n] - A*Qin_indirect[:, n] - Yjn[i, n] == 0)
+    # @variable(model, lb[i] <= x[i=1:length(x0)] <= ub[i])
+    # @NLobjective(model, Min, -sum(param.omegaj .* param.Lj .* utility(x[1:graph.J], param.hj)))
+    # @NLconstraint(model, [i=1:graph.J], x[i]*param.Lj[i] + cost_direct[i] + cost_indirect[i] - Dj[i] == 0)
+    # @NLconstraint(model, [i=1:graph.J, n=1:param.N], Djn[i, n] + A*Qin_direct[:, n] - A*Qin_indirect[:, n] - Yjn[i, n] == 0)
 
     return model
 end

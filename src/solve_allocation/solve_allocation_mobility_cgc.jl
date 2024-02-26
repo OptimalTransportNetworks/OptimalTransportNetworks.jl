@@ -39,18 +39,18 @@ function create_nlp_mobility_cgc(x0, auxdata, verbose)
     utility = param.u
 
     nlp = Model(solver=IpoptSolver(print_level=verbose ? 5 : 0))
-    @variable(nlp, -Inf <= x[1:length(x0)] <= Inf)
+    # @variable(nlp, -Inf <= x[1:length(x0)] <= Inf)
     for i in 2:length(x0)
         setlowerbound(x[i], 1e-6)
     end
     setlowerbound(x[end - graph.J + 1:end], 1e-8)
 
-    @NLobjective(nlp, Min, -x[1])
+    # @NLobjective(nlp, Min, -x[1])
 
-    @NLconstraint(nlp, cons_u[j=1:graph.J], x[1] * x[end - graph.J + j] - utility(x[1 + j], param.Hj[j]) == 0)
-    @NLconstraint(nlp, cons_C[j=1:graph.J], x[1 + j] + cost_direct[j] + cost_indirect[j] - Dj[j] == 0)
-    @NLconstraint(nlp, cons_Q[j=1:graph.J, n=1:param.N], Djn[j, n] + A * Qin_direct[:, n] - A * Qin_indirect[:, n] - Yjn[j, n] == 0)
-    @NLconstraint(nlp, cons_L, sum(x[end - graph.J + 1:end]) - 1 == 0)
+    # @NLconstraint(nlp, cons_u[j=1:graph.J], x[1] * x[end - graph.J + j] - utility(x[1 + j], param.Hj[j]) == 0)
+    # @NLconstraint(nlp, cons_C[j=1:graph.J], x[1 + j] + cost_direct[j] + cost_indirect[j] - Dj[j] == 0)
+    # @NLconstraint(nlp, cons_Q[j=1:graph.J, n=1:param.N], Djn[j, n] + A * Qin_direct[:, n] - A * Qin_indirect[:, n] - Yjn[j, n] == 0)
+    # @NLconstraint(nlp, cons_L, sum(x[end - graph.J + 1:end]) - 1 == 0)
 
     return nlp
 end
