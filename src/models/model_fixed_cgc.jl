@@ -23,6 +23,11 @@ function model_fixed_cgc(optimizer, auxdata)
     @variable(model, Ljn[1:graph.J, 1:param.N])
     @variable(model, cj[1:graph.J])
 
+    # Defining Utility Funcion: from cj + parameters (by operator overloading)
+    Uj = @expression(model, ((cj / param.alpha) .^ param.alpha .* (param.hj / (1-param.alpha)) .^ (1-param.alpha)) .^ (1-param.rho) / (1-param.rho))
+    u = @expression(model, sum(param.omegaj .* param.Lj .* Uj))
+    @objective(model, Max, u)
+
     # Final good constraints
     for i in 1:graph.ndeg
         # Create the matrix B_direct (resp. B_indirect) of transport cost along the direction of the edge (resp. in edge opposite direction)
