@@ -2,9 +2,10 @@
 
 module OptimalTransportNetworks
 
-using LinearAlgebra, Plots # Ipopt, JuMP,
+using LinearAlgebra, JuMP, Plots
 using SparseArrays: sparse
-import Ipopt, ForwardDiff # Try to replace with Enzyme.jl
+using Statistics: mean
+import Ipopt, MathOptSymbolicAD
 
 # Function to include all .jl files in a directory
 function include_directory(directory)
@@ -23,11 +24,12 @@ function include_directory(directory)
     end
 end
 
-# Include all .jl files in a specific directory
-include_directory("objective")
-include_directory("constraints")
-include_directory("solve_allocation")
+## Include all .jl files in a specific directory
+# include_directory("objective")
+# include_directory("constraints")
+# include_directory("solve_allocation")
 include_directory("main")
+include_directory("models")
 
 # Defining exports
 export init_parameters, create_graph, plot_graph, create_auxdata
