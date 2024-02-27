@@ -728,21 +728,3 @@ end
 
 
 
-"""
-    kappa_extract(graph, kappa)
-
-Description: auxiliary function that converts kappa_jk into kappa_i
-"""
-function kappa_extract(graph, kappa)
-    kappa_ex = zeros(graph.ndeg)
-    id = 1
-    for i in 1:graph.J
-        for j in graph.nodes[i]
-            if j > i
-                kappa_ex[id] = kappa[i, j]
-                id += 1
-            end
-        end
-    end
-    return kappa_ex
-end
