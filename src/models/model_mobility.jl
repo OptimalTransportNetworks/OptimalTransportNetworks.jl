@@ -60,3 +60,38 @@ function model_mobility(optimizer, auxdata)
     return model
 end
 
+function recover_allocation_mobility(model, auxdata)
+    param = dict_to_namedtuple(auxdata[:param])
+    graph = auxdata[:graph]
+    model_dict = model.obj_dict
+    results = Dict()
+
+    results[:welfare] = value(model_dict[:u])
+    results[:Yjn] = value.(model_dict[:Yjn])
+    results[:Yj] = sum(results[:Yjn], dims=2) 
+    results[:Cjn] = value.(model_dict[:Cjn])
+    results[:Cj] = sum(results[:Cjn] .^ ((param.sigma-1)/param.sigma), dims=2) .^ (param.sigma/(param.sigma-1))
+    results[:Ljn] = value.(model_dict[:Ljn])
+    results[:Lj] = value.(model_dict[:Lj])
+    results[:cj] = ifelse.(results[:Lj] .== 0, 0.0, results[:Cj] ./ results[:Lj])
+    results[:hj] = ifelse.(results[:Lj] .== 0, 0.0, param.Hj ./ results[:Lj])
+    results[:uj] = param.u.(results[:cj], results[:hj])
+    # Prices
+    results[:Pjn] = shadow_price.(model_dict[:Pjn])
+    results[:PCj] = sum(results[:Pjn] .^ (1-param.sigma), dims=2) .^ (1/(1-param.sigma))    
+    # Network flows
+    results[:Qin] = value.(model_dict[:Qin])
+    results[:Qjkn] = zeros(graph.J, graph.J, param.N)
+    id = 1
+    for i in 1:graph.J
+        for j in 1:length(graph.nodes[i])
+            if graph.nodes[i][j] > i
+                results[:Qjkn][i, graph.nodes[i][j], :] = max.(results[:Qin][id, :], 0)
+                results[:Qjkn][graph.nodes[i][j], i, :] = max.(-results[:Qin][id, :], 0)
+                id += 1
+            end
+        end
+    end
+
+    return results
+end
