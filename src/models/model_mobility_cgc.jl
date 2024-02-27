@@ -45,7 +45,7 @@ function model_mobility_cgc(optimizer, auxdata)
 
     # Balanced flow constraints
     Yjn = @expression(model, param.Zjn .* (Ljn .^ param.a))
-    @constraint(model, Djn + A * Qin_direct - A * Qin_indirect - Yjn .<= -1e-8)
+    @constraint(model, Pjn, Djn + A * Qin_direct - A * Qin_indirect - Yjn .<= -1e-8)
 
     # Local labor availability constraints ( sum Ljn <= Lj )
     @constraint(model, -1e-8 .<= sum(Ljn, dims=2) .- Lj .<= 1e-8)
