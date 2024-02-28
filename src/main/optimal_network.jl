@@ -31,7 +31,7 @@ This code is distributed under BSD-3 License. See LICENSE.txt for more informati
 # using LinearAlgebra
 # I0=nothing; Il=nothing; Iu=nothing; verbose=false;
 
-function optimal_network(param, graph, I0=nothing, Il=nothing, Iu=nothing, verbose=false)
+function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbose=false)
 
     J = graph.J
     TOL_I_BOUNDS = 1e-7
