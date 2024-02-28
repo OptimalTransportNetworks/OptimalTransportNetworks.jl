@@ -81,17 +81,6 @@ function recover_allocation_mobility(model, auxdata)
     results[:PCj] = sum(results[:Pjn] .^ (1-param.sigma), dims=2) .^ (1/(1-param.sigma))    
     # Network flows
     results[:Qin] = value.(model_dict[:Qin])
-    results[:Qjkn] = zeros(graph.J, graph.J, param.N)
-    id = 1
-    for i in 1:graph.J
-        for j in 1:length(graph.nodes[i])
-            if graph.nodes[i][j] > i
-                results[:Qjkn][i, graph.nodes[i][j], :] = max.(results[:Qin][id, :], 0)
-                results[:Qjkn][graph.nodes[i][j], i, :] = max.(-results[:Qin][id, :], 0)
-                id += 1
-            end
-        end
-    end
-
+    results[:Qjkn] = gen_network_flows(results[:Qin], graph, param.N)
     return results
 end
