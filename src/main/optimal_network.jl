@@ -31,7 +31,7 @@ This code is distributed under BSD-3 License. See LICENSE.txt for more informati
 # using LinearAlgebra
 # I0=nothing; Il=nothing; Iu=nothing; verbose=false;
 
-function optimal_network(param, graph, I0=nothing, Il=nothing, Iu=nothing, verbose=false, x0=nothing)
+function optimal_network(param, graph, I0=nothing, Il=nothing, Iu=nothing, verbose=false)
 
     J = graph.J
     TOL_I_BOUNDS = 1e-7
@@ -93,6 +93,10 @@ function optimal_network(param, graph, I0=nothing, Il=nothing, Iu=nothing, verbo
 
     # --------------
     # CUSTOMIZATIONS
+
+    if !verbose
+        set_silent(model)
+    end
 
     if haskey(param, :optimizer_attr)
         for (key, value) in param[:optimizer_attr]
