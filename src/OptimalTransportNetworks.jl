@@ -25,15 +25,12 @@ function include_directory(directory)
 end
 
 ## Include all .jl files in a specific directory
-# include_directory("objective")
-# include_directory("constraints")
-# include_directory("solve_allocation")
 include_directory("main")
 include_directory("models")
 
 # Defining exports
 export init_parameters, create_graph, plot_graph, create_auxdata
-export optimal_network, annealing, solve_allocation, call_adigator
+export optimal_network, annealing, solve_allocation
 export add_node, find_node, remove_node, apply_geography
 
 end
