@@ -17,7 +17,7 @@ function model_fixed_cgc(optimizer, auxdata)
     set_string_names_on_creation(model, false)
 
     # Variables
-    @variable(model, u)                                    # Overall utility
+    @variable(model, U)                                    # Overall utility
     @variable(model, Djn[1:graph.J, 1:param.N])            # Consumption per good pre-transport cost (Dj)
     @variable(model, Qin_direct[1:graph.ndeg, 1:param.N])  # Direct aggregate flow
     @variable(model, Qin_indirect[1:graph.ndeg, 1:param.N])# Indirect aggregate flow
@@ -25,9 +25,9 @@ function model_fixed_cgc(optimizer, auxdata)
     @variable(model, cj[1:graph.J])                        # Overall consumption bundle, including transport costs
 
     # Defining Utility Funcion: from cj + parameters (by operator overloading)
-    Uj = @expression(model, ((cj / param.alpha) .^ param.alpha .* (param.hj / (1-param.alpha)) .^ (1-param.alpha)) .^ (1-param.rho) / (1-param.rho))
-    u = @expression(model, sum(param.omegaj .* param.Lj .* Uj))
-    @objective(model, Max, u)
+    uj = @expression(model, ((cj / param.alpha) .^ param.alpha .* (param.hj / (1-param.alpha)) .^ (1-param.alpha)) .^ (1-param.rho) / (1-param.rho))
+    U = @expression(model, sum(param.omegaj .* param.Lj .* uj))
+    @objective(model, Max, U)
 
     # Final good constraints
     for i in 1:graph.ndeg
