@@ -15,7 +15,6 @@ Arguments:
 - Il: (optional) exogenous lower bound on infrastructure levels (matrix JxJ)
 - Iu: (optional) exogenous upper bound on infrastructure levels (matrix JxJ)
 - verbose: (optional) tell IPOPT to display results
-- x0: (optional) provide initial condition for IPOPT
 
 -----------------------------------------------------------------------------------
 REFERENCE: "Optimal Transport Networks in Spatial Equilibrium" (2019) by Pablo D.
@@ -30,7 +29,7 @@ This code is distributed under BSD-3 License. See LICENSE.txt for more informati
 
 
 # using LinearAlgebra
-# I0=nothing; Il=nothing; Iu=nothing; verbose=false; x0=nothing
+# I0=nothing; Il=nothing; Iu=nothing; verbose=false;
 
 function optimal_network(param, graph, I0=nothing, Il=nothing, Iu=nothing, verbose=false, x0=nothing)
 
@@ -61,7 +60,6 @@ function optimal_network(param, graph, I0=nothing, Il=nothing, Iu=nothing, verbo
 
     Il = Il === nothing ? zeros(graph.J, graph.J) : Il
     Iu = Iu === nothing ? Inf * ones(graph.J, graph.J) : Iu
-    x0 = x0 === nothing ? [] : x0
 
     if param[:mobility] || param[:beta] > 1 || param[:cong]
         Il = max.(1e-6 * graph.adjacency, Il)
@@ -73,58 +71,51 @@ function optimal_network(param, graph, I0=nothing, Il=nothing, Iu=nothing, verbo
     optimizer = get(param, :optimizer, Ipopt.Optimizer)
     auxdata = create_auxdata(param, graph, I0)
 
-    # if param[:adigator] && param[:mobility] != 0.5
-    if param[:custom]
-        model = param[:custom_model](optimizer, auxdata)
+    if haskey(param, :model)
+        model = param[:model](optimizer, auxdata)
+        if !haskey(param, :recover_allocation)
+            error("The custom model does not have the recover_allocation function.")
+        end
+        recover_allocation = param[:recover_allocation] 
     elseif param[:mobility] == 1 && param[:cong]
         model = model_mobility_cgc(optimizer, auxdata)
+        recover_allocation = recover_allocation_mobility_cgc
     elseif param[:mobility] == 0 && param[:cong]
         model = model_fixed_cgc(optimizer, auxdata)
+        recover_allocation = recover_allocation_fixed_cgc
     elseif param[:mobility] == 1 && !param[:cong]
         model = model_mobility(optimizer, auxdata)
         recover_allocation = recover_allocation_mobility
-    elseif (param[:mobility] == 0 && !param[:cong]) && (param[:beta] <= 1 && param[:a] < 1 && param[:duality])
-        # TODO: Dual solution !!
-        solve_allocation_handle = (x0, auxdata, funcs, verbose) -> solve_allocation_by_duality_ADiGator(x0, auxdata, funcs, verbose)
     else 
         model = model_fixed(optimizer, auxdata)
+        recover_allocation = recover_allocation_fixed
     end
-    # else
-    #     if !param[:cong]
-    #         if param[:mobility] == 0
-    #             if param[:beta] <= 1 && param[:duality]
-    #                 solve_allocation_handle = (x0, auxdata, funcs, verbose) -> solve_allocation_by_duality(x0, auxdata, verbose)
-    #             else
-    #                 solve_allocation_handle = (x0, auxdata, funcs, verbose) -> solve_allocation_primal(x0, auxdata, verbose)
-    #             end
-    #         elseif param[:mobility] == 1
-    #             solve_allocation_handle = (x0, auxdata, funcs, verbose) -> solve_allocation_mobility(x0, auxdata, verbose)
-    #         elseif param[:mobility] == 0.5
-    #             solve_allocation_handle = (x0, auxdata, funcs, verbose) -> solve_allocation_partial_mobility(x0, auxdata, verbose)
-    #         end
-    #     else
-    #         if param[:mobility] == 0
-    #             solve_allocation_handle = (x0, auxdata, funcs, verbose) -> solve_allocation_cgc(x0, auxdata, verbose)
-    #         elseif param[:mobility] == 1
-    #             solve_allocation_handle = (x0, auxdata, funcs, verbose) -> solve_allocation_mobility_cgc(x0, auxdata, verbose)
-    #         elseif param[:mobility] == 0.5
-    #             solve_allocation_handle = (x0, auxdata, funcs, verbose) -> solve_allocation_partial_mobility_cgc(x0, auxdata, verbose)
-    #         end
-    #     end
-    # end
+
+    # --------------
+    # CUSTOMIZATIONS
+
     if haskey(param, :optimizer_attr)
         for (key, value) in param[:optimizer_attr]
             set_optimizer_attribute(model, String(key), value)
         end
-    else
-        # set_optimizer_attribute(model, "tol", 1e-5)  
-        set_optimizer_attribute(model, "max_iter", 10000) 
     end
+
+    if haskey(param, :model_attr) 
+        for value in values(param[:model_attr])
+            if !(value isa Tuple)  
+                error("model_attr must be a dict of tuples.")
+            end
+            set_optimizer_attribute(model, value[1], value[2])
+        end
+    end
+    # E.g.:
     # set_attribute(model,
-    #     MOI.AutomaticDifferentiationBackend(),
-    #     MathOptSymbolicAD.DefaultBackend(),
+    #    MOI.AutomaticDifferentiationBackend(),
+    #    MathOptSymbolicAD.DefaultBackend(),
     # )
-    # if haskey(param, :model_attr) ...
+
+    # --------------------
+    # NETWORK OPTIMIZATION
 
     has_converged = false
     counter = 0
@@ -133,48 +124,45 @@ function optimal_network(param, graph, I0=nothing, Il=nothing, Iu=nothing, verbo
 
     while (!has_converged && counter < param[:MAX_ITER_KAPPA]) || counter <= 20
 
-        # auxdata = create_auxdata(param, graph, I0)
-
         # if save_before_it_crashes
         #     debug_file_str = "debug.mat"
-        #     save(debug_file_str, "param", "graph", "kappa", "x0", "I0", "I1", "counter")
+        #     save(debug_file_str, "param", "graph", "kappa", "I0", "I1", "counter")
         # end
 
         t0 = time()
         optimize!(model)
-        # results, flag, x1 = solve_allocation_handle(x0, auxdata, funcs, verbose)
         t1 = time()
+
         if !is_solved_and_feasible(model, allow_almost = true)
             error("Solver returned with error code $(termination_status(model)).")
         end
 
         results = recover_allocation(model, auxdata)
+
         # Set next run starting values to previous run solution.
-        # vars = all_variables(model)
-        # vars_solution = value.(vars)
-        # set_start_value.(vars, vars_solution)
-        # # Previous: x0 = x1
+        if param[:warm_start]
+            vars = all_variables(model)
+            vars_solution = value.(vars)
+            set_start_value.(vars, vars_solution)
+        end
         
         if !param[:cong]
             PQ = repeat(results[:Pjn], 1, graph.J, 1) .* results[:Qjkn] .^ (1 + param[:beta])
             PQ = dropdims(sum(PQ + permutedims(PQ, [2, 1, 3]), dims=3), dims = 3)
-            I1 = (graph.delta_tau ./ graph.delta_i .* PQ) .^ (1 / (1 + param[:gamma]))
-            I1[graph.adjacency .== 0] .= 0
-            I1[PQ .== 0] .= 0
-            I1[graph.delta_i .== 0] .= 0
         else
             PCj = repeat(results[:PCj], 1, graph.J)
             matm = permutedims(repeat(param[:m], 1, graph.J, graph.J), 2)
             cost = sum(matm .* results[:Qjkn] .^ param[:nu], dims=3) .^ ((param[:beta] + 1) / param[:nu])
             PQ = PCj .* cost
             PQ = PQ + PQ'
-            I1 = (graph.delta_tau ./ graph.delta_i .* PQ) .^ (1 / (param[:gamma] + 1))
-            I1[graph.adjacency.==false] .= 0
-            I1[PQ.==0] .= 0
-            I1[graph.delta_i.==0] .= 0
         end
 
+        I1 = (graph.delta_tau ./ graph.delta_i .* PQ) .^ (1 / (1 + param[:gamma]))
+        I1[graph.adjacency .== 0] .= 0
+        I1[PQ .== 0] .= 0
+        I1[graph.delta_i .== 0] .= 0
         I1 = param[:K] * I1 / sum(graph.delta_i .* I1)
+
         distance_lb = max(maximum(Il - I1), 0)
         distance_ub = max(maximum(I1 - Iu), 0)
         counter_rescale = 0
@@ -201,8 +189,8 @@ function optimal_network(param, graph, I0=nothing, Il=nothing, Iu=nothing, verbo
 
         if !has_converged || counter <= 20
             I0 = weight_old * I0 + (1 - weight_old) * I1
+            auxdata = create_auxdata(param, graph, I0)
         end
-
     end
 
     if counter <= param[:MAX_ITER_KAPPA] && !has_converged && param[:verbose]
@@ -216,6 +204,9 @@ function optimal_network(param, graph, I0=nothing, Il=nothing, Iu=nothing, verbo
         println("\nCOMPUTATION RESULTED WITH SUCCESS.\n----------------------------------\n")
     end
 
+    # --------------------
+    # SIMULATED ANNEALING
+
     if param[:gamma] > param[:beta] && param[:annealing]
         results = annealing(param, graph, I0, "Funcs" => funcs)
     end
@@ -223,4 +214,3 @@ function optimal_network(param, graph, I0=nothing, Il=nothing, Iu=nothing, verbo
     return results
 end
 
-# Please note that this is a direct translation and the code might not work correctly due to differences in how MATLAB and Julia handle arrays and other data structures. You might need to adjust the code to fit Julia's conventions and syntax.
