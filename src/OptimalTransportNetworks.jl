@@ -5,7 +5,7 @@ module OptimalTransportNetworks
 using LinearAlgebra, JuMP, Plots
 using SparseArrays: sparse
 using Statistics: mean
-import Ipopt, MathOptSymbolicAD
+import Ipopt #, MathOptSymbolicAD
 
 # Function to include all .jl files in a directory
 function include_directory(directory)
