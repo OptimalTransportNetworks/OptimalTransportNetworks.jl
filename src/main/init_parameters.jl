@@ -63,6 +63,7 @@ function init_parameters(; alpha=0.5, beta=1, gamma=1, K=1, sigma=5, rho=2, a=0.
     param[:verbose] = get(p, :Verbose, Verbose)
     param[:adigator] = get(p, :ADiGator, ADiGator)
     param[:duality] = get(p, :Duality, Duality)
+    param[:warm_start] = get(p, :warm_start, false)
 
     # Additional parameters for the numerical part
     param[:tol_kappa] = get(p, :TolKappa, 1e-7)
