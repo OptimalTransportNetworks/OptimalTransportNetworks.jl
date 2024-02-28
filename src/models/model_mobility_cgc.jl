@@ -52,3 +52,31 @@ function model_mobility_cgc(optimizer, auxdata)
     
     return model
 end
+
+function recover_allocation_mobility_cgc(model, auxdata)
+    param = dict_to_namedtuple(auxdata[:param])
+    graph = auxdata[:graph]
+    model_dict = model.obj_dict
+    results = Dict()
+
+    results[:welfare] = value(model_dict[:u])
+    results[:Yjn] = value.(model_dict[:Yjn])
+    results[:Yj] = sum(results[:Yjn], dims=2) 
+    results[:Ljn] = value.(model_dict[:Ljn])
+    results[:Lj] = value.(model_dict[:Lj])
+    results[:Djn] = value.(model_dict[:Djn]) # Consumption per good pre-transport cost
+    results[:Dj] = sum(results[:Djn] .^ ((param.sigma-1)/param.sigma), dims=2) .^ (param.sigma/(param.sigma-1))
+    results[:cj] = value.(model_dict[:cj])
+    results[:Cj] = results[:cj] .* results[:Lj]
+    results[:hj] = ifelse.(results[:Lj] .== 0, 0.0, param.Hj ./ results[:Lj])
+    results[:uj] = param.u.(results[:cj], results[:hj])
+    # Prices
+    results[:Pjn] = shadow_price.(model_dict[:Pjn])
+    results[:PCj] = sum(results[:Pjn] .^ (1-param.sigma), dims=2) .^ (1/(1-param.sigma))    
+    # Network flows
+    Qin_direct = value.(model_dict[:Qin_direct])
+    Qin_indirect = value.(model_dict[:Qin_indirect])
+    results[:Qin] = ifelse.(Qin_direct .> Qin_indirect, Qin_direct, -Qin_indirect)
+    results[:Qjkn] = gen_network_flows(results[:Qin], graph, param.N)
+    return results
+end
