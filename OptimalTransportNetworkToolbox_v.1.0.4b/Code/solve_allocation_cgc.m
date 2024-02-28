@@ -157,7 +157,7 @@ for i=1:param.N*graph.ndeg
     if Qin_direct(i)>Qin_indirect(i)
         results.Qin(i)=Qin_direct(i)-Qin_indirect(i);
     else
-        results.Qin(i)=Qin_direct(i)-Qin_indirect(i);
+        results.Qin(i)=Qin_indirect(i)-Qin_direct(i);
     end
 end
 results.Qin=reshape(results.Qin,[graph.ndeg param.N]);
