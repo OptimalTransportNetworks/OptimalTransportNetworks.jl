@@ -14,3 +14,14 @@ function gen_network_flows(Qin, graph, N)
     end
     return Qjkn
 end
+
+# Function to check if the input is a color
+function is_color(input)
+    if isa(input, String)
+        return haskey(Colors.color_names, input)
+    elseif isa(input, Symbol)
+        return haskey(Colors.color_names, string(input))
+    else
+        return false
+    end
+end
