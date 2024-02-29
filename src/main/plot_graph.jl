@@ -11,7 +11,7 @@ function plot_graph(param, graph, edges; kwargs...)
     pl = plot(grid=false, axis=([], false))
 
     # Set margins
-    if !options[:geography]
+    if options[:geography] === nothing
         margin = options[:margin]
     else
         margin = 0
@@ -29,11 +29,10 @@ function plot_graph(param, graph, edges; kwargs...)
     vec_y = lb .+ (graph.y .- minimum(graph.y)) .* (ub - lb) ./ graph_ext
 
     # PLOT COLORMAP
-    if !options[:map] === nothing || options[:geography]
-        if !isempty(options[:geography_struct])
-            vec_map = options[:geography_struct][:z]
-        end
-        if !isempty(options[:map])
+    if options[:map] !== nothing || options[:geography] !== nothing
+        if options[:geography] !== nothing
+            vec_map = options[:geography][:z]
+        else
             vec_map = options[:map]
         end
         # Interpolate map onto grid
@@ -57,7 +56,7 @@ function plot_graph(param, graph, edges; kwargs...)
 
     # PLOT OBSTACLES
     if options[:obstacles]
-        obstacles = options[:geography_struct][:obstacles]
+        obstacles = options[:geography][:obstacles]
         for i in 1:size(obstacles, 1)
             x1 = vec_x[obstacles[i, 1]]
             y1 = vec_y[obstacles[i, 1]]
@@ -115,7 +114,7 @@ function plot_graph(param, graph, edges; kwargs...)
                 yj = vec_y[j]
 
                 if edges[i, j] >= options[:min_edge]
-                    if options[:edge_scaling] == "off"
+                    if options[:edge_scaling]
                         q = edges[i, j]
                     else
                         q = min((edges[i, j] - options[:min_edge]) / (options[:max_edge] - options[:min_edge]), 1)
@@ -132,7 +131,7 @@ function plot_graph(param, graph, edges; kwargs...)
 
                     width = options[:min_edge_thickness] + q * (options[:max_edge_thickness] - options[:min_edge_thickness])
 
-                    if options[:transparency] == "on" && is_color(options[:edge_color])
+                    if options[:transparency] && is_color(options[:edge_color])
                         alpha = q
                         color = edge_color
                     else
@@ -203,10 +202,10 @@ end
 
 function retrieve_options_plot_graph(param, graph, edges; kwargs...)
     options = Dict(
-        :mesh => get(kwargs, :mesh, "off") == "on",
-        :arrows => get(kwargs, :arrows, "off") == "on",
-        :edges => get(kwargs, :edges, "on") == "on",
-        :nodes => get(kwargs, :nodes, "on") == "on",
+        :mesh => get(kwargs, :mesh, false),
+        :arrows => get(kwargs, :arrows, false),
+        :edges => get(kwargs, :edges, true),
+        :nodes => get(kwargs, :nodes, true),
         :map => get(kwargs, :map, nothing),
         :map_color => get(kwargs, :map_color, :YlOrBr_4),
 
@@ -223,11 +222,10 @@ function retrieve_options_plot_graph(param, graph, edges; kwargs...)
         :mesh_transparency => get(kwargs, :mesh_transparency, 1),
 
         :edge_color => get(kwargs, :edge_color, :blue), 
-        :edge_scaling => get(kwargs, :edge_scaling, "on"),
+        :edge_scaling => get(kwargs, :edge_scaling, true),
 
-        :geography => get(kwargs, :geography, "off") == "on",
-        :geography_struct => get(kwargs, :geography_struct, nothing),
-        :obstacles => get(kwargs, :obstacles, "off") == "on",
+        :geography => get(kwargs, :geography, nothing),
+        :obstacles => get(kwargs, :obstacles, false),
         :obstacle_color => get(kwargs, :obstacle_color, :black), 
         :obstackle_thickness => get(kwargs, :obstackle_thickness, 3),
 
@@ -238,7 +236,7 @@ function retrieve_options_plot_graph(param, graph, edges; kwargs...)
         :margin => get(kwargs, :margin, 0.1),
         :arrow_scale => get(kwargs, :arrow_scale, 1),
         :arrow_style => get(kwargs, :arrow_style, "long"),
-        :transparency => get(kwargs, :transparency, "on")
+        :transparency => get(kwargs, :transparency, true)
     )
     return options
 end
