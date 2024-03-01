@@ -2,7 +2,7 @@
 """
     create_auxdata(param, graph, I)
 
-Creates the auxdata structure that contains all the auxiliary parameters for ADiGator and solve_allocation_...()
+Creates the auxdata structure that contains all the auxiliary parameters for estimation
 
 # Arguments
 - `param`: structure that contains the model's parameters
@@ -10,7 +10,7 @@ Creates the auxdata structure that contains all the auxiliary parameters for ADi
 - `I`: provides the current JxJ symmetric matrix of infrastructure investment
 
 # Output
-- `auxdata`: structure auxdata to be used by the IPOPT/ADiGator bundle.
+- `auxdata`: structure auxdata to be used by IPOPT bundle.
 """
 function create_auxdata(param, graph, I)
     # Make named tuples
@@ -18,7 +18,7 @@ function create_auxdata(param, graph, I)
     # graph = dict_to_namedtuple(graph)
 
     # Initialize kappa
-    kappa = max.(I.^param[:gamma] ./ graph.delta_tau, param[:MIN_KAPPA])
+    kappa = max.(I.^param[:gamma] ./ graph.delta_tau, param[:kappa_min])
     kappa[.!graph.adjacency] .= 0
     kappa_ex = kappa_extract(graph, kappa)  # extract the ndeg free values of matrix kappa (due to symmetry)
 

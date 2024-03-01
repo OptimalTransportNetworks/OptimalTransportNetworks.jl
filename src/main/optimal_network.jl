@@ -126,7 +126,7 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
     weight_old = 0.5
     I1 = zeros(graph.J, graph.J)
 
-    while (!has_converged && counter < param[:MAX_ITER_KAPPA]) || counter <= 20
+    while (!has_converged && counter < param[:kappa_max_iter]) || counter <= 20
 
         # if save_before_it_crashes
         #     debug_file_str = "debug.mat"
@@ -179,12 +179,12 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
             counter_rescale += 1
         end
 
-        if counter_rescale == 100 && distance_lb + distance_ub > param[:tol_kappa] && param[:verbose]
+        if counter_rescale == 100 && distance_lb + distance_ub > param[:kappa_tol] && param[:verbose]
             println("Warning! Could not impose bounds on network properly.")
         end
 
         distance = maximum(abs.(I1 - I0)) / (param[:K] / mean(graph.delta_i[graph.adjacency.==1]))
-        has_converged = distance < param[:tol_kappa]
+        has_converged = distance < param[:kappa_tol]
         counter += 1
 
         if param[:verbose]
@@ -197,7 +197,7 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
         end
     end
 
-    if counter <= param[:MAX_ITER_KAPPA] && !has_converged && param[:verbose]
+    if counter <= param[:kappa_max_iter] && !has_converged && param[:verbose]
         println("Reached MAX iterations with convergence at $distance.")
         error_status = true
     end

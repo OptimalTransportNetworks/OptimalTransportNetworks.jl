@@ -20,16 +20,15 @@ Returns a `param` structure with the model parameters.
 - `m::Vector{Float64}=ones(N,1)`: vector of weights Nx1 in the cross congestion cost function
 - `N::Int64=1`: number of goods
 - `nu::Float64=1`: elasticity of substitution b/w goods in transport costs if cross-good congestion
-- `LaborMobility::String="off"`: switch for labor mobility ('on'/'off'/'partial')
-- `CrossGoodCongestion::Bool=false`: switch for cross-good congestion
-- `Annealing::Bool=true`: switch for the use of annealing at the end of iterations
-- `Custom::Bool=false`: switch for the use of custom lagrangian function
-- `Verbose::Bool=true`: switch to turn on/off text output
-- `ADiGator::Bool=false`: use autodifferentiation with Adigator
-- `Duality::Bool=true`: switch to turn on/off duality whenever available
+- `labor_mobility::String="off"`: switch for labor mobility ('on'/'off'/'partial')
+- `cross_good_congestion::Bool=false`: switch for cross-good congestion
+- `annealing::Bool=true`: switch for the use of annealing at the end of iterations
+- `custom::Bool=false`: switch for the use of custom lagrangian function
+- `verbose::Bool=true`: switch to turn on/off text output
+- `duality::Bool=true`: switch to turn on/off duality whenever available
 - `param::Dict=Dict()`: provide an already existing 'param' structure if you just want to change parameters.
 """
-function init_parameters(; alpha=0.5, beta=1, gamma=1, K=1, sigma=5, rho=2, a=0.8, N=1, m=ones(N,1), nu=1, LaborMobility="off", CrossGoodCongestion=false, Annealing=true, Custom=false, Verbose=true, ADiGator=false, Duality=true, param=Dict(), kwargs...)
+function init_parameters(; alpha=0.5, beta=1, gamma=1, K=1, sigma=5, rho=2, a=0.8, N=1, m=ones(N,1), nu=1, labor_mobility="off", cross_good_congestion=false, annealing=true, custom=false, verbose=true, duality=true, param=Dict(), kwargs...)
     p = isempty(param) ? Dict() : param
     if !isempty(kwargs)
         for (key, value) in kwargs
@@ -48,29 +47,26 @@ function init_parameters(; alpha=0.5, beta=1, gamma=1, K=1, sigma=5, rho=2, a=0.
     param[:m] = get(p, :m, m)
     param[:N] = get(p, :N, N)
     param[:nu] = get(p, :nu, nu)
-    LaborMobility = get(p, :LaborMobility, LaborMobility)
-    if LaborMobility == "partial"
+    labor_mobility = get(p, :labor_mobility, labor_mobility)
+    if labor_mobility == "partial"
         param[:mobility] = 0.5
     else
-        param[:mobility] = LaborMobility == "on"
+        param[:mobility] = labor_mobility == "on"
     end
     if param[:mobility] == true
         param[:rho] = 0;
     end
-    param[:cong] = get(p, :CrossGoodCongestion, CrossGoodCongestion)
-    param[:annealing] = get(p, :Annealing, Annealing)
-    param[:custom] = get(p, :Custom, Custom)
-    param[:verbose] = get(p, :Verbose, Verbose)
-    param[:adigator] = get(p, :ADiGator, ADiGator)
-    param[:duality] = get(p, :Duality, Duality)
+    param[:cong] = get(p, :cross_good_congestion, cross_good_congestion)
+    param[:annealing] = get(p, :annealing, annealing)
+    param[:custom] = get(p, :custom, custom)
+    param[:verbose] = get(p, :verbose, verbose)
+    param[:duality] = get(p, :duality, duality)
     param[:warm_start] = get(p, :warm_start, false)
 
     # Additional parameters for the numerical part
-    param[:tol_kappa] = get(p, :TolKappa, 1e-7)
-    param[:MIN_KAPPA] = get(p, :min_kappa, 1e-5)
-    param[:MIN_KAPPA] = get(p, :minpop, 1e-3) 
-    param[:MAX_ITER_KAPPA] = get(p, :max_iter_kappa, 200)
-    param[:MAX_ITER_L] = get(p, :max_iter_l, 100)
+    param[:kappa_tol] = get(p, :kappa_tol, 1e-7)
+    param[:kappa_min] = get(p, :min_kappa, 1e-5)
+    param[:kappa_max_iter] = get(p, :max_iter_kappa, 200)
 
     # Define utility function
     param[:u] = (c, h) -> ((c/param[:alpha])^param[:alpha] * (h/(1-param[:alpha]))^(1-param[:alpha]))^(1-param[:rho])/(1-param[:rho])
@@ -120,15 +116,4 @@ function init_parameters(; alpha=0.5, beta=1, gamma=1, K=1, sigma=5, rho=2, a=0.
     end
 
     return param
-end
-
-
-# Please note that this is a direct translation and the code may need to be adjusted to fit the specific needs of your project.
-
-function dict_to_namedtuple(dict)
-    if !(dict isa NamedTuple)
-        return NamedTuple{Tuple(keys(dict))}(values(dict))
-    else
-        return dict
-    end
 end
