@@ -1,11 +1,11 @@
 
 # using Plots
-# using Interpolations
+# using Dierckx
 # using Colors
 
-function plot_graph(param, graph, edges; kwargs...)
+function plot_graph(graph, edges; kwargs...)
 
-    op = retrieve_options_plot_graph(param, graph, edges; kwargs...)
+    op = retrieve_options_plot_graph(graph, edges; kwargs...)
 
     # Empty plot
     pl = plot(grid=false, axis=([], false))
@@ -200,7 +200,7 @@ function plot_graph(param, graph, edges; kwargs...)
     return pl
 end
 
-function retrieve_options_plot_graph(param, graph, edges; kwargs...)
+function retrieve_options_plot_graph(graph, edges; kwargs...)
     options = (
         mesh = get(kwargs, :mesh, false),
         arrows = get(kwargs, :arrows, false),
@@ -240,7 +240,3 @@ function retrieve_options_plot_graph(param, graph, edges; kwargs...)
     )
     return options
 end
-
-
-# Please note that this is a direct translation and might not work as expected due to differences in how Matlab and Julia handle certain operations. You might need to adjust the code to fit your specific needs.
-
