@@ -1,4 +1,12 @@
 
+function dict_to_namedtuple(dict)
+    if !(dict isa NamedTuple)
+        return NamedTuple{Tuple(keys(dict))}(values(dict))
+    else
+        return dict
+    end
+end
+
 function gen_network_flows(Qin, graph, N)
     Qjkn = zeros(graph.J, graph.J, N)
     nodes = graph.nodes
@@ -15,8 +23,28 @@ function gen_network_flows(Qin, graph, N)
     return Qjkn
 end
 
+"""
+    kappa_extract(graph, kappa)
+
+Description: auxiliary function that converts kappa_jk into kappa_i
+"""
+function kappa_extract(graph, kappa)
+    kappa_ex = zeros(graph.ndeg)
+    id = 1
+    for i in 1:graph.J
+        for j in graph.nodes[i]
+            if j > i
+                kappa_ex[id] = kappa[i, j]
+                id += 1
+            end
+        end
+    end
+    return kappa_ex
+end
+
 # Function to check if the input is a color
 function is_color(input)
+    # TODO: what if directly passing RGBA color?
     if isa(input, String)
         return haskey(Colors.color_names, input)
     elseif isa(input, Symbol)
