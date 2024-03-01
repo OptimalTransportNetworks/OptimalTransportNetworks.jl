@@ -8,20 +8,23 @@ function plot_graph(graph, edges; kwargs...)
     op = retrieve_options_plot_graph(graph, edges; kwargs...)
 
     # Empty plot
-    pl = plot(grid = op.grid, axis = op.axis)
+    pl = plot(grid = op.grid, axis = op.axis, margin = op.margin)
 
-    # Set margins
-    margin = op.margin
-    lb = margin
-    ub = 1 - margin
+    # # Set margins
+    # margin = op.margin
+    # lb = margin
+    # ub = 1 - margin
 
     # Resize graph to fit window
     graph_w = maximum(graph.x) - minimum(graph.x)
     graph_h = maximum(graph.y) - minimum(graph.y)
     graph_ext = max(graph_w, graph_h)
 
-    vec_x = lb .+ (graph.x .- minimum(graph.x)) .* (ub - lb) ./ graph_ext
-    vec_y = lb .+ (graph.y .- minimum(graph.y)) .* (ub - lb) ./ graph_ext
+    # vec_x = lb .+ (graph.x .- minimum(graph.x)) .* (ub - lb) ./ graph_ext
+    # vec_y = lb .+ (graph.y .- minimum(graph.y)) .* (ub - lb) ./ graph_ext
+
+    vec_x = (graph.x .- minimum(graph.x)) ./ graph_ext
+    vec_y = (graph.y .- minimum(graph.y)) ./ graph_ext
 
     # PLOT COLORMAP
     if op.map !== nothing || op.geography !== nothing
@@ -94,7 +97,7 @@ function plot_graph(graph, edges; kwargs...)
             end
 
             arrow_z = complex.(arrow_vertices[:, 1], arrow_vertices[:, 2])
-            arrow_scale = (1 - margin) / graph_ext * 0.15 * op.arrow_scale
+            arrow_scale = 1 / graph_ext * 0.15 * op.arrow_scale # (1 - margin) / graph_ext
         end
 
         edge_color_is_color = is_color(op.edge_color)
@@ -162,25 +165,43 @@ function plot_graph(graph, edges; kwargs...)
     # PLOT NODES
     if op.nodes
 
-        sizes = op.node_sizes
-        sizes = (sizes .- minimum(sizes)) ./ (maximum(sizes) - minimum(sizes))
+        has_sizes = false
+        if op.node_sizes !== nothing
+            has_sizes = true
+            sizes = vec(op.node_sizes)
+            if length(sizes) != length(vec_x)
+                error("length(node_sizes) = $(length(sizes)) does not match number of nodes = $(length(vec_x))")
+            end
+            diff_sizes = maximum(sizes) - minimum(sizes)
+            if diff_sizes > 0.0
+                sizes = (sizes .- minimum(sizes)) ./ diff_sizes
+            end
+            r = sizes .* (op.node_sizes_scale / graph_ext) # * 0.075 * (1 - 2 * margin) / graph_ext
+        end
 
         color_grad = false
+        has_shades = false
         node_color = op.node_color
-        if op.node_shades  !== nothing
-            shades = op.node_shades 
-            shades = (shades .- minimum(shades)) ./ (maximum(shades) - minimum(shades))
+        if op.node_shades !== nothing
+            has_shades = true
+            shades = vec(op.node_shades)
+            if length(shades) != length(vec_x)
+                error("length(node_shades) = $(length(shades)) does not match number of nodes = $(length(vec_x))")
+            end
+            diff_shades = maximum(shades) - minimum(shades)
+            if diff_shades > 0.0
+                shades = (shades .- minimum(shades)) ./ diff_shades
+            end
             if !is_color(node_color)
                 node_color = cgrad(node_color, [0.0, 1.0])
                 color_grad = true
             end
         end
 
-        r = sizes .* (op.node_sizes_scale * (1 - 2 * margin) / graph_ext) # * 0.075
 
         scatter!(pl, vec_x, vec_y, 
-                 markercolor = color_grad ? node_color[node_shades_scale] : node_color, 
-                 markeralpha = has_node_sizes_scale ? node_sizes_scale : 1,
+                 markercolor = color_grad ? node_color[shades] : node_color, 
+                 markeralpha = has_shades && !color_grad ? shades : 1,
                  markerstrokewidth = op.node_stroke_width,
                  markerstrokecolor = op.node_stroke_color,
                  markersize = r, label = nothing)
@@ -190,10 +211,11 @@ function plot_graph(graph, edges; kwargs...)
 end
 
 function retrieve_options_plot_graph(graph, edges; kwargs...)
+    gridl = get(kwargs, :grid, false)
     options = (
-        grid = get(kwargs, :grid, false),
+        grid = gridl,
         axis = get(kwargs, :axis, ([], false)),
-        margin = get(kwargs, :margin, 0.1),
+        margin = get(kwargs, :margin, gridl ? 0Plots.mm : -20Plots.mm),
 
         map = get(kwargs, :map, nothing),
         map_color = get(kwargs, :map_color, :YlOrBr_4),
