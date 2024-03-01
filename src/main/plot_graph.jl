@@ -8,15 +8,10 @@ function plot_graph(graph, edges; kwargs...)
     op = retrieve_options_plot_graph(graph, edges; kwargs...)
 
     # Empty plot
-    pl = plot(grid=false, axis=([], false))
+    pl = plot(grid = op.grid, axis = op.axis)
 
     # Set margins
-    if op.geography === nothing
-        margin = op.margin
-    else
-        margin = 0
-    end
-
+    margin = op.margin
     lb = margin
     ub = 1 - margin
 
@@ -36,7 +31,6 @@ function plot_graph(graph, edges; kwargs...)
             vec_map = op.map
         end
         # Interpolate map onto grid
-        # Maxbe need dierickx Spline2D
         # itp = interpolate((vec_x, vec_y), vec_map, Gridded(Linear()))
         spl = Spline2D(vec_x, vec_y, vec_map, s = 0.1)
         xmap = range(minimum(vec_x), stop=maximum(vec_x), length=2*length(vec_x))
@@ -49,7 +43,7 @@ function plot_graph(graph, edges; kwargs...)
 
         # Plot heatmap 
         heatmap!(pl, xmap, ymap, fmap,
-                 color = op.map_colormap,
+                 color = op.map_color,
                  colorbar = false)
                  # clim=(minimum(fmap), maximum(fmap)))
     end
@@ -103,7 +97,11 @@ function plot_graph(graph, edges; kwargs...)
             arrow_scale = (1 - margin) / graph_ext * 0.15 * op.arrow_scale
         end
 
-        edge_color = is_color(op.edge_color) ? op.edge_color : cgrad(op.edge_color, [0.0, 1.0])
+        edge_color_is_color = is_color(op.edge_color)
+        edge_color = edge_color_is_color ? op.edge_color : cgrad(op.edge_color, [0.0, 1.0])
+        var_transparency = op.edge_transparency === true
+        alt_transparency = op.edge_transparency === false ? 1 : op.edge_transparency
+
 
         for i in 1:graph.J
             xi = vec_x[i]
@@ -113,12 +111,12 @@ function plot_graph(graph, edges; kwargs...)
                 xj = vec_x[j]
                 yj = vec_y[j]
 
-                if edges[i, j] >= op.min_edge
+                if edges[i, j] >= op.edge_min
                     if op.edge_scaling
                         q = edges[i, j]
                     else
-                        q = min((edges[i, j] - op.min_edge) / (op.max_edge - op.min_edge), 1)
-                        if op.max_edge == op.min_edge
+                        q = min((edges[i, j] - op.edge_min) / (op.edge_max - op.edge_min), 1)
+                        if op.edge_max == op.edge_min
                             q = 1
                         end
 
@@ -129,15 +127,9 @@ function plot_graph(graph, edges; kwargs...)
                         end
                     end
 
-                    width = op.min_edge_thickness + q * (op.max_edge_thickness - op.min_edge_thickness)
-
-                    if op.transparency && is_color(op.edge_color)
-                        alpha = q
-                        color = edge_color
-                    else
-                        alpha = 1
-                        color = edge_color[q]
-                    end
+                    width = op.edge_min_thickness + q * (op.edge_max_thickness - op.edge_min_thickness)
+                    alpha = var_transparency ? q : alt_transparency
+                    color = edge_color_is_color ? edge_color : edge_color[q]
 
                     if q > 0
                         plot!(pl, [xi, xj], [yi, yj], 
@@ -170,28 +162,25 @@ function plot_graph(graph, edges; kwargs...)
     # PLOT NODES
     if op.nodes
 
-        sizes = op.sizes
+        sizes = op.node_sizes
         sizes = (sizes .- minimum(sizes)) ./ (maximum(sizes) - minimum(sizes))
 
-        has_shades = false
         color_grad = false
         node_color = op.node_color
-        if op.shades !== nothing
-            has_shades = true
-            shades = op.shades
+        if op.node_shades  !== nothing
+            shades = op.node_shades 
             shades = (shades .- minimum(shades)) ./ (maximum(shades) - minimum(shades))
             if !is_color(node_color)
                 node_color = cgrad(node_color, [0.0, 1.0])
                 color_grad = true
-                has_shades = false
             end
         end
 
-        r = sizes .* (op.sizes_scale * (1 - 2 * margin) / graph_ext) # * 0.075
+        r = sizes .* (op.node_sizes_scale * (1 - 2 * margin) / graph_ext) # * 0.075
 
         scatter!(pl, vec_x, vec_y, 
-                 markercolor = color_grad ? node_color[shades] : node_color, 
-                 markeralpha = has_shades ? shades : 1,
+                 markercolor = color_grad ? node_color[node_shades_scale] : node_color, 
+                 markeralpha = has_node_sizes_scale ? node_sizes_scale : 1,
                  markerstrokewidth = op.node_stroke_width,
                  markerstrokecolor = op.node_stroke_color,
                  markersize = r, label = nothing)
@@ -202,41 +191,43 @@ end
 
 function retrieve_options_plot_graph(graph, edges; kwargs...)
     options = (
-        mesh = get(kwargs, :mesh, false),
-        arrows = get(kwargs, :arrows, false),
-        edges = get(kwargs, :edges, true),
-        nodes = get(kwargs, :nodes, true),
+        grid = get(kwargs, :grid, false),
+        axis = get(kwargs, :axis, ([], false)),
+        margin = get(kwargs, :margin, 0.1),
+
         map = get(kwargs, :map, nothing),
         map_color = get(kwargs, :map_color, :YlOrBr_4),
 
-        min_edge = get(kwargs, :min_edge, minimum(edges[edges .> 0])),
-        max_edge = get(kwargs, :max_edge, maximum(edges)),
-        min_edge_thickness = get(kwargs, :min_edge_thickness, 0.1),
-        max_edge_thickness = get(kwargs, :max_edge_thickness, 2),
-        sizes = get(kwargs, :sizes, ones(graph.J)),
-        sizes_scale = get(kwargs, :sizes_scale, 75),
-        shades = get(kwargs, :shades, nothing),
-
+        mesh = get(kwargs, :mesh, false),
         mesh_color = get(kwargs, :mesh_color, :grey90), 
         mesh_style = get(kwargs, :mesh_style, :dash),
         mesh_transparency = get(kwargs, :mesh_transparency, 1),
 
+        edges = get(kwargs, :edges, true),
         edge_color = get(kwargs, :edge_color, :blue), 
-        edge_scaling = get(kwargs, :edge_scaling, true),
+        edge_scaling = get(kwargs, :edge_scaling, false),
+        edge_transparency = get(kwargs, :edge_transparency, true),
+        edge_min = get(kwargs, :edge_min, minimum(edges[edges .> 0])),
+        edge_max = get(kwargs, :edge_max, maximum(edges)),
+        edge_min_thickness = get(kwargs, :edge_min_thickness, 0.1),
+        edge_max_thickness = get(kwargs, :edge_max_thickness, 2),
+
+        arrows = get(kwargs, :arrows, false),
+        arrow_scale = get(kwargs, :arrow_scale, 1),
+        arrow_style = get(kwargs, :arrow_style, "long"),
+
+        nodes = get(kwargs, :nodes, true),
+        node_sizes = get(kwargs, :node_sizes, ones(graph.J)),
+        node_sizes_scale = get(kwargs, :node_sizes_scale, 75),
+        node_shades = get(kwargs, :node_shades, nothing),
+        node_color = get(kwargs, :node_color, :purple),
+        node_stroke_width = get(kwargs, :node_stroke_width, 0),
+        node_stroke_color = get(kwargs, :node_stroke_color, nothing),
 
         geography = get(kwargs, :geography, nothing),
         obstacles = get(kwargs, :obstacles, false),
         obstacle_color = get(kwargs, :obstacle_color, :black), 
-        obstackle_thickness = get(kwargs, :obstackle_thickness, 3),
-
-        node_color = get(kwargs, :node_color, :purple),
-        node_stroke_width = get(kwargs, :node_stroke_width, 0),
-        node_stroke_color = get(kwargs, :node_stroke_color, nothing),
-   
-        margin = get(kwargs, :margin, 0.1),
-        arrow_scale = get(kwargs, :arrow_scale, 1),
-        arrow_style = get(kwargs, :arrow_style, "long"),
-        transparency = get(kwargs, :transparency, true)
+        obstacle_thickness = get(kwargs, :obstacle_thickness, 3)
     )
     return options
 end
