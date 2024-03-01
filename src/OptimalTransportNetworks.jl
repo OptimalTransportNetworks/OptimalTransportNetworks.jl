@@ -5,6 +5,7 @@ module OptimalTransportNetworks
 using LinearAlgebra, JuMP, Plots
 using SparseArrays: sparse
 using Statistics: mean
+using Dierckx: Spline2D, evaluate
 import Ipopt #, MathOptSymbolicAD
 
 # Function to include all .jl files in a directory
