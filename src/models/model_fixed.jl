@@ -16,14 +16,14 @@ function model_fixed(optimizer, auxdata)
 
     # Variables
     @variable(model, U)
-    @variable(model, Cjn[1:graph.J, 1:param.N])
+    @variable(model, Cjn[1:graph.J, 1:param.N] >= 1e-8)
     @variable(model, Qin[1:graph.ndeg, 1:param.N])
-    @variable(model, Ljn[1:graph.J, 1:param.N])
+    @variable(model, Ljn[1:graph.J, 1:param.N] >= 1e-8)
 
     # Defining Utility Funcion: from Cjn + parameters (by operator overloading)
-    Cj = @expression(model, sum(Cjn .^ psigma, dims=2) .^ (1 / psigma))
-    cj = @expression(model, ifelse.(param.Lj .== 0, 0.0, Cj ./ param.Lj))
-    uj = @expression(model, ((cj / param.alpha) .^ param.alpha .* (param.hj / (1-param.alpha)) .^ (1-param.alpha)) .^ (1-param.rho) / (1-param.rho))
+    @expression(model, Cj, sum(Cjn .^ psigma, dims=2) .^ (1 / psigma))
+    @expression(model, cj, ifelse.(param.Lj .== 0, 0.0, Cj ./ param.Lj))
+    @expression(model, uj, ((cj / param.alpha) .^ param.alpha .* (param.hj / (1-param.alpha)) .^ (1-param.alpha)) .^ (1-param.rho) / (1-param.rho))
     U = @expression(model, sum(param.omegaj .* param.Lj .* uj))
     @objective(model, Max, U)
 
@@ -36,11 +36,11 @@ function model_fixed(optimizer, auxdata)
             max(ifelse(Qin[i, n] > 0, A[j, i], -A[j, i]), 0) *
             abs(Qin[i, n])^(1 + param.beta) / kappa_ex[i]
             for i in 1:graph.ndeg
-        ) <= -1e-8
+        ) <= 0
     )
 
     # Local labor availability constraints ( sum Ljn <= Lj )
-    @constraint(model, -1e-8 .<= sum(Ljn, dims=2) .- Lj .<= 1e-8)
+    @constraint(model, sum(Ljn, dims=2) .- Lj .<= 0)
 
     return model
 end
@@ -53,17 +53,17 @@ function recover_allocation_fixed(model, auxdata)
 
     results[:welfare] = value(model_dict[:U])
     results[:Yjn] = value.(model_dict[:Yjn])
-    results[:Yj] = sum(results[:Yjn], dims=2) 
+    results[:Yj] = dropdims(sum(results[:Yjn], dims=2), dims = 2)
     results[:Cjn] = value.(model_dict[:Cjn])
-    results[:Cj] = value.(model_dict[:Cj])
+    results[:Cj] = dropdims(value.(model_dict[:Cj]), dims = 2)
     results[:Ljn] = value.(model_dict[:Ljn])
     results[:Lj] = param.Lj
-    results[:cj] = value.(model_dict[:cj])
+    results[:cj] = dropdims(value.(model_dict[:cj]), dims = 2)
     results[:hj] = ifelse.(results[:Lj] .== 0, 0.0, param.Hj ./ results[:Lj])
-    results[:uj] = value.(model_dict[:uj])
+    results[:uj] = dropdims(value.(model_dict[:uj]), dims = 2)
     # Prices
     results[:Pjn] = shadow_price.(model_dict[:Pjn])
-    results[:PCj] = sum(results[:Pjn] .^ (1-param.sigma), dims=2) .^ (1/(1-param.sigma))    
+    results[:PCj] = dropdims(sum(results[:Pjn] .^ (1-param.sigma), dims=2), dims = 2) .^ (1/(1-param.sigma))    
     # Network flows
     results[:Qin] = value.(model_dict[:Qin])
     results[:Qjkn] = gen_network_flows(results[:Qin], graph, param.N)
