@@ -19,7 +19,7 @@ function model_mobility(optimizer, auxdata)
     @variable(model, Cjn[1:graph.J, 1:param.N] >= 1e-8)    # Good specific consumption
     @variable(model, Qin[1:graph.ndeg, 1:param.N])         # Good specific flow
     @variable(model, 1e-8 <= Lj[1:graph.J] <= 1)           # Total labour
-    @variable(model, Ljn[1:graph.J] >= 1e-8)               # Good specific labour
+    @variable(model, Ljn[1:graph.J, 1:param.N] >= 1e-8)    # Good specific labour
 
     # If custom: set start values
     if param.custom
