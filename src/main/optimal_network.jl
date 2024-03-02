@@ -154,18 +154,18 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
             PQ = repeat(results[:Pjn], 1, graph.J, 1) .* results[:Qjkn] .^ (1 + param[:beta])
             PQ = dropdims(sum(PQ + permutedims(PQ, [2, 1, 3]), dims=3), dims = 3)
         else
-            PCj = repeat(results[:PCj], 1, graph.J)
-            matm = permutedims(repeat(param[:m], 1, graph.J, graph.J), 2)
-            cost = sum(matm .* results[:Qjkn] .^ param[:nu], dims=3) .^ ((param[:beta] + 1) / param[:nu])
-            PQ = PCj .* cost
-            PQ = PQ + PQ'
+            PQ = repeat(results[:PCj], 1, graph.J)
+            matm = permutedims(repeat(param[:m], 1, graph.J, graph.J), [3, 2, 1])
+            cost = dropdims(sum(matm .* results[:Qjkn] .^ param[:nu], dims=3), dims = 3) .^ ((param[:beta] + 1) / param[:nu])
+            PQ .*= cost
+            PQ += PQ'
         end
 
         I1 = (graph.delta_tau ./ graph.delta_i .* PQ) .^ (1 / (1 + param[:gamma]))
         I1[graph.adjacency .== 0] .= 0
         I1[PQ .== 0] .= 0
         I1[graph.delta_i .== 0] .= 0
-        I1 = param[:K] * I1 / sum(graph.delta_i .* I1)
+        I1 *= param[:K] / sum(graph.delta_i .* I1)
 
         distance_lb = max(maximum(Il - I1), 0)
         distance_ub = max(maximum(I1 - Iu), 0)
@@ -173,7 +173,7 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
 
         while distance_lb + distance_ub > TOL_I_BOUNDS && counter_rescale < 100
             I1 = max.(min.(I1, Iu), Il)
-            I1 = param[:K] * I1 / sum(graph.delta_i .* I1)
+            I1 *= param[:K] / sum(graph.delta_i .* I1)
             distance_lb = max(maximum(Il - I1), 0)
             distance_ub = max(maximum(I1 - Iu), 0)
             counter_rescale += 1
@@ -192,7 +192,8 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
         end
 
         if !has_converged || counter <= 20
-            I0 = weight_old * I0 + (1 - weight_old) * I1
+            I0 *= weight_old 
+            I0 += (1 - weight_old) * I1
             auxdata = create_auxdata(param, graph, I0)
         end
     end
