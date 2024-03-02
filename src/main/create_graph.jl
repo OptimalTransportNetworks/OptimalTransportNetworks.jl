@@ -41,7 +41,7 @@ function create_graph(param, w, h; kwargs...)
         param[:Zjn] = ones(param[:J], param[:N])
         param[:Hj] = ones(param[:J])
         param[:hj] = param[:Hj] ./ param[:Lj]
-        param[:hj][param[:Lj] .== 0] = 1
+        param[:hj][param[:Lj] .== 0] .= 1
         param[:omegaj] = options[:omega]
     elseif param[:mobility] == true
         param[:Zjn] = ones(param[:J], param[:N])
