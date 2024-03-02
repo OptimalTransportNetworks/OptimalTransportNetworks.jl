@@ -16,13 +16,13 @@ function model_mobility_cgc(optimizer, auxdata)
     set_string_names_on_creation(model, false)
 
     # Variable declarations
-    @variable(model, u)                                    # Overall utility
-    @variable(model, Djn[1:graph.J, 1:param.N])            # Consumption per good pre-transport cost (Dj)
-    @variable(model, Qin_direct[1:graph.ndeg, 1:param.N])  # Direct aggregate flow
-    @variable(model, Qin_indirect[1:graph.ndeg, 1:param.N])# Indirect aggregate flow
-    @variable(model, Ljn[1:graph.J, 1:param.N])            # Good specific labour
-    @variable(model, Lj[1:graph.J])                        # Overall labour
-    @variable(model, cj[1:graph.J])                        # Overall consumption bundle, including transport costs
+    @variable(model, u)                                            # Overall utility
+    @variable(model, Djn[1:graph.J, 1:param.N] >= 1e-8)            # Consumption per good pre-transport cost (Dj)
+    @variable(model, Qin_direct[1:graph.ndeg, 1:param.N] >= 1e-8)  # Direct aggregate flow
+    @variable(model, Qin_indirect[1:graph.ndeg, 1:param.N] >= 1e-8)# Indirect aggregate flow
+    @variable(model, Ljn[1:graph.J, 1:param.N] >= 1e-8)            # Good specific labour
+    @variable(model, Lj[1:graph.J] >= 1e-8)                        # Overall labour
+    @variable(model, cj[1:graph.J] >= 1e-8)                        # Overall consumption bundle, including transport costs
 
     # Objective
     @objective(model, Max, u)
@@ -39,13 +39,16 @@ function model_mobility_cgc(optimizer, auxdata)
                     cj[j] * Lj[j] + 
                     max(A[j, i], 0) * B_direct + 
                     max(-A[j, i], 0) * B_indirect - 
-                    sum(Djn[j, n] ^ psigma for n in 1:param.N) ^ (1 / psigma) <= 1e-8
+                    sum(Djn[j, n] ^ psigma for n in 1:param.N) ^ (1 / psigma) <= -1e-8
         )
     end
 
     # Balanced flow constraints
-    Yjn = @expression(model, param.Zjn .* (Ljn .^ param.a))
+    @expression(model, Yjn, param.Zjn .* (Ljn .^ param.a))
     @constraint(model, Pjn, Djn + A * Qin_direct - A * Qin_indirect - Yjn .<= -1e-8)
+
+    # Labor resource constraint
+    @constraint(model, -1e-8 <= sum(Lj) - 1 <= 1e8)
 
     # Local labor availability constraints ( sum Ljn <= Lj )
     @constraint(model, -1e-8 .<= sum(Ljn, dims=2) .- Lj .<= 1e-8)
@@ -61,18 +64,18 @@ function recover_allocation_mobility_cgc(model, auxdata)
 
     results[:welfare] = value(model_dict[:u])
     results[:Yjn] = value.(model_dict[:Yjn])
-    results[:Yj] = sum(results[:Yjn], dims=2) 
+    results[:Yj] = dropdims(sum(results[:Yjn], dims=2), dims = 2) 
     results[:Ljn] = value.(model_dict[:Ljn])
     results[:Lj] = value.(model_dict[:Lj])
     results[:Djn] = value.(model_dict[:Djn]) # Consumption per good pre-transport cost
-    results[:Dj] = sum(results[:Djn] .^ ((param.sigma-1)/param.sigma), dims=2) .^ (param.sigma/(param.sigma-1))
+    results[:Dj] = dropdims(sum(results[:Djn] .^ ((param.sigma-1)/param.sigma), dims=2), dims=2) .^ (param.sigma/(param.sigma-1))
     results[:cj] = value.(model_dict[:cj])
     results[:Cj] = results[:cj] .* results[:Lj]
     results[:hj] = ifelse.(results[:Lj] .== 0, 0.0, param.Hj ./ results[:Lj])
     results[:uj] = param.u.(results[:cj], results[:hj])
     # Prices
     results[:Pjn] = shadow_price.(model_dict[:Pjn])
-    results[:PCj] = sum(results[:Pjn] .^ (1-param.sigma), dims=2) .^ (1/(1-param.sigma))    
+    results[:PCj] = dropdims(sum(results[:Pjn] .^ (1-param.sigma), dims=2), dims=2) .^ (1/(1-param.sigma))    
     # Network flows
     Qin_direct = value.(model_dict[:Qin_direct])
     Qin_indirect = value.(model_dict[:Qin_indirect])
