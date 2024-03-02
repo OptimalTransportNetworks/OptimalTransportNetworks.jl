@@ -28,7 +28,9 @@ Returns a `param` structure with the model parameters.
 - `duality::Bool=true`: switch to turn on/off duality whenever available
 - `param::Dict=Dict()`: provide an already existing 'param' structure if you just want to change parameters.
 """
-function init_parameters(; alpha=0.5, beta=1, gamma=1, K=1, sigma=5, rho=2, a=0.8, N=1, m=ones(N,1), nu=1, labor_mobility="off", cross_good_congestion=false, annealing=true, custom=false, verbose=true, duality=true, param=Dict(), kwargs...)
+function init_parameters(; alpha=0.5, beta=1, gamma=1, K=1, sigma=5, rho=2, a=0.8, N=1, m=ones(N,1), nu=1, 
+                         labor_mobility=false, cross_good_congestion=false, annealing=true, custom=false, 
+                         verbose=true, duality=true, param=Dict(), kwargs...)
     p = isempty(param) ? Dict() : param
     if !isempty(kwargs)
         for (key, value) in kwargs
@@ -48,10 +50,10 @@ function init_parameters(; alpha=0.5, beta=1, gamma=1, K=1, sigma=5, rho=2, a=0.
     param[:N] = get(p, :N, N)
     param[:nu] = get(p, :nu, nu)
     labor_mobility = get(p, :labor_mobility, labor_mobility)
-    if labor_mobility == "partial"
+    if labor_mobility === "partial"
         param[:mobility] = 0.5
     else
-        param[:mobility] = labor_mobility == "on"
+        param[:mobility] = labor_mobility === true
     end
     if param[:mobility] == true
         param[:rho] = 0;
@@ -68,7 +70,7 @@ function init_parameters(; alpha=0.5, beta=1, gamma=1, K=1, sigma=5, rho=2, a=0.
     param[:kappa_min] = get(p, :min_kappa, 1e-5)
     param[:kappa_max_iter] = get(p, :max_iter_kappa, 200)
 
-    unmatched_keys = setdiff(keys(p), keys(param))
+    unmatched_keys = setdiff(keys(p), union(keys(param), [:optimizer_attr, :model_attr]))
     # Check if non-supported keys
     if !isempty(unmatched_keys)
         # Print the error message indicating the unmatched keys
