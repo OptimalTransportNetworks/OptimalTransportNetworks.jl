@@ -211,7 +211,9 @@ function plot_graph(graph, edges; kwargs...)
 end
 
 function retrieve_options_plot_graph(graph, edges; kwargs...)
+
     gridl = get(kwargs, :grid, false)
+
     options = (
         grid = gridl,
         axis = get(kwargs, :axis, ([], false)),
@@ -251,5 +253,13 @@ function retrieve_options_plot_graph(graph, edges; kwargs...)
         obstacle_color = get(kwargs, :obstacle_color, :black), 
         obstacle_thickness = get(kwargs, :obstacle_thickness, 3)
     )
+
+    unmatched_keys = setdiff(keys(kwargs), keys(options))
+    # Check if non-supported keys
+    if !isempty(unmatched_keys)
+        # Print the error message indicating the unmatched keys
+        @warn "Unsupported styling parameters:  $unmatched_keys"
+    end
+
     return options
 end
