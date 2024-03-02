@@ -68,6 +68,13 @@ function init_parameters(; alpha=0.5, beta=1, gamma=1, K=1, sigma=5, rho=2, a=0.
     param[:kappa_min] = get(p, :min_kappa, 1e-5)
     param[:kappa_max_iter] = get(p, :max_iter_kappa, 200)
 
+    unmatched_keys = setdiff(keys(p), keys(param))
+    # Check if non-supported keys
+    if !isempty(unmatched_keys)
+        # Print the error message indicating the unmatched keys
+        @warn "Unsupported parameters:  $unmatched_keys"
+    end
+
     # Define utility function
     param[:u] = (c, h) -> ((c/param[:alpha])^param[:alpha] * (h/(1-param[:alpha]))^(1-param[:alpha]))^(1-param[:rho])/(1-param[:rho])
     param[:uprime] = (c, h) -> ((c/param[:alpha])^param[:alpha] * (h/(1-param[:alpha]))^(1-param[:alpha]))^(-param[:rho]) * ((c/param[:alpha])^(param[:alpha]-1) * (h/(1-param[:alpha]))^(1-param[:alpha]))
@@ -76,24 +83,25 @@ function init_parameters(; alpha=0.5, beta=1, gamma=1, K=1, sigma=5, rho=2, a=0.
 
     # Define production function 
     param[:F] = (L, a) -> L^a
-    param[:Fprime] = (L, a) ->
+    param[:Fprime] = (L, a) -> a * L^(a-1)
 
     # CHECK CONSISTENCY WITH ENDOWMENTS/PRODUCTIVITY (if applicable)
     # only happens when object param is specified
     if haskey(p, :omegaj)
-        if size(p[:omegaj]) != (param[:J], 1)
-            @warn "$(basename(@__FILE__)).jl: omegaj does not have the right size Jx1."
+        if length(p[:omegaj]) != param[:J]
+            @warn "$(basename(@__FILE__)).jl: omegaj does not have the right length J."
         end
         param[:omegaj] = p[:omegaj]
     end
 
     if haskey(p, :Lj) && !param[:mobility]
-        if size(p[:Lj]) != (param[:J], 1)
-            @warn "$(basename(@__FILE__)).jl: Lj does not have the right size Jx1."
+        if length(p[:Lj]) != param[:J]
+            @warn "$(basename(@__FILE__)).jl: Lj does not have the right length J."
         end
         param[:Lj] = p[:Lj]
     end
 
+    # Zjn is a two-dimensional array (JxN), so using size() is appropriate for this check
     if haskey(p, :Zjn)
         if size(p[:Zjn]) != (param[:J], param[:N])
             @warn "$(basename(@__FILE__)).jl: Zjn does not have the right size JxN."
@@ -102,18 +110,18 @@ function init_parameters(; alpha=0.5, beta=1, gamma=1, K=1, sigma=5, rho=2, a=0.
     end
 
     if haskey(p, :Hj)
-        if size(p[:Hj]) != (param[:J], 1)
-            @warn "$(basename(@__FILE__)).jl: Hj does not have the right size Jx1."
+        if length(p[:Hj]) != param[:J]
+            @warn "$(basename(@__FILE__)).jl: Hj does not have the right length J."
         end
         param[:Hj] = p[:Hj]
     end
 
     if haskey(p, :hj)
-        if size(p[:hj]) != (param[:J], 1)
-            @warn "$(basename(@__FILE__)).jl: hj does not have the right size Jx1."
+        if length(p[:hj]) != param[:J]
+            @warn "$(basename(@__FILE__)).jl: hj does not have the right length J."
         end
         param[:hj] = p[:hj]
     end
-
+    
     return param
 end
