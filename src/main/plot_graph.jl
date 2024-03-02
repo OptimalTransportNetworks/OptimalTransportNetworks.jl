@@ -212,12 +212,12 @@ end
 
 function retrieve_options_plot_graph(graph, edges; kwargs...)
 
-    gridl = get(kwargs, :grid, false)
+    axis = get(kwargs, :axis, ([], false))
 
     options = (
-        grid = gridl,
-        axis = get(kwargs, :axis, ([], false)),
-        margin = get(kwargs, :margin, gridl ? 0Plots.mm : -20Plots.mm),
+        grid = get(kwargs, :grid, false),
+        axis = axis,
+        margin = get(kwargs, :margin, axis !== ([], false) ? 0Plots.mm : -30Plots.mm),
 
         map = get(kwargs, :map, nothing),
         map_color = get(kwargs, :map_color, :YlOrBr_4),
