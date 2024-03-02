@@ -151,7 +151,7 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
         end
         
         if !param[:cong]
-            PQ = repeat(results[:Pjn], 1, graph.J, 1) .* results[:Qjkn] .^ (1 + param[:beta])
+            PQ = permutedims(repeat(results[:Pjn], 1, 1, graph.J), [1, 3, 2]) .* results[:Qjkn] .^ (1 + param[:beta])
             PQ = dropdims(sum(PQ + permutedims(PQ, [2, 1, 3]), dims=3), dims = 3)
         else
             PQ = repeat(results[:PCj], 1, graph.J)
