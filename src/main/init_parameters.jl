@@ -67,8 +67,9 @@ function init_parameters(; alpha=0.5, beta=1, gamma=1, K=1, sigma=5, rho=2, a=0.
 
     # Additional parameters for the numerical part
     param[:kappa_tol] = get(p, :kappa_tol, 1e-7)
-    param[:kappa_min] = get(p, :min_kappa, 1e-5)
-    param[:kappa_max_iter] = get(p, :max_iter_kappa, 200)
+    param[:kappa_min] = get(p, :kappa_min, 1e-5)
+    param[:kappa_min_iter] = get(p, :kappa_min_iter, 20)
+    param[:kappa_max_iter] = get(p, :kappa_max_iter, 200)
 
     unmatched_keys = setdiff(keys(p), union(keys(param), [:optimizer_attr, :model_attr]))
     # Check if non-supported keys

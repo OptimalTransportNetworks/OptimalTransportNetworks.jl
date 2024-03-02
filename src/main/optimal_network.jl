@@ -126,7 +126,7 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
     weight_old = 0.5
     I1 = zeros(graph.J, graph.J)
 
-    while (!has_converged && counter < param[:kappa_max_iter]) || counter <= 20
+    while (!has_converged && counter < param[:kappa_max_iter]) || counter <= param[:kappa_min_iter]
 
         # if save_before_it_crashes
         #     debug_file_str = "debug.mat"
