@@ -50,7 +50,7 @@ function init_parameters(; alpha=0.5, beta=1, gamma=1, K=1, sigma=5, rho=2, a=0.
     param[:N] = get(p, :N, N)
     param[:nu] = get(p, :nu, nu)
     labor_mobility = get(p, :labor_mobility, labor_mobility)
-    if labor_mobility === "partial"
+    if labor_mobility === "partial" || labor_mobility === 0.5
         param[:mobility] = 0.5
     else
         param[:mobility] = labor_mobility === true
@@ -71,7 +71,7 @@ function init_parameters(; alpha=0.5, beta=1, gamma=1, K=1, sigma=5, rho=2, a=0.
     param[:kappa_min_iter] = get(p, :kappa_min_iter, 20)
     param[:kappa_max_iter] = get(p, :kappa_max_iter, 200)
 
-    if haskey(param, :nregions) || haskey(param, :region) || haskey(param, :omegar) || haskey(param, :Lr)
+    if param[:mobility] == 0.5 || haskey(param, :nregions) || haskey(param, :region) || haskey(param, :omegar) || haskey(param, :Lr)
         if !haskey(param, :Lr)
             error("For partial mobility case need to provide a parameter 'Lr' containing a vector with the total populations of each region")        
         end
