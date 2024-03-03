@@ -80,15 +80,23 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
     elseif param[:mobility] == 1 && param[:cong]
         model = model_mobility_cgc(optimizer, auxdata)
         recover_allocation = recover_allocation_mobility_cgc
+    elseif param[:mobility] == 0.5 && param[:cong]
+        model = model_partial_mobility_cgc(optimizer, auxdata)
+        recover_allocation = recover_allocation_partial_mobility_cgc
     elseif param[:mobility] == 0 && param[:cong]
         model = model_fixed_cgc(optimizer, auxdata)
         recover_allocation = recover_allocation_fixed_cgc
     elseif param[:mobility] == 1 && !param[:cong]
         model = model_mobility(optimizer, auxdata)
         recover_allocation = recover_allocation_mobility
-    else 
+    elseif param[:mobility] == 0.5 && !param[:cong]
+        model = model_partial_mobility(optimizer, auxdata)
+        recover_allocation = recover_allocation_partial_mobility    
+    elseif param[:mobility] == 0 && !param[:cong]
         model = model_fixed(optimizer, auxdata)
         recover_allocation = recover_allocation_fixed
+    else
+        error("Usupported model configuration with labor_mobility = $(param[:mobility]) and cross_good_congestion = $(param[:cong])")
     end
 
     # --------------
