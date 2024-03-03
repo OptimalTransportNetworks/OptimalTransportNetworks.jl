@@ -71,6 +71,21 @@ function init_parameters(; alpha=0.5, beta=1, gamma=1, K=1, sigma=5, rho=2, a=0.
     param[:kappa_min_iter] = get(p, :kappa_min_iter, 20)
     param[:kappa_max_iter] = get(p, :kappa_max_iter, 200)
 
+    if haskey(param, :nregions) || haskey(param, :region) || haskey(param, :omegar) || haskey(param, :Lr)
+        if !haskey(param, :Lr)
+            error("For partial mobility case need to provide a parameter 'Lr' containing a vector with the total populations of each region")        
+        end
+        if !haskey(param, :region)
+            error("For partial mobility case need to provide a parameter 'region' containing an integer vector that maps each node of the graph to a region. The vector should have values in the range 1:nregions and be of length graph.J (=number of nodes).")        
+        end
+        if !haskey(param, :omegar)
+            param[:omegar] = ones(length(param[:Lr]))
+        end
+        if !haskey(param, :nregions)
+            param[:nregions] = length(param[:Lr])
+        end
+    end
+
     unmatched_keys = setdiff(keys(p), union(keys(param), [:optimizer_attr, :model_attr]))
     # Check if non-supported keys
     if !isempty(unmatched_keys)
