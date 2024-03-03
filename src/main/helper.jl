@@ -53,3 +53,15 @@ function is_color(input)
         return false
     end
 end
+
+function gsum(x, ng, g)
+    n = length(x)
+    if length(g) != n
+        error("length(regions) must match number of edges (graph.J)")
+    end
+    res = zeros(ng)
+    for i in 1:n
+        @inbounds res[g[i]] += x[i]
+    end
+    return res
+end
