@@ -5,8 +5,7 @@ Runs the simulated annealing method starting from network `I0`.
 
 # Arguments
 - `param`: Dict that contains the model's parameters
-- `graph`: Dict that contains the underlying graph (created by
-  `create_map`, `create_rectangle` or `create_triangle` functions)
+- `graph`: Named tuple that contains the underlying graph 
 - `I0`: (optional) provides the initial guess for the iterations
 - `kwargs...`: various optional arguments, see below
 
@@ -28,7 +27,7 @@ Runs the simulated annealing method starting from network `I0`.
 - `:num_deepening`: number of FOC iterations between candidate draws
 - `:num_random_perturbations`: number of links to be randomly affected
   ('random' and 'random rebranching' only)
-- `:Funcs`: funcs structure computed by ADiGator in order to skip rederivation
+- `:model`: JuMP model to be used (from optimal_network)
 - `:Iu`: JxJ matrix of upper bounds on network infrastructure Ijk
 - `:Il`: JxJ matrix of lower bounds on network infrastructure Ijk
 
@@ -42,19 +41,18 @@ This code is distributed under BSD-3 License.
 
 function annealing(param, graph, I0; kwargs...)
 
-    param = dict_to_namedtuple(param)
+    graph = dict_to_namedtuple(graph)
     # Retrieve economy's parameters
     J = graph.J
-    gamma = param.gamma
     verbose = false
-    TOL_I_BOUNDS = 1e-7
+    TOL_I_BOUNDS = 1e-7 # needed in macro
 
     # Retrieve optional parameters
     options = retrieve_options_annealing(graph; kwargs...)
     Iu = options.Iu
     Il = options.Il
 
-    if param.mobility || param.beta > 1 # use with the primal version only
+    if param[:mobility] || param[:beta] > 1 || param[:cong] # use with the primal version only
         Il = max.(1e-6 * graph.adjacency, Il) # the primal approach in the mobility case requires a non-zero lower bound on kl, otherwise derivatives explode
     end
 
@@ -62,7 +60,7 @@ function annealing(param, graph, I0; kwargs...)
     T = options.t_start
     T_min = options.t_end # 1e-3
     T_step = options.t_step
-    nb_network_deepening = options.num_deepening # number of iterations for local network deepening
+    num_deepening = options.num_deepening # number of iterations for local network deepening
 
     # -------------------
     # PERTURBATION METHOD
@@ -81,67 +79,10 @@ function annealing(param, graph, I0; kwargs...)
         error("unknown perturbation method %s\n", options.perturbation_method)
     end
 
-    # ----------
-    # INIT STUFF
-
-    # initial point in the IPOPT optimization
-    x0 = [] # automatic initialization except for custom case
-    # CUSTOMIZATION 1: provide here the initial point of optimization for custom case
-    if param.custom # Enter here the initial point of optimization for custom case
-        x0 = [1e-6 * ones(graph.J * param.N, 1); zeros(graph.ndeg * param.N, 1); sum(param.Lj) / (graph.J * param.N) * ones(graph.J * param.N, 1)]
-        # Based on the primal case with immobile and no cross-good congestion, to be customized
-    end
-
     # =======================================
     # SET FUNCTION HANDLE TO SOLVE ALLOCATION
 
-    if param.adigator && param.mobility!=0.5 # IF USING ADIGATOR
-        if param.mobility && param.cong && !param.custom # implement primal with mobility and congestion
-            solve_allocation_handle = solve_allocation_mobility_cgc_ADiGator
-        elseif !param.mobility && param.cong && !param.custom # implement primal with congestion
-            solve_allocation_handle = solve_allocation_cgc_ADiGator
-        elseif param.mobility && !param.cong && !param.custom # implement primal with mobility
-            solve_allocation_handle = solve_allocation_mobility_ADiGator
-        elseif (!param.mobility && !param.cong && !param.custom) && (param.beta<=1 && param.a < 1 && param.duality) # implement dual
-            solve_allocation_handle = solve_allocation_by_duality_ADiGator
-        elseif (!param.mobility && !param.cong && !param.custom) && (param.beta>1 || param.a == 1) # implement primal
-            solve_allocation_handle = solve_allocation_ADiGator
-        elseif param.custom # run custom optimization
-            solve_allocation_handle = solve_allocation_custom_ADiGator
-        end
-    else # IF NOT USING ADIGATOR
-        if !param.cong
-            if param.mobility==0 
-                if param.beta<=1 && param.duality # dual is only twice differentiable if beta<=1
-                    solve_allocation_handle = solve_allocation_by_duality
-                else # otherwise solve the primal
-                    solve_allocation_handle = solve_allocation_primal
-                end
-            elseif param.mobility==1 # always solve the primal with labor mobility
-                solve_allocation_handle = solve_allocation_mobility
-            elseif param.mobility==0.5
-                solve_allocation_handle = solve_allocation_partial_mobility
-            end
-        else
-            if param.mobility==0
-                solve_allocation_handle = solve_allocation_cgc
-            elseif param.mobility==1
-                solve_allocation_handle = solve_allocation_mobility_cgc
-            elseif param.mobility==0.5
-                solve_allocation_handle = solve_allocation_partial_mobility_cgc
-            end
-        end
-    end
-
-
-    # ===================================================
-    # GENERATE AUTODIFFERENTIATED FUNCTIONS WITH ADIGATOR
-    # ===================================================
-
-    funcs = options.funcs
-    if param.adigator && isempty(funcs)
-        funcs = call_adigator(param, graph, I0, verbose)
-    end
+    @choose_model_and_customize
 
     # =========
     # ANNEALING
@@ -183,19 +124,18 @@ function annealing(param, graph, I0; kwargs...)
         end
 
         k = 0
-        x = x0 # use default initial condition for allocation
-        while k <= nb_network_deepening - 1
-            # Create auxdata structure for IPOPT/ADiGator
-            auxdata = create_auxdata(param, graph, I1)
-            # Solve allocation
-            results, flag, x = solve_allocation_handle(x, auxdata, funcs, verbose)
-            score = results.welfare
+        while k <= num_deepening - 1
 
-            if (!any(flag.status .== [0, 1]) || isnan(score)) && param.verbose # optimization failed
-                println("optimization failed! k=$(k), return flag=$(flag.status)")
-                k = nb_network_deepening - 1
+            optimize!(model)
+
+            if !is_solved_and_feasible(model, allow_almost = true) && param.verbose # optimization failed
+                println("optimization failed! k=$(k), return flag=$(termination_status(model))")
+                k = num_deepening - 1
                 score = -Inf
             end
+
+            results = recover_allocation(model, auxdata)
+            score = results[:welfare]
 
             if score > best_score
                 best_results = results
@@ -204,47 +144,11 @@ function annealing(param, graph, I0; kwargs...)
             end
 
             # Deepen network
-            if k < nb_network_deepening - 1
-                if !param.cong # no cross-good congestion
-                    Pjkn = repeat(permute(results.Pjn, [1 3 2]), [1 graph.J 1])
-                    PQ = Pjkn .* results.Qjkn.^(1 + param.beta)
-                    I1 = (graph.delta_tau ./ graph.delta_i .* sum(PQ + permutedims(PQ, [2 1 3]), 3)).^(1 / (1 + param.gamma))
-                    I1[graph.adjacency .== false] .= 0
-                else # cross-good congestion
-                    PCj = repeat(results.PCj, [1 graph.J])
-                    matm = shiftdim(repeat(param.m, [1 graph.J graph.J]), 1)
-                    cost = sum(matm .* results.Qjkn.^param.nu, 3).^((param.beta + 1) / param.nu)
-                    PQ = PCj .* cost
-                    I1 = (graph.delta_tau ./ graph.delta_i .* (PQ + PQ')).^(1 / (param.gamma + 1))
-                    I1[graph.adjacency .== false] .= 0
-                end
-
-                # CUSTOMIZATION 2: updating network
-                if param.custom
-                    # enter here how to update the infrastructure network I1 (if needed) in the custom case
-                end
-
-                # Take care of scaling and bounds
-                I1 = param.K * I1 / sum(reshape(graph.delta_i .* I1, [graph.J^2 1])) # rescale so that sum(delta*kappa^1/gamma)=K
-
-                distance_lb = max(maximum(Il .- I1), 0)
-                distance_ub = max(maximum(I1 .- Iu), 0)
-                counter_rescale = 0
-
-                while distance_lb + distance_ub > TOL_I_BOUNDS && counter_rescale < 100
-                    I1 = max.(min.(I1, Iu), Il) # impose the upper and lower bounds
-                    I1 = param.K * I1 / sum(reshape(graph.delta_i .* I1, [graph.J^2 1])) # rescale again
-                    distance_lb = max(maximum(Il .- I1), 0)
-                    distance_ub = max(maximum(I1 .- Iu), 0)
-                    counter_rescale += 1
-                end
-
-                if counter_rescale == 100 && distance_lb + distance_ub > param.kappa_tol && param.verbose
-                    println("Warning! Could not impose bounds on network properly.")
-                end
-
+            if k < num_deepening - 1
+                # Macro defined in optimal_network.jl
+                @update_network_iter false
             end
-            k = k + 1
+            k += 1
         end
 
         # Probabilistically accept perturbation 
@@ -276,9 +180,14 @@ function annealing(param, graph, I0; kwargs...)
     while !has_converged && counter < 100
         # Update auxdata
         auxdata = create_auxdata(param, graph, I0)
+
         # Solve allocation
-        results, flag, x = solve_allocation_handle(x0, auxdata, funcs, verbose)
-        score = results.welfare
+        optimize!(model)
+        if !is_solved_and_feasible(model, allow_almost = true)
+            error("Solver returned with error code $(termination_status(model)).")
+        end
+        results = recover_allocation(model, auxdata)
+        score = results[:welfare]
 
         if options.display
             plot_graph(param, graph, I0; Sizes = results.Lj)
@@ -291,47 +200,16 @@ function annealing(param, graph, I0; kwargs...)
         end
 
         # DEEPEN NETWORK
-        if !param.cong # no cross-good congestion
-            Pjkn = repeat(permute(results.Pjn, [1 3 2]), [1 graph.J 1])
-            PQ = Pjkn .* results.Qjkn.^(1 + param.beta)
-            I1 = (graph.delta_tau ./ graph.delta_i .* sum(PQ + permutedims(PQ, [2 1 3]), 3)).^(1 / (1 + param.gamma))
-            I1[graph.adjacency .== false] .= 0
-        else # cross-good congestion
-            PCj = repeat(results.PCj, [1 graph.J])
-            matm = shiftdim(repeat(param.m, [1 graph.J graph.J]), 1)
-            cost = sum(matm .* results.Qjkn.^param.nu, 3).^((param.beta + 1) / param.nu)
-            PQ = PCj .* cost
-            I1 = (graph.delta_tau ./ graph.delta_i .* (PQ + PQ')).^(1 / (param.gamma + 1))
-            I1[graph.adjacency .== false] .= 0
-        end
-
-        # CUSTOMIZATION 2': updating network
-        if param.custom
-            # enter here how to update the infrastructure network I1 (if needed) in the custom case
-        end
-
-        # Take care of scaling and bounds
-        I1 = param.K * I1 / sum(reshape(graph.delta_i .* I1, [graph.J^2 1])) # rescale so that sum(delta*kappa^1/gamma)=K
-
-        distance_lb = max.(maximum(Il .- I1), 0)
-        distance_ub = max.(maximum(I1 .- Iu), 0)
-        counter_rescale = 0
-        while distance_lb + distance_ub > TOL_I_BOUNDS && counter_rescale < 100
-            I1 = max.(min.(I1, Iu), Il) # impose the upper and lower bounds
-            I1 = param.K * I1 ./ sum(reshape.(graph.delta_i .* I1, [graph.J^2 1])) # rescale again
-            distance_lb = max.(max.(Il .- I1), 0) 
-            distance_ub = max.(max.(I1 .- Iu), 0)
-            counter_rescale += 1
-        end
-
-        if counter_rescale == 100 && distance_lb + distance_ub > param.kappa_tol && param.verbose
-            println("Warning! Could not impose bounds on network properly.")
-        end
+        @update_network_iter false
 
         # UPDATE AND DISPLAY RESULTS
         distance = sum(abs.(I1 .- I0)) / (J^2)
-        I0 = weight_old * I0 + (1 - weight_old) * I1
+        I0 *= weight_old 
+        I0 += (1 - weight_old) * I1
         has_converged = distance < param.kappa_tol
+        if !has_converged
+            auxdata = create_auxdata(param, graph, I0)
+        end
         counter += 1
 
         if param.verbose
@@ -368,7 +246,7 @@ function retrieve_options_annealing(graph; kwargs...)
         :t_step => 0.9,
         :num_deepening => 4,
         :num_random_perturbations => 1,
-        :funcs => [],
+        :model => nothing,
         :Iu => Inf * ones(graph.J, graph.J),
         :Il => zeros(graph.J, graph.J)
     )
@@ -401,7 +279,7 @@ function retrieve_options_annealing(graph; kwargs...)
         error("Il must be of size (graph.J, graph.J)")
     end
 
-    return options
+    return dict_to_namedtuple(options)
 end
 
 # using Random
