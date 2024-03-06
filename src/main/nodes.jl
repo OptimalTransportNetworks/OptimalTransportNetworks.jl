@@ -16,61 +16,73 @@ The cost matrices delta_tau and delta_i are parametrized as a function of Euclid
 Returns the updated graph and param Dict (param is affected too because the variable Zjn, Lj, Hj and others are reset to a uniform dist.)
 """
 function add_node(param, graph, x, y, neighbors)
-    # check validity of neighbors list
-    if any(neighbors .!= floor.(neighbors)) || any(neighbors .< 1) || any(neighbors .> graph["J"])
-        println("neighbors should be a list of integers between 1 and $(graph["J"]).")
+
+    # Check validity of neighbors list
+    if any(neighbors .!= floor.(neighbors)) || any(neighbors .< 1) || any(neighbors .> graph.J)
+        error("neighbors should be a list of integers between 1 and $(graph.J).")
     end
+
+    Jnew = graph.J + 1
 
     # Add node
-    nodes = graph["nodes"]
-    nodes[graph["J"]+1] = Dict("neighbors" => neighbors)
-    new_x = [graph["x"]; x]
-    new_y = [graph["y"]; y]
+    nodes = [graph.nodes; [neighbors]]
+    new_x = [graph.x; x]
+    new_y = [graph.y; y]
 
     # Add new node to neighbors' neighbors
-    # and update adjacency and cost matrices
-    adjacency = zeros(graph["J"]+1, graph["J"]+1)
-    adjacency[1:graph["J"], 1:graph["J"]] = graph["adjacency"]
+    # And update adjacency and cost matrices
+    adjacency = zeros(Jnew, Jnew)
+    adjacency[1:graph.J, 1:graph.J] = graph.adjacency
 
-    delta_tau = zeros(graph["J"]+1, graph["J"]+1)
-    delta_tau[1:graph["J"], 1:graph["J"]] = graph["delta_tau"]
+    delta_tau = zeros(Jnew, Jnew)
+    delta_tau[1:graph.J, 1:graph.J] = graph.delta_tau
 
-    delta_i = zeros(graph["J"]+1, graph["J"]+1)
-    delta_i[1:graph["J"], 1:graph["J"]] = graph["delta_i"]
+    delta_i = zeros(Jnew, Jnew)
+    delta_i[1:graph.J, 1:graph.J] = graph.delta_i
 
     for i in neighbors
-        nodes[i]["neighbors"] = [nodes[i]["neighbors"]; graph["J"]+1]
+        nodes[i] = [nodes[i]; Jnew]
 
-        distance = sqrt((new_x[i]-x)^2 + (new_y[i]-y)^2)
+        distance = sqrt((new_x[i] - x)^2 + (new_y[i] - y)^2)
 
         # adjacency
-        adjacency[i, graph["J"]+1] = 1
-        adjacency[graph["J"]+1, i] = 1
+        adjacency[i, Jnew] = 1
+        adjacency[Jnew, i] = 1
 
         # travel cost: delta_tau
-        delta_tau[i, graph["J"]+1] = distance
-        delta_tau[graph["J"]+1, i] = distance
+        delta_tau[i, Jnew] = distance
+        delta_tau[Jnew, i] = distance
 
         # building cost: delta_i
-        delta_i[i, graph["J"]+1] = distance
-        delta_i[graph["J"]+1, i] = distance
+        delta_i[i, Jnew] = distance
+        delta_i[Jnew, i] = distance
     end
 
-    # update number of degrees of liberty for Ijk
+    # Update number of degrees of liberty for Ijk
     ndeg = sum(tril(adjacency)) # nb of degrees of liberty in adjacency matrix
 
-    # return new graph structure
-    graph = Dict("J" => graph["J"]+1, "x" => new_x, "y" => new_y, "nodes" => nodes, "adjacency" => adjacency, "delta_i" => delta_i, "delta_tau" => delta_tau, "ndeg" => ndeg)
+    # Return new graph structure
+    graph_new = (
+        J = Jnew,
+        x = new_x,
+        y = new_y,
+        nodes = nodes,
+        adjacency = adjacency,
+        delta_i = delta_i,
+        delta_tau = delta_tau,
+        ndeg = ndeg
+    )
 
-    # now, update the param structure
-    param["J"] = graph["J"]
-    param["Lj"] = ones(graph["J"]) / graph["J"]
-    param["Hj"] = ones(graph["J"])
-    param["hj"] = param["Hj"] ./ param["Lj"]
-    param["omegaj"] = ones(graph["J"])
-    param["Zjn"] = ones(graph["J"], param["N"])
+    # Now, update the param structure
+    param_new = copy(param)
+    param_new[:J] = Jnew
+    param_new[:Lj] = ones(Jnew) / Jnew
+    param_new[:Hj] = ones(Jnew)
+    param_new[:hj] = param[:Hj] ./ param[:Lj]
+    param_new[:omegaj] = ones(Jnew)
+    param_new[:Zjn] = ones(Jnew, param[:N])
 
-    return param, graph
+    return param_new, graph_new
 end
 
 
