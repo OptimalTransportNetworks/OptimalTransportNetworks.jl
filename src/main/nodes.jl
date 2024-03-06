@@ -108,7 +108,7 @@ Removes node i from the graph.
 Returns the updated graph and param structure (param is affected too because the variable Zjn, Lj, Hj and others are changed).
 """
 function remove_node(param, graph, i)
-    
+
     if i < 1 || i > graph.J || i != floor(i)
         error("remove_node: node i should be an integer between 1 and $(graph.J).")
     end
@@ -127,7 +127,7 @@ function remove_node(param, graph, i)
         nodes[k] = ifelse.(node_k .> i, node_k .- 1, node_k) # reindex nodes k > i to k-1
     end
 
-    # rebuild adjacency matrix, delta_i and delta_tau
+    # Rebuild adjacency matrix, delta_i and delta_tau
     graph_new[:adjacency] = [graph.adjacency[1:i-1, 1:i-1] graph.adjacency[1:i-1, i+1:end];
                              graph.adjacency[i+1:end, 1:i-1] graph.adjacency[i+1:end, i+1:end]]
 
@@ -152,8 +152,6 @@ function remove_node(param, graph, i)
     param_new[:omegaj] = vcat(param[:omegaj][1:i-1], param[:omegaj][i+1:end])
     param_new[:Zjn] = vcat(param[:Zjn][1:i-1, :], param[:Zjn][i+1:end, :])
 
-    return param_new, graph_new
+    return param_new, dict_to_namedtuple(graph_new)
 end
 
-
-# Please note that this translation assumes that `param` and `graph` are dictionaries and that `graph.nodes` is an array of dictionaries. If the actual data structures are different, you may need to adjust the code accordingly.
