@@ -112,8 +112,8 @@ function create_auxdata(param, graph, I)
         graph = graph,
         kappa = kappa,
         kappa_ex = kappa_ex,
-        Iex = kappa_extract(graph, I),
-        delta_tau_ex = kappa_extract(graph, graph.delta_tau),
+        # Iex = kappa_extract(graph, I),
+        # delta_tau_ex = kappa_extract(graph, graph.delta_tau),
         A = A,
         Apos = max.(A, 0),
         Aneg = max.(-A, 0)

@@ -11,6 +11,8 @@ function model_partial_mobility(optimizer, auxdata)
     end
     kappa_ex = auxdata[:kappa_ex]
     A = auxdata[:A]
+    Apos = auxdata[:Apos]
+    Aneg = auxdata[:Aneg]
     psigma = (param.sigma - 1) / param.sigma
     Hj = param.Hj
     Lr = param.Lr
@@ -49,7 +51,7 @@ function model_partial_mobility(optimizer, auxdata)
     @constraint(model, Pjn[j in 1:param.J, n in 1:param.N],
         Cjn[j, n] + sum(A[j, i] * Qin[i, n] for i in 1:graph.ndeg) -
         Yjn[j, n] + sum(
-            max(ifelse(Qin[i, n] > 0, A[j, i], -A[j, i]), 0) *
+            ifelse(Qin[i, n] > 0, Apos[j, i], Aneg[j, i]) *
             abs(Qin[i, n])^(1 + param.beta) / kappa_ex[i]
             for i in 1:graph.ndeg
         ) <= -1e-8

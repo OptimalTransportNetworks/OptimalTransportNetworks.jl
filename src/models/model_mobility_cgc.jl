@@ -7,6 +7,8 @@ function model_mobility_cgc(optimizer, auxdata)
     graph = auxdata[:graph]
     kappa_ex = auxdata[:kappa_ex]
     A = auxdata[:A]
+    Apos = auxdata[:Apos]
+    Aneg = auxdata[:Aneg]
     m = param.m # Vector of weights on each goods flow for aggregate congestion term
     psigma = (param.sigma - 1) / param.sigma
     beta_nu = (param.beta + 1) / param.nu
@@ -37,8 +39,8 @@ function model_mobility_cgc(optimizer, auxdata)
         B_indirect = sum(m[n] * Qin_indirect[i, n] ^ param.nu for n in 1:param.N) ^ beta_nu / kappa_ex[i]
         @constraint(model, [j in 1:param.J],
                     cj[j] * Lj[j] + 
-                    max(A[j, i], 0) * B_direct + 
-                    max(-A[j, i], 0) * B_indirect - 
+                    Apos[j, i] * B_direct + 
+                    Aneg[j, i] * B_indirect - 
                     sum(Djn[j, n] ^ psigma for n in 1:param.N) ^ (1 / psigma) <= -1e-8
         )
     end
