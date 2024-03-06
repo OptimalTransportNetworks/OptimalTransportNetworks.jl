@@ -26,7 +26,7 @@ Runs the simulated annealing method starting from network `I0`.
 - `:t_end`: final temperature
 - `:t_step`: speed of cooling
 - `:num_deepening`: number of FOC iterations between candidate draws
-- `:num_random_permutations`: number of links to be randomly affected
+- `:num_random_perturbations`: number of links to be randomly affected
   ('random' and 'random rebranching' only)
 - `:Funcs`: funcs structure computed by ADiGator in order to skip rederivation
 - `:Iu`: JxJ matrix of upper bounds on network infrastructure Ijk
@@ -62,7 +62,7 @@ function annealing(param, graph, I0; kwargs...)
     T = options.t_start
     T_min = options.t_end # 1e-3
     T_step = options.t_step
-    nb_network_deepening = options.nb_deepening # number of iterations for local network deepening
+    nb_network_deepening = options.num_deepening # number of iterations for local network deepening
 
     # -------------------
     # PERTURBATION METHOD
@@ -366,8 +366,8 @@ function retrieve_options_annealing(graph; kwargs...)
         :t_start => 100,
         :t_end => 1,
         :t_step => 0.9,
-        :nb_deepening => 4,
-        :nb_random_perturbations => 1,
+        :num_deepening => 4,
+        :num_random_perturbations => 1,
         :funcs => [],
         :Iu => Inf * ones(graph.J, graph.J),
         :Il => zeros(graph.J, graph.J)
@@ -390,8 +390,8 @@ function retrieve_options_annealing(graph; kwargs...)
     options[:t_start] = Float64(options[:t_start])
     options[:t_end] = Float64(options[:t_end])
     options[:t_step] = Float64(options[:t_step])
-    options[:nb_deepening] = round(Int, options[:nb_deepening])
-    options[:nb_random_perturbations] = round(Int, options[:nb_random_perturbations])
+    options[:num_deepening] = round(Int, options[:num_deepening])
+    options[:num_random_perturbations] = round(Int, options[:num_random_perturbations])
 
     # Validate sizes of matrix options
     if size(options[:Iu]) != (graph.J, graph.J)
@@ -406,14 +406,14 @@ end
 
 # using Random
 
-# This function adds #num_random_permutations random links to the network and
+# This function adds #num_random_perturbations random links to the network and
 # applies a Gaussian smoothing to prevent falling too quickly in a local optimum
 function random_perturbation(param, graph, I0, res, options)
     size_perturbation = 0.1 * param[:K] / graph.J
     I1 = copy(I0)
 
     # Draw random perturbations
-    link_list = Random.randperm(graph.J)[1:options[:nb_random_perturbations]]
+    link_list = Random.randperm(graph.J)[1:options[:num_random_perturbations]]
 
     for i in link_list
         j = rand(1:length(graph.nodes[i]))
@@ -591,7 +591,7 @@ end
     random_rebranch_network(param, graph, I0, res, options)
 
 This function does the same as `rebranch_network` except that only a few nodes
-(#num_random_permutations) are selected for rebranching at random.
+(#num_random_perturbations) are selected for rebranching at random.
 """
 function random_rebranch_network(param, graph, I0, res, options)
     J = graph.J
@@ -603,7 +603,7 @@ function random_rebranch_network(param, graph, I0, res, options)
     I1 = copy(I0)
 
     # Random selection of nodes to rebranch
-    link_list = Random.randperm(J)[1:options[:nb_random_perturbations]]
+    link_list = Random.randperm(J)[1:options[:num_random_perturbations]]
 
     # Rebranch each selected location to its lowest price parent
     for i in link_list
