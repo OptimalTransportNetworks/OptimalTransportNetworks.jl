@@ -9,7 +9,7 @@ function model_partial_mobility(optimizer, auxdata)
     if length(region) != graph.J
         error("length(region) = $(length(region)) does not match number of nodes = $(graph.J)")
     end
-    kappa_ex = auxdata[:kappa_ex]
+    kappa_ex_init = auxdata[:kappa_ex]
     A = auxdata[:A]
     Apos = auxdata[:Apos]
     Aneg = auxdata[:Aneg]
@@ -34,6 +34,9 @@ function model_partial_mobility(optimizer, auxdata)
     @variable(model, Qin[1:graph.ndeg, 1:param.N])         # Good specific flow
     @variable(model, 1e-8 <= Lj[1:graph.J] <= 1)           # Total labour
     @variable(model, Ljn[1:graph.J, 1:param.N] >= 1e-8)    # Good specific labour
+
+    # Parameters: to be updated between solves
+    @variable(model, kappa_ex[i = 1:graph.ndeg] in Parameter(kappa_ex_init[i]))
 
     # Objective
     U = @expression(model, sum(param.omegar .* Lr .* ur))

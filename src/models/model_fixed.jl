@@ -5,7 +5,7 @@ function model_fixed(optimizer, auxdata)
     # Extract parameters
     param = dict_to_namedtuple(auxdata[:param])
     graph = auxdata[:graph]
-    kappa_ex = auxdata[:kappa_ex]
+    kappa_ex_init = auxdata[:kappa_ex]
     A = auxdata[:A]
     Apos = auxdata[:Apos]
     Aneg = auxdata[:Aneg]
@@ -21,6 +21,9 @@ function model_fixed(optimizer, auxdata)
     @variable(model, Cjn[1:graph.J, 1:param.N] >= 1e-8)
     @variable(model, Qin[1:graph.ndeg, 1:param.N])
     @variable(model, Ljn[1:graph.J, 1:param.N] >= 1e-8)
+
+    # Parameters: to be updated between solves
+    @variable(model, kappa_ex[i = 1:graph.ndeg] in Parameter(kappa_ex_init[i]))
 
     # Defining Utility Funcion: from Cjn + parameters (by operator overloading)
     @expression(model, Cj, sum(Cjn .^ psigma, dims=2) .^ (1 / psigma))

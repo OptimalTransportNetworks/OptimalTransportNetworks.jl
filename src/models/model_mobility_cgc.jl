@@ -5,7 +5,7 @@ function model_mobility_cgc(optimizer, auxdata)
     # Extract parameters
     param = dict_to_namedtuple(auxdata[:param])
     graph = auxdata[:graph]
-    kappa_ex = auxdata[:kappa_ex]
+    kappa_ex_init = auxdata[:kappa_ex]
     A = auxdata[:A]
     Apos = auxdata[:Apos]
     Aneg = auxdata[:Aneg]
@@ -25,6 +25,9 @@ function model_mobility_cgc(optimizer, auxdata)
     @variable(model, Ljn[1:graph.J, 1:param.N] >= 1e-8)            # Good specific labour
     @variable(model, Lj[1:graph.J] >= 1e-8)                        # Overall labour
     @variable(model, cj[1:graph.J] >= 1e-8)                        # Overall consumption bundle, including transport costs
+
+    # Parameters: to be updated between solves
+    @variable(model, kappa_ex[i = 1:graph.ndeg] in Parameter(kappa_ex_init[i]))
 
     # Objective
     @objective(model, Max, u)

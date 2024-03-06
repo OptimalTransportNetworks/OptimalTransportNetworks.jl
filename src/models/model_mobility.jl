@@ -5,7 +5,7 @@ function model_mobility(optimizer, auxdata)
     # Parameters and data
     param = dict_to_namedtuple(auxdata[:param])
     graph = auxdata[:graph]
-    kappa_ex = auxdata[:kappa_ex]
+    kappa_ex_init = auxdata[:kappa_ex]
     A = auxdata[:A]
     Apos = auxdata[:Apos]
     Aneg = auxdata[:Aneg]
@@ -22,6 +22,9 @@ function model_mobility(optimizer, auxdata)
     @variable(model, Qin[1:graph.ndeg, 1:param.N])         # Good specific flow
     @variable(model, 1e-8 <= Lj[1:graph.J] <= 1)           # Total labour
     @variable(model, Ljn[1:graph.J, 1:param.N] >= 1e-8)    # Good specific labour
+
+    # Parameters: to be updated between solves
+    @variable(model, kappa_ex[i = 1:graph.ndeg] in Parameter(kappa_ex_init[i]))
 
     # If custom: set start values
     if param.custom

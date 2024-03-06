@@ -5,7 +5,7 @@ function model_fixed_cgc(optimizer, auxdata)
     # Extract parameters
     param = dict_to_namedtuple(auxdata[:param])
     graph = auxdata[:graph]
-    kappa_ex = auxdata[:kappa_ex]
+    kappa_ex_init = auxdata[:kappa_ex]
     A = auxdata[:A]
     Apos = auxdata[:Apos]
     Aneg = auxdata[:Aneg]
@@ -25,6 +25,9 @@ function model_fixed_cgc(optimizer, auxdata)
     @variable(model, Qin_indirect[1:graph.ndeg, 1:param.N] >= 1e-8) # Indirect aggregate flow
     @variable(model, Ljn[1:graph.J, 1:param.N] >= 1e-8)             # Good specific labour
     @variable(model, cj[1:graph.J] >= 1e-8)                         # Overall consumption bundle, including transport costs
+
+    # Parameters: to be updated between solves
+    @variable(model, kappa_ex[i = 1:graph.ndeg] in Parameter(kappa_ex_init[i]))
 
     # Defining Utility Funcion: from cj + parameters (by operator overloading)
     @expression(model, uj, ((cj / param.alpha) .^ param.alpha .* (param.hj / (1-param.alpha)) .^ (1-param.alpha)) .^ (1-param.rho) / (1-param.rho))
