@@ -1,4 +1,4 @@
-# OptimalTransportNeworks.jl
+# OptimalTransportNetworks.jl
 **Optimal Transport Networks in Spatial Equilibrium - in Julia**
 
 Julia translation of the Matlab OptimalTransportNetworkToolbox v1.0.4 implementing the quantitative spatial economic model of
