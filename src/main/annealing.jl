@@ -11,22 +11,22 @@ Runs the simulated annealing method starting from network `I0`.
 - `kwargs...`: various optional arguments, see below
 
 # Optional Arguments
-- `:PerturbationMethod`: method to be used to perturbate the network
+- `:perturbation_method`: method to be used to perturbate the network 
   (random is purely random, works horribly; shake applies a gaussian blur
   along a random direction, works alright; rebranching (default) is the algorithm
   described in Appendix A.4 in the paper, works nicely )
-- `:PreserveCentralSymmetry`: only applies to shake method
-- `:PreserveVerticalSymmetry`: only applies to shake method
-- `:PreserveHorizontalSymmetry`: only applies to shake method
-- `:SmoothingRadius`: parameters of the Gaussian blur
-- `:MuPerturbation`: parameters of the Gaussian blur
-- `:SigmaPerturbation`: parameters of the Gaussian blur
-- `:Display`: display the graph as we go
-- `:TStart`: initial temperature
-- `:TEnd`: final temperature
-- `:TStep`: speed of cooling
-- `:NbDeepening`: number of FOC iterations between candidate draws
-- `:NbRandomPerturbations`: number of links to be randomly affected
+- `:preserve_central_symmetry`: only applies to shake method
+- `:preserve_vertical_symmetry`: only applies to shake method
+- `:preserve_horizontal_symmetry`: only applies to shake method
+- `:smoothing_radius`: parameters of the Gaussian blur
+- `:mu_perturbation`: parameters of the Gaussian blur
+- `:sigma_perturbation`: parameters of the Gaussian blur
+- `:display`: display the graph as we go
+- `:t_start`: initial temperature
+- `:t_end`: final temperature
+- `:t_step`: speed of cooling
+- `:num_deepening`: number of FOC iterations between candidate draws
+- `:num_random_permutations`: number of links to be randomly affected
   ('random' and 'random rebranching' only)
 - `:Funcs`: funcs structure computed by ADiGator in order to skip rederivation
 - `:Iu`: JxJ matrix of upper bounds on network infrastructure Ijk
@@ -41,6 +41,8 @@ This code is distributed under BSD-3 License.
 """
 
 function annealing(param, graph, I0; kwargs...)
+
+    param = dict_to_namedtuple(param)
     # Retrieve economy's parameters
     J = graph.J
     gamma = param.gamma
@@ -48,7 +50,7 @@ function annealing(param, graph, I0; kwargs...)
     TOL_I_BOUNDS = 1e-7
 
     # Retrieve optional parameters
-    options = retrieve_options_annealing(param, graph; kwargs...)
+    options = retrieve_options_annealing(graph; kwargs...)
     Iu = options.Iu
     Il = options.Il
 
@@ -66,15 +68,15 @@ function annealing(param, graph, I0; kwargs...)
     # PERTURBATION METHOD
 
     if options.perturbation_method == "random"
-        perturbate = random_perturbation(param, graph, I0, res, options)
+        perturbate = random_perturbation
     elseif options.perturbation_method == "shake"  
-        perturbate = shake_network(param, graph, I0, res, options)
+        perturbate = shake_network
     elseif options.perturbation_method == "rebranching"
-        perturbate = rebranch_network(param, graph, I0, res, options)  
+        perturbate = rebranch_network
     elseif options.perturbation_method == "random rebranching"
-        perturbate = random_rebranch_network(param, graph, I0, res, options)
+        perturbate = random_rebranch_network
     elseif options.perturbation_method == "hybrid alder"
-        perturbate = hybrid(param, graph, I0, res, options)
+        perturbate = hybrid
     else 
         error("unknown perturbation method %s\n", options.perturbation_method)
     end
@@ -228,6 +230,7 @@ function annealing(param, graph, I0; kwargs...)
                 distance_lb = max(maximum(Il .- I1), 0)
                 distance_ub = max(maximum(I1 .- Iu), 0)
                 counter_rescale = 0
+
                 while distance_lb + distance_ub > TOL_I_BOUNDS && counter_rescale < 100
                     I1 = max.(min.(I1, Iu), Il) # impose the upper and lower bounds
                     I1 = param.K * I1 / sum(reshape(graph.delta_i .* I1, [graph.J^2 1])) # rescale again
@@ -236,7 +239,7 @@ function annealing(param, graph, I0; kwargs...)
                     counter_rescale += 1
                 end
 
-                if counter_rescale == 100 && distance_lb + distance_ub > param.tol_kappa && param.verbose
+                if counter_rescale == 100 && distance_lb + distance_ub > param.kappa_tol && param.verbose
                     println("Warning! Could not impose bounds on network properly.")
                 end
 
@@ -321,14 +324,14 @@ function annealing(param, graph, I0; kwargs...)
             counter_rescale += 1
         end
 
-        if counter_rescale == 100 && distance_lb + distance_ub > param.tol_kappa && param.verbose
+        if counter_rescale == 100 && distance_lb + distance_ub > param.kappa_tol && param.verbose
             println("Warning! Could not impose bounds on network properly.")
         end
 
         # UPDATE AND DISPLAY RESULTS
         distance = sum(abs.(I1 .- I0)) / (J^2)
         I0 = weight_old * I0 + (1 - weight_old) * I1
-        has_converged = distance < param.tol_kappa
+        has_converged = distance < param.kappa_tol
         counter += 1
 
         if param.verbose
@@ -348,36 +351,33 @@ end
 
 
 
-function retrieve_options_annealing(param, graph; kwargs...)
+function retrieve_options_annealing(graph; kwargs...)
+
     # Set up default options with lowercase names
     options = Dict{Symbol, Any}(
         :perturbation_method => "random rebranching",
-        :preserve_central_symmetry => "off",
-        :preserve_vertical_symmetry => "off",
-        :preserve_horizontal_symmetry => "off",
+        :preserve_central_symmetry => false,
+        :preserve_vertical_symmetry => false,
+        :preserve_horizontal_symmetry => false,
         :smoothing_radius => 0.25,
         :mu_perturbation => log(0.3),
         :sigma_perturbation => 0.05,
-        :display => "off",
+        :display => false,
         :t_start => 100,
         :t_end => 1,
         :t_step => 0.9,
         :nb_deepening => 4,
         :nb_random_perturbations => 1,
         :funcs => [],
-        :iu => Inf * ones(graph.J, graph.J),
-        :il => zeros(graph.J, graph.J)
+        :Iu => Inf * ones(graph.J, graph.J),
+        :Il => zeros(graph.J, graph.J)
     )
-
-    # A helper function to convert "on"/"off" to true/false
-    convert_switch = (val) -> val == "on"
 
     # Update options with user-provided values
     for (k, v) in kwargs
         sym_key = Symbol(lowercase(string(k)))  # Convert to lowercase symbol
         if haskey(options, sym_key)
-            # Assign the value after any necessary conversion
-            options[sym_key] = sym_key in [:preserve_central_symmetry, :preserve_vertical_symmetry, :preserve_horizontal_symmetry, :display] ? convert_switch(v) : v
+            options[sym_key] = v
         else
             error("Unknown parameter: $sym_key")
         end
@@ -394,10 +394,10 @@ function retrieve_options_annealing(param, graph; kwargs...)
     options[:nb_random_perturbations] = round(Int, options[:nb_random_perturbations])
 
     # Validate sizes of matrix options
-    if size(options[:iu]) != (graph.J, graph.J)
+    if size(options[:Iu]) != (graph.J, graph.J)
         error("Iu must be of size (graph.J, graph.J)")
     end
-    if size(options[:il]) != (graph.J, graph.J)
+    if size(options[:Il]) != (graph.J, graph.J)
         error("Il must be of size (graph.J, graph.J)")
     end
 
@@ -406,14 +406,14 @@ end
 
 # using Random
 
-# This function adds #NbRandomPerturbations random links to the network and
+# This function adds #num_random_permutations random links to the network and
 # applies a Gaussian smoothing to prevent falling too quickly in a local optimum
 function random_perturbation(param, graph, I0, res, options)
     size_perturbation = 0.1 * param[:K] / graph.J
     I1 = copy(I0)
 
     # Draw random perturbations
-    link_list = shuffle(1:graph.J)[1:options[:nb_random_perturbations]]
+    link_list = Random.randperm(graph.J)[1:options[:nb_random_perturbations]]
 
     for i in link_list
         j = rand(1:length(graph.nodes[i]))
@@ -459,6 +459,7 @@ function smooth_network(param, graph, I0)
     edge_y = 0.5 * (vec_y * ones(J)' .+ ones(J) * vec_y')
 
     # Proceed to Gaussian kernel smoothing
+    # TODO: Speed up??
     for i = 1:J
         for neighbor in graph.nodes[i]
             x0 = edge_x[i, neighbor]
@@ -483,6 +484,7 @@ end
 # A simple way to perturb the network that simulates shaking the network in some 
 # random direction and applying a Gaussian smoothing (see smooth_network()).
 function shake_network(param, graph, I0, res, options)
+
     J = graph.J
 
     # ===================
@@ -497,9 +499,9 @@ function shake_network(param, graph, I0, res, options)
     # PERTURB NETWORK
     # ===============
 
-    theta = rand() * 2 * π
+    theta = cispi(rand() * 2) # cispi(x) is exp(i*pi*x) in Julia
     rho = exp(mu_perturbation + sigma_perturbation * randn()) / exp(sigma_perturbation^2)
-    direction = rho * cis(theta)  # cis(theta) is exp(i*theta) in Julia
+    direction = rho * theta  
     direction_x = real(direction)
     direction_y = imag(direction)
 
@@ -560,12 +562,12 @@ function rebranch_network(param, graph, I0, res, options)
     # Rebranch each location to its lowest price parent
     for i = 1:J
         neighbors = graph.nodes[i]
-        parents = neighbors[ res[:PCj][neighbors] .< res[:PCj][i] ]
+        parents = neighbors[res[:PCj][neighbors] .< res[:PCj][i]]
         
         if length(parents) >= 2
-            lowest_price_parent = sortperm(res[:PCj][parents])[1]
+            lowest_price_parent = findmin(res[:PCj][parents])[2]
             lowest_price_parent = parents[lowest_price_parent]
-            best_connected_parent = sortperm(I0[i, parents], rev=true)[1]
+            best_connected_parent = findmax(I0[i, parents])[2]
             best_connected_parent = parents[best_connected_parent]
             
             # swap roads
@@ -589,7 +591,7 @@ end
     random_rebranch_network(param, graph, I0, res, options)
 
 This function does the same as `rebranch_network` except that only a few nodes
-(#NbRandomPerturbations) are selected for rebranching at random.
+(#num_random_permutations) are selected for rebranching at random.
 """
 function random_rebranch_network(param, graph, I0, res, options)
     J = graph.J
@@ -601,7 +603,7 @@ function random_rebranch_network(param, graph, I0, res, options)
     I1 = copy(I0)
 
     # Random selection of nodes to rebranch
-    link_list = randperm(J)[1:options[:nb_random_perturbations]]
+    link_list = Random.randperm(J)[1:options[:nb_random_perturbations]]
 
     # Rebranch each selected location to its lowest price parent
     for i in link_list
@@ -609,9 +611,9 @@ function random_rebranch_network(param, graph, I0, res, options)
         parents = neighbors[res[:PCj][neighbors] .< res[:PCj][i]]
         
         if length(parents) >= 2
-            lowest_price_parent_index = sortperm(res[:PCj][parents])[1]
+            lowest_price_parent_index = findmin(res[:PCj][parents])[2]
             lowest_price_parent = parents[lowest_price_parent_index]
-            best_connected_parent_index = sortperm(I0[i, parents], rev=true)[1]
+            best_connected_parent_index = findmax(I0[i, parents])[2]
             best_connected_parent = parents[best_connected_parent_index]
             
             # Swap roads
