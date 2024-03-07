@@ -120,8 +120,12 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing,
         if !has_converged || counter <= param[:kappa_min_iter]
             I0 *= weight_old 
             I0 += (1 - weight_old) * I1
-            auxdata = create_auxdata(param, graph, I0)
-            # TODO: need to update model !!!
+            # This creates kappa and updates the model
+            # auxdata = create_auxdata(param, graph, I0)
+            kappa_new = max.(I0 .^ param[:gamma] ./ graph.delta_tau, param[:kappa_min])
+            kappa_new[.!graph.adjacency] .= 0
+            kappa_ex_new = kappa_extract(graph, kappa_new)
+            set_parameter_value.(model.obj_dict[:kappa_ex], kappa_ex_new)
         end
     end
 
