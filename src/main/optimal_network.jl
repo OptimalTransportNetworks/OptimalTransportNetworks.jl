@@ -1,4 +1,3 @@
-
 """
  ==============================================================
  OPTIMAL TRANSPORT NETWORKS IN SPATIAL EQUILIBRIUM
@@ -31,8 +30,7 @@ This code is distributed under BSD-3 License. See LICENSE.txt for more informati
 # using LinearAlgebra
 # I0=nothing; Il=nothing; Iu=nothing; verbose=false;
 
-function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, 
-                         verbose=false, return_model = false)
+function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbose=false) # , return_model = false
 
     J = graph.J
     TOL_I_BOUNDS = 1e-7
@@ -70,88 +68,6 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing,
     # INITIALIZATION
 
     auxdata = create_auxdata(param, graph, I0)
-
-    # See macro defined below
-    @choose_model_and_customize
-
-    # --------------------
-    # NETWORK OPTIMIZATION
-
-    has_converged = false
-    counter = 0
-    weight_old = 0.5
-    I1 = zeros(graph.J, graph.J)
-
-    while (!has_converged && counter < param[:kappa_max_iter]) || counter <= param[:kappa_min_iter]
-
-        # if save_before_it_crashes
-        #     debug_file_str = "debug.mat"
-        #     save(debug_file_str, "param", "graph", "kappa", "I0", "I1", "counter")
-        # end
-
-        t0 = time()
-        optimize!(model)
-        t1 = time()
-
-        if !is_solved_and_feasible(model, allow_almost = true)
-            error("Solver returned with error code $(termination_status(model)).")
-        end
-
-        results = recover_allocation(model, auxdata)
-
-        # Set next run starting values to previous run solution.
-        if param[:warm_start]
-            vars = all_variables(model)
-            vars_solution = value.(vars)
-            set_start_value.(vars, vars_solution)
-        end
-        
-        # See macro defined below
-        @update_network_iter true
-
-        distance = maximum(abs.(I1 - I0)) / (param[:K] / mean(graph.delta_i[graph.adjacency.==1]))
-        has_converged = distance < param[:kappa_tol]
-        counter += 1
-
-        if param[:verbose]
-            println("Iteration No. $counter distance=$distance duration=$(t1 - t0) secs. Welfare=$(results[:welfare])")
-        end
-
-        if !has_converged || counter <= param[:kappa_min_iter]
-            I0 *= weight_old 
-            I0 += (1 - weight_old) * I1
-            # This creates kappa and updates the model
-            # auxdata = create_auxdata(param, graph, I0)
-            kappa_new = max.(I0 .^ param[:gamma] ./ graph.delta_tau, param[:kappa_min])
-            kappa_new[.!graph.adjacency] .= 0
-            kappa_ex_new = kappa_extract(graph, kappa_new)
-            set_parameter_value.(model.obj_dict[:kappa_ex], kappa_ex_new)
-        end
-    end
-
-    if counter <= param[:kappa_max_iter] && !has_converged && param[:verbose]
-        println("Reached MAX iterations with convergence at $distance.")
-        error_status = true
-    end
-
-    results[:Ijk] = I0
-
-    if param[:verbose] && !error_status
-        println("\nCOMPUTATION RESULTED WITH SUCCESS.\n----------------------------------\n")
-    end
-
-    # --------------------
-    # SIMULATED ANNEALING
-
-    if param[:gamma] > param[:beta] && param[:annealing]
-        results = annealing(param, graph, I0, model = model)
-    end
-
-    return results
-end
-
-# Macro to choose the model depending on the parameters.
-macro choose_model_and_customize()
 
     optimizer = get(param, :optimizer, Ipopt.Optimizer)
 
@@ -209,42 +125,108 @@ macro choose_model_and_customize()
     #    MOI.AutomaticDifferentiationBackend(),
     #    MathOptSymbolicAD.DefaultBackend(),
     # )
-end
 
-# Macro to update the network in the iteration loop: Also used in the annealing function.
-macro update_network_iter(main)
-    if !param[:cong]
-        PQ = permutedims(repeat(results[:Pjn], 1, 1, graph.J), [1, 3, 2]) .* results[:Qjkn] .^ (1 + param[:beta])
-        PQ = dropdims(sum(PQ + permutedims(PQ, [2, 1, 3]), dims=3), dims = 3)
-    else
-        PQ = repeat(results[:PCj], 1, graph.J)
-        matm = permutedims(repeat(param[:m], 1, graph.J, graph.J), [3, 2, 1])
-        cost = dropdims(sum(matm .* results[:Qjkn] .^ param[:nu], dims=3), dims = 3) .^ ((param[:beta] + 1) / param[:nu])
-        PQ .*= cost
-        PQ += PQ'
-    end
+    # --------------------
+    # NETWORK OPTIMIZATION
 
-    I1 = (graph.delta_tau ./ graph.delta_i .* PQ) .^ (1 / (1 + param[:gamma]))
-    I1[graph.adjacency .== 0] .= 0
-    if main == true
+    has_converged = false
+    counter = 0
+    weight_old = 0.5
+    I1 = zeros(graph.J, graph.J)
+
+    while (!has_converged && counter < param[:kappa_max_iter]) || counter <= param[:kappa_min_iter]
+
+        # if save_before_it_crashes
+        #     debug_file_str = "debug.mat"
+        #     save(debug_file_str, "param", "graph", "kappa", "I0", "I1", "counter")
+        # end
+
+        t0 = time()
+        optimize!(model)
+        t1 = time()
+
+        if !is_solved_and_feasible(model, allow_almost = true)
+            error("Solver returned with error code $(termination_status(model)).")
+        end
+
+        results = recover_allocation(model, auxdata)
+
+        # Set next run starting values to previous run solution.
+        if param[:warm_start]
+            vars = all_variables(model)
+            vars_solution = value.(vars)
+            set_start_value.(vars, vars_solution)
+        end
+        
+        # See macro defined below
+        if !param[:cong]
+            PQ = permutedims(repeat(results[:Pjn], 1, 1, graph.J), [1, 3, 2]) .* results[:Qjkn] .^ (1 + param[:beta])
+            PQ = dropdims(sum(PQ + permutedims(PQ, [2, 1, 3]), dims=3), dims = 3)
+        else
+            PQ = repeat(results[:PCj], 1, graph.J)
+            matm = permutedims(repeat(param[:m], 1, graph.J, graph.J), [3, 2, 1])
+            cost = dropdims(sum(matm .* results[:Qjkn] .^ param[:nu], dims=3), dims = 3) .^ ((param[:beta] + 1) / param[:nu])
+            PQ .*= cost
+            PQ += PQ'
+        end
+        
+        I1 = (graph.delta_tau ./ graph.delta_i .* PQ) .^ (1 / (1 + param[:gamma]))
+        I1[graph.adjacency .== 0] .= 0
         I1[PQ .== 0] .= 0
         I1[graph.delta_i .== 0] .= 0
-    end
-    I1 *= param[:K] / sum(graph.delta_i .* I1)
-
-    distance_lb = max(maximum(Il - I1), 0)
-    distance_ub = max(maximum(I1 - Iu), 0)
-    counter_rescale = 0
-
-    while distance_lb + distance_ub > TOL_I_BOUNDS && counter_rescale < 100
-        I1 = max.(min.(I1, Iu), Il)
         I1 *= param[:K] / sum(graph.delta_i .* I1)
+        
         distance_lb = max(maximum(Il - I1), 0)
         distance_ub = max(maximum(I1 - Iu), 0)
-        counter_rescale += 1
+        counter_rescale = 0
+        
+        while distance_lb + distance_ub > TOL_I_BOUNDS && counter_rescale < 100
+            I1 = max.(min.(I1, Iu), Il)
+            I1 *= param[:K] / sum(graph.delta_i .* I1)
+            distance_lb = max(maximum(Il - I1), 0)
+            distance_ub = max(maximum(I1 - Iu), 0)
+            counter_rescale += 1
+        end
+        
+        if counter_rescale == 100 && distance_lb + distance_ub > param[:kappa_tol] && param[:verbose]
+            println("Warning! Could not impose bounds on network properly.")
+        end
+
+        distance = maximum(abs.(I1 - I0)) / (param[:K] / mean(graph.delta_i[graph.adjacency.==1]))
+        has_converged = distance < param[:kappa_tol]
+        counter += 1
+
+        if param[:verbose]
+            println("Iteration No. $counter distance=$distance duration=$(t1 - t0) secs. Welfare=$(results[:welfare])")
+        end
+
+        if !has_converged || counter <= param[:kappa_min_iter]
+            I0 *= weight_old 
+            I0 += (1 - weight_old) * I1
+            # This creates kappa and updates the model
+            auxdata = create_auxdata(param, graph, I0)
+            set_parameter_value.(model.obj_dict[:kappa_ex], auxdata.kappa_ex)
+        end
     end
 
-    if counter_rescale == 100 && distance_lb + distance_ub > param[:kappa_tol] && param[:verbose]
-        println("Warning! Could not impose bounds on network properly.")
+    if counter <= param[:kappa_max_iter] && !has_converged && param[:verbose]
+        println("Reached MAX iterations with convergence at $distance.")
+        error_status = true
     end
+
+    results[:Ijk] = I0
+
+    if param[:verbose] && !error_status
+        println("\nCOMPUTATION RESULTED WITH SUCCESS.\n----------------------------------\n")
+    end
+
+    # --------------------
+    # SIMULATED ANNEALING
+
+    if param[:gamma] > param[:beta] && param[:annealing]
+        results = annealing(param, graph, I0, final_model = model, recover_allocation = recover_allocation)
+    end
+
+    return results
 end
+
