@@ -14,7 +14,7 @@ Arguments:
 - Il: (optional) exogenous lower bound on infrastructure levels (matrix JxJ)
 - Iu: (optional) exogenous upper bound on infrastructure levels (matrix JxJ)
 - verbose: (optional) tell IPOPT to display results
-- return_model: (optional) return the JuMP model alongside the results
+- return_model: (optional) return the JuMP model and corresponding recover_allocation() function alongside the results. 
 
 -----------------------------------------------------------------------------------
 REFERENCE: "Optimal Transport Networks in Spatial Equilibrium" (2019) by Pablo D.
@@ -229,7 +229,7 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
     end
 
     if return_model
-        return results, model
+        return results, model, recover_allocation
     end
     return results
 end
