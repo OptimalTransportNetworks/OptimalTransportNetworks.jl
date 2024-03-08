@@ -11,26 +11,28 @@ Runs the simulated annealing method starting from network `I0`.
 - `kwargs...`: various optional arguments, see below
 
 # Optional Arguments
-- `:perturbation_method`: method to be used to perturbate the network 
+- `perturbation_method`: method to be used to perturbate the network 
   (random is purely random, works horribly; shake applies a gaussian blur
   along a random direction, works alright; rebranching (default) is the algorithm
   described in Appendix A.4 in the paper, works nicely )
-- `:preserve_central_symmetry`: only applies to shake method
-- `:preserve_vertical_symmetry`: only applies to shake method
-- `:preserve_horizontal_symmetry`: only applies to shake method
-- `:smoothing_radius`: parameters of the Gaussian blur
-- `:mu_perturbation`: parameters of the Gaussian blur
-- `:sigma_perturbation`: parameters of the Gaussian blur
-- `:display`: display the graph as we go
-- `:t_start`: initial temperature
-- `:t_end`: final temperature
-- `:t_step`: speed of cooling
-- `:num_deepening`: number of FOC iterations between candidate draws
-- `:num_random_perturbations`: number of links to be randomly affected
+- `preserve_central_symmetry`: only applies to shake method
+- `preserve_vertical_symmetry`: only applies to shake method
+- `preserve_horizontal_symmetry`: only applies to shake method
+- `smoothing_radius`: parameters of the Gaussian blur
+- `mu_perturbation`: parameters of the Gaussian blur
+- `sigma_perturbation`: parameters of the Gaussian blur
+- `display`: display the graph as we go
+- `t_start`: initial temperature
+- `t_end`: final temperature
+- `t_step`: speed of cooling
+- `num_deepening`: number of FOC iterations between candidate draws
+- `num_random_perturbations`: number of links to be randomly affected
   ('random' and 'random rebranching' only)
-- `:model`: JuMP model to be used (from optimal_network)
-- `:Iu`: JxJ matrix of upper bounds on network infrastructure Ijk
-- `:Il`: JxJ matrix of lower bounds on network infrastructure Ijk
+- `Iu`: JxJ matrix of upper bounds on network infrastructure Ijk
+- `Il`: JxJ matrix of lower bounds on network infrastructure Ijk
+- `final_model`: a readily parameterized JuMP model to be used (from optimal_network)
+- `recover_allocation`: the corresponding recover_allocation function (from optimal_network)
+
 
 # Reference
 "Optimal Transport Networks in Spatial Equilibrium" (2019) by Pablo D.
