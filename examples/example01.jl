@@ -6,10 +6,10 @@ using OptimalTransportNetworks
 # ==============
 
 # Set parameters: try with labor mobility: true/false, convex: beta>=gamma,
-# nonconvex: gamma>beta, cross good congestion: true/false, or ADiGator: on/off
+# nonconvex: gamma>beta, cross good congestion: true/false
 
-param = init_parameters(labor_mobility = true, K = 10, gamma = 1, beta = 1, verbose = true,
-                        N = 1, kappa_tol = 1e-5, cross_good_congestion = true, nu = 1)
+param = init_parameters(labor_mobility = true, K = 1, gamma = 1, beta = 1, verbose = true,
+                        N = 1, kappa_tol = 1e-5, cross_good_congestion = false, nu = 1)
 
 # kappa_tol is the tolerance in distance b/w iterations for road capacity
 # kappa=I^gamma/delta_i, default is 1e-7 but we relax it a bit here
@@ -21,9 +21,9 @@ param, graph = create_graph(param, 11, 11, type = "map") # create a map network 
 # note: by default, productivity and population are equalized everywhere
 
 # Customize graph
-param[:Zjn] = fill(0.1, param[:J]) # set most places to low productivity
+param[:Zjn] = fill(0.1, param[:J], param[:N]) # set most places to low productivity
 Ni = find_node(graph, 6, 6) # Find index of the central node at (6,6)
-param[:Zjn][Ni] = 1 # central node more productive
+param[:Zjn][Ni, :] .= 1 # central node more productive
 
 # ==========
 # RESOLUTION
