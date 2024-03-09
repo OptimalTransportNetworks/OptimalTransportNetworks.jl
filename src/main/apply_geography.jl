@@ -50,6 +50,7 @@ function apply_geography!(graph, geography; kwargs...)
     end
 
     options = dict_to_namedtuple(options)
+    geography = dict_to_namedtuple(geography)
 
     # Embed geographical barriers into network building costs
     for i in 1:graph.J
