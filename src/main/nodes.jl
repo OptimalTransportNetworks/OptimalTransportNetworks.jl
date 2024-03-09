@@ -126,7 +126,7 @@ function remove_node(param, graph, i)
     end
 
     Jnew = graph.J - 1
-    graph_new = Dict(pairs(graph))
+    graph_new = namedtuple_to_dict(graph)
 
     graph_new[:J] = Jnew
     graph_new[:x] = deleteat!(copy(graph.x), i)

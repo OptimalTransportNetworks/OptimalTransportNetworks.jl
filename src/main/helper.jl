@@ -1,9 +1,17 @@
 
 function dict_to_namedtuple(dict)
-    if !(dict isa NamedTuple)
-        return NamedTuple{Tuple(keys(dict))}(values(dict))
-    else
+    if dict isa NamedTuple
         return dict
+    else
+        return NamedTuple{Tuple(keys(dict))}(values(dict))
+    end
+end
+
+function namedtuple_to_dict(namedtuple)
+    if namedtuple isa Dict
+        return namedtuple
+    else
+        return Dict(pairs(namedtuple))
     end
 end
 

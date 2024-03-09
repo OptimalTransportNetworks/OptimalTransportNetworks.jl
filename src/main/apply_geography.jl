@@ -135,7 +135,7 @@ function apply_geography!(graph, geography; kwargs...)
         end
     end
 
-    greph_new = Dict(pairs(graph))
+    greph_new = namedtuple_to_dict(graph)
     greph_new[:across_obstacle] = across_obstacle
     greph_new[:along_obstacle] = along_obstacle
 
