@@ -101,7 +101,7 @@ function retrieve_options_create_graph(param, w, h; kwargs...)
     options[:J] = w * h
 
     if options[:type] == "triangle"
-        options[:J] = w * ceil(h / 2) + (w - 1) * (ceil(h / 2) - 1)
+        options[:J] = Int(w * ceil(h / 2) + (w - 1) * (ceil(h / 2) - 1))
     end
 
     if options[:type] == "custom"
