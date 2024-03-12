@@ -86,13 +86,6 @@ function init_parameters(; alpha=0.5, beta=1, gamma=1, K=1, sigma=5, rho=2, a=0.
         end
     end
 
-    unmatched_keys = setdiff(keys(p), union(keys(param), [:optimizer_attr, :model_attr]))
-    # Check if non-supported keys
-    if !isempty(unmatched_keys)
-        # Print the error message indicating the unmatched keys
-        @warn "Unsupported parameters:  $unmatched_keys"
-    end
-
     # Define utility function
     param[:u] = (c, h) -> ((c/param[:alpha])^param[:alpha] * (h/(1-param[:alpha]))^(1-param[:alpha]))^(1-param[:rho])/(1-param[:rho])
     param[:uprime] = (c, h) -> ((c/param[:alpha])^param[:alpha] * (h/(1-param[:alpha]))^(1-param[:alpha]))^(-param[:rho]) * ((c/param[:alpha])^(param[:alpha]-1) * (h/(1-param[:alpha]))^(1-param[:alpha]))
@@ -103,40 +96,47 @@ function init_parameters(; alpha=0.5, beta=1, gamma=1, K=1, sigma=5, rho=2, a=0.
     param[:F] = (L, a) -> L^a
     param[:Fprime] = (L, a) -> a * L^(a-1)
 
+    unmatched_keys = setdiff(keys(p), union(keys(param), [:optimizer_attr, :model_attr, :Zjn, :J, :omegaj, :hj, :Lj, :Hj]))
+    # Check if non-supported keys
+    if !isempty(unmatched_keys)
+        # Print the error message indicating the unmatched keys
+        @warn "Unsupported parameters:  $unmatched_keys"
+    end
+
     # CHECK CONSISTENCY WITH ENDOWMENTS/PRODUCTIVITY (if applicable)
     # only happens when object param is specified
     if haskey(p, :omegaj)
-        if length(p[:omegaj]) != param[:J]
-            @warn "$(basename(@__FILE__)).jl: omegaj does not have the right length J."
+        if length(p[:omegaj]) != p[:J]
+            @warn "omegaj does not have the right length J = $(p[:J])."
         end
         param[:omegaj] = p[:omegaj]
     end
 
-    if haskey(p, :Lj) && !param[:mobility]
-        if length(p[:Lj]) != param[:J]
-            @warn "$(basename(@__FILE__)).jl: Lj does not have the right length J."
+    if haskey(p, :Lj) && param[:mobility] == 0
+        if length(p[:Lj]) != p[:J]
+            @warn "Lj does not have the right length J = $(p[:J])."
         end
         param[:Lj] = p[:Lj]
     end
 
     # Zjn is a two-dimensional array (JxN), so using size() is appropriate for this check
     if haskey(p, :Zjn)
-        if size(p[:Zjn]) != (param[:J], param[:N])
-            @warn "$(basename(@__FILE__)).jl: Zjn does not have the right size JxN."
+        if size(p[:Zjn]) != (p[:J], p[:N])
+            @warn "Zjn does not have the right size J ($(p[:J])) x N ($(p[:N]))."
         end
         param[:Zjn] = p[:Zjn]
     end
 
     if haskey(p, :Hj)
-        if length(p[:Hj]) != param[:J]
-            @warn "$(basename(@__FILE__)).jl: Hj does not have the right length J."
+        if length(p[:Hj]) != p[:J]
+            @warn "Hj does not have the right length J = $(p[:J])."
         end
         param[:Hj] = p[:Hj]
     end
 
     if haskey(p, :hj)
-        if length(p[:hj]) != param[:J]
-            @warn "$(basename(@__FILE__)).jl: hj does not have the right length J."
+        if length(p[:hj]) != p[:J]
+            @warn "hj does not have the right length J = $(p[:J])."
         end
         param[:hj] = p[:hj]
     end
