@@ -26,30 +26,30 @@ Returns a `param` structure with the model parameters.
 - `custom::Bool=false`: switch for the use of custom lagrangian function
 - `verbose::Bool=true`: switch to turn on/off text output
 - `duality::Bool=true`: switch to turn on/off duality whenever available
-- `param::Dict=Dict()`: provide an already existing 'param' structure if you just want to change parameters.
 """
 function init_parameters(; alpha=0.5, beta=1, gamma=1, K=1, sigma=5, rho=2, a=0.8, N=1, m=ones(N,1), nu=1, 
                          labor_mobility=false, cross_good_congestion=false, annealing=true, custom=false, 
-                         verbose=true, duality=true, param=Dict(), kwargs...)
-    p = isempty(param) ? Dict() : param
-    if !isempty(kwargs)
-        for (key, value) in kwargs
-            p[key] = value
-        end
-    end
+                         verbose=true, duality=true, warm_start = false, 
+                         kappa_tol = 1e-7, kappa_min = 1e-5, kappa_min_iter = 20, kappa_max_iter = 200,
+                         kwargs...)
     param = Dict()
 
-    param[:gamma] = get(p, :gamma, gamma)
-    param[:alpha] = get(p, :alpha, alpha) 
-    param[:beta] = get(p, :beta, beta)
-    param[:K] = get(p, :K, K)
-    param[:sigma] = get(p, :sigma, sigma)
-    param[:rho] = get(p, :rho, rho)
-    param[:a] = get(p, :a, a)
-    param[:m] = get(p, :m, m)
-    param[:N] = get(p, :N, N)
-    param[:nu] = get(p, :nu, nu)
-    labor_mobility = get(p, :labor_mobility, labor_mobility)
+    if !isempty(kwargs)
+        for (key, value) in kwargs
+            param[key] = value
+        end
+    end
+
+    param[:gamma] = gamma
+    param[:alpha] = alpha
+    param[:beta] = beta
+    param[:K] = K
+    param[:sigma] = sigma
+    param[:rho] = rho
+    param[:a] = a
+    param[:m] = m
+    param[:N] = N
+    param[:nu] = nu
     if labor_mobility === "partial" || labor_mobility === 0.5
         param[:mobility] = 0.5
     else
@@ -58,18 +58,18 @@ function init_parameters(; alpha=0.5, beta=1, gamma=1, K=1, sigma=5, rho=2, a=0.
     if param[:mobility] == true
         param[:rho] = 0;
     end
-    param[:cong] = get(p, :cross_good_congestion, cross_good_congestion)
-    param[:annealing] = get(p, :annealing, annealing)
-    param[:custom] = get(p, :custom, custom)
-    param[:verbose] = get(p, :verbose, verbose)
-    param[:duality] = get(p, :duality, duality)
-    param[:warm_start] = get(p, :warm_start, false)
+    param[:cong] = cross_good_congestion
+    param[:annealing] = annealing
+    param[:custom] = custom
+    param[:verbose] = verbose
+    param[:duality] = duality
+    param[:warm_start] = warm_start
 
     # Additional parameters for the numerical part
-    param[:kappa_tol] = get(p, :kappa_tol, 1e-7)
-    param[:kappa_min] = get(p, :kappa_min, 1e-5)
-    param[:kappa_min_iter] = get(p, :kappa_min_iter, 20)
-    param[:kappa_max_iter] = get(p, :kappa_max_iter, 200)
+    param[:kappa_tol] = kappa_tol
+    param[:kappa_min] = kappa_min
+    param[:kappa_min_iter] = kappa_min_iter
+    param[:kappa_max_iter] = kappa_max_iter
 
     if param[:mobility] == 0.5 || haskey(param, :nregions) || haskey(param, :region) || haskey(param, :omegar) || haskey(param, :Lr)
         if !haskey(param, :Lr)
@@ -86,59 +86,35 @@ function init_parameters(; alpha=0.5, beta=1, gamma=1, K=1, sigma=5, rho=2, a=0.
         end
     end
 
-    # Define utility function
-    param[:u] = (c, h) -> ((c/param[:alpha])^param[:alpha] * (h/(1-param[:alpha]))^(1-param[:alpha]))^(1-param[:rho])/(1-param[:rho])
-    param[:uprime] = (c, h) -> ((c/param[:alpha])^param[:alpha] * (h/(1-param[:alpha]))^(1-param[:alpha]))^(-param[:rho]) * ((c/param[:alpha])^(param[:alpha]-1) * (h/(1-param[:alpha]))^(1-param[:alpha]))
-    param[:usecond] = (c, h) -> -param[:rho] * ((c/param[:alpha])^param[:alpha] * (h/(1-param[:alpha]))^(1-param[:alpha]))^(-param[:rho]-1) * ((c/param[:alpha])^(param[:alpha]-1) * (h/(1-param[:alpha]))^(1-param[:alpha]))^2 + (param[:alpha]-1)/param[:alpha] * ((c/param[:alpha])^param[:alpha] * (h/(1-param[:alpha]))^(1-param[:alpha]))^(-param[:rho]) * ((c/param[:alpha])^(param[:alpha]-2) * (h/(1-param[:alpha]))^(1-param[:alpha]))
-    param[:uprimeinv] = (x, h) -> param[:alpha] * x^(-1/(1+param[:alpha]*(param[:rho]-1))) * (h/(1-param[:alpha]))^-((1-param[:alpha])*(param[:rho]-1)/(1+param[:alpha]*(param[:rho]-1)))
-
+    # Define utility function, marginal utility of consumtion and inverse
+    param[:u] = (c, h) -> ((c / alpha)^alpha * (h / (1 - alpha))^(1 - alpha))^(1 - rho) / (1 - rho)
+    param[:uprime] = (c, h) -> ((c / alpha)^alpha * (h / (1 - alpha))^(1 - alpha))^-rho * ((c / alpha)^(alpha - 1) * (h / (1 - alpha))^(1 - alpha))
+    param[:usecond] = (c, h) -> -rho * ((c / alpha)^alpha * (h / (1 - alpha))^(1 - alpha))^(-rho - 1) * ((c / alpha)^(alpha - 1) * (h / (1 - alpha))^(1 - alpha))^2 + (alpha - 1) / alpha * ((c / alpha)^alpha * (h / (1 - alpha))^(1 - alpha))^-rho * ((c / alpha)^(alpha - 2) * (h / (1 - alpha))^(1 - alpha))
+    param[:uprimeinv] = (x, h) -> alpha * x^(-1 / (1 + alpha * (rho - 1))) * (h / (1 - alpha))^-((1 - alpha) * (rho - 1) / (1 + alpha * (rho - 1)))
+    
     # Define production function 
     param[:F] = (L, a) -> L^a
-    param[:Fprime] = (L, a) -> a * L^(a-1)
-
-    unmatched_keys = setdiff(keys(p), union(keys(param), [:optimizer_attr, :model_attr, :Zjn, :J, :omegaj, :hj, :Lj, :Hj]))
-    # Check if non-supported keys
-    if !isempty(unmatched_keys)
-        # Print the error message indicating the unmatched keys
-        @warn "Unsupported parameters:  $unmatched_keys"
-    end
+    param[:Fprime] = (L, a) -> a * L^(a - 1)
 
     # CHECK CONSISTENCY WITH ENDOWMENTS/PRODUCTIVITY (if applicable)
-    # only happens when object param is specified
-    if haskey(p, :omegaj)
-        if length(p[:omegaj]) != p[:J]
-            @warn "omegaj does not have the right length J = $(p[:J])."
-        end
-        param[:omegaj] = p[:omegaj]
+    if haskey(param, :omegaj) && length(param[:omegaj]) != param[:J]
+        @warn "omegaj does not have the right length J = $(param[:J])."
     end
 
-    if haskey(p, :Lj) && param[:mobility] == 0
-        if length(p[:Lj]) != p[:J]
-            @warn "Lj does not have the right length J = $(p[:J])."
-        end
-        param[:Lj] = p[:Lj]
+    if haskey(param, :Lj) && param[:mobility] == 0 && length(param[:Lj]) != param[:J]
+        @warn "Lj does not have the right length J = $(param[:J])."
     end
-
     # Zjn is a two-dimensional array (JxN), so using size() is appropriate for this check
-    if haskey(p, :Zjn)
-        if size(p[:Zjn]) != (p[:J], p[:N])
-            @warn "Zjn does not have the right size J ($(p[:J])) x N ($(p[:N]))."
-        end
-        param[:Zjn] = p[:Zjn]
+    if haskey(param, :Zjn) && size(param[:Zjn]) != (param[:J], param[:N])
+        @warn "Zjn does not have the right size J ($(param[:J])) x N ($(param[:N]))."
     end
 
-    if haskey(p, :Hj)
-        if length(p[:Hj]) != p[:J]
-            @warn "Hj does not have the right length J = $(p[:J])."
-        end
-        param[:Hj] = p[:Hj]
+    if haskey(param, :Hj) && length(param[:Hj]) != param[:J]
+        @warn "Hj does not have the right length J = $(param[:J])."
     end
 
-    if haskey(p, :hj)
-        if length(p[:hj]) != p[:J]
-            @warn "hj does not have the right length J = $(p[:J])."
-        end
-        param[:hj] = p[:hj]
+    if haskey(param, :hj) && length(param[:hj]) != param[:J]
+        @warn "hj does not have the right length J = $(param[:J])."
     end
     
     return param
