@@ -31,18 +31,18 @@ Notes:
 function apply_geography!(graph, geography; kwargs...)
 
     options = Dict(
-        "across_obstacle_delta_i" => Inf,
-        "along_obstacle_delta_i" => 1,
-        "across_obstacle_delta_tau" => Inf,
-        "along_obstacle_delta_tau" => 1,
-        "alpha_up_i" => 0,
-        "beta_up_i" => 1,
-        "alpha_up_tau" => 0,
-        "beta_up_tau" => 1,
-        "alpha_down_i" => 0,
-        "beta_down_i" => 1,
-        "alpha_down_tau" => 0,
-        "beta_down_tau" => 1
+        :across_obstacle_delta_i => Inf,
+        :along_obstacle_delta_i => 1,
+        :across_obstacle_delta_tau => Inf,
+        :along_obstacle_delta_tau => 1,
+        :alpha_up_i => 0,
+        :beta_up_i => 1,
+        :alpha_up_tau => 0,
+        :beta_up_tau => 1,
+        :alpha_down_i => 0,
+        :beta_down_i => 1,
+        :alpha_down_tau => 0,
+        :beta_down_tau => 1
     )
 
     for (k, v) in kwargs
@@ -135,12 +135,12 @@ function apply_geography!(graph, geography; kwargs...)
         end
     end
 
-    greph_new = namedtuple_to_dict(graph)
-    greph_new[:across_obstacle] = across_obstacle
-    greph_new[:along_obstacle] = along_obstacle
+    graph_new = namedtuple_to_dict(graph)
+    graph_new[:across_obstacle] = across_obstacle
+    graph_new[:along_obstacle] = along_obstacle
 
     # make sure that the degrees of freedom of the updated graph match the # of links
-    greph_new[:ndeg] = sum(tril(graph.adjacency))
+    graph_new[:ndeg] = sum(tril(graph.adjacency))
 
     return dict_to_namedtuple(graph_new)
 end
