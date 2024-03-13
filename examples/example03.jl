@@ -53,7 +53,7 @@ plots = [] # Initialize an empty array to hold the subplots
 
 # First subplot for the network Ijk
 results = res
-p1 = plot_graph(graph, results[:Ijk], nodes = false) # Assuming plot_graph returns a plot object
+p1 = plot_graph(graph, results[:Ijk], nodes = false) 
 title!(p1, "(a) Network I")
 push!(plots, p1)
 
@@ -61,7 +61,6 @@ push!(plots, p1)
 for i in 1:param[:N]
     results = res
     p = plot_graph(graph, results[:Qjkn][:, :, i], arrows = true, nodes = false)
-    # Convert the letter for the subplot title using char
     title!(p, string('(', Char(96 + i), ')', " Flows good ", i))
     push!(plots, p)
 end
