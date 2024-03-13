@@ -32,7 +32,7 @@ include_directory("models")
 # Defining exports
 export init_parameters, create_graph, plot_graph, create_auxdata
 export optimal_network, annealing, solve_allocation
-export add_node, find_node, remove_node, apply_geography
+export add_node, find_node, remove_node, apply_geography!
 
 end
 
