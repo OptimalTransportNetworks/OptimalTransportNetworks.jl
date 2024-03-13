@@ -6,8 +6,8 @@ import Random
 # INITIALIZATION
 # ==============
 
-# Set parameters: try with LaborMobility: true/false, convex: beta>=gamma,
-# nonconvex: gamma>betam, CrossGoodCongestion: true/false
+# Set parameters: try with labor_mobility: true/false, convex: beta>=gamma,
+# nonconvex: gamma>beta, cross_good_congestion: true/false
 
 param = init_parameters(labor_mobility = true, K = 100, gamma = 2, beta = 1, N = 6, 
                         kappa_tol = 1e-4, cross_good_congestion = false)
@@ -17,7 +17,7 @@ param = init_parameters(labor_mobility = true, K = 100, gamma = 2, beta = 1, N =
 
 param, graph = create_graph(param, 7, 7, type = "triangle") # create a triangular network of 21x21
 
-param[:Zjn][:, 1:param.N-1] .= 0 # default locations cannot produce goods 1-10
+param[:Zjn][:, 1:param[:N]-1] .= 0 # default locations cannot produce goods 1-10
 param[:Zjn][:, param[:N]] .= 1 # but they can all produce good 11 (agricultural)
 
 # Draw the cities randomly
@@ -41,26 +41,34 @@ end
 
 @time res = optimal_network(param, graph)
 
-# Plot them 
-
+# ==========
+# PLOT
+# ==========
 using Plots
 
-rows = ceil((param[:N] + 1) / 4)
+rows = ceil(Int, (param[:N] + 1) / 4)
 cols = min(4, param[:N] + 1)
 
-plot(layout = (rows, cols))
+plots = [] # Initialize an empty array to hold the subplots
 
-plot!(subplot=1)
+# First subplot for the network Ijk
 results = res
-plot_graph(param, graph, results[:Ijk])
-title!("(a) Network I")
+p1 = plot_graph(graph, results[:Ijk], nodes = false) # Assuming plot_graph returns a plot object
+title!(p1, "(a) Network I")
+push!(plots, p1)
 
+# Subsequent subplots for the flows of each good
 for i in 1:param[:N]
-    plot!(subplot = i + 1)
     results = res
-    plot_graph(param, graph, results[:Qjkn][:, :, i], arrows = true, arrowscale = 1.5)
-    title!(sprintf("(%c) Flows good %i", 97 + i, i))
+    p = plot_graph(graph, results[:Qjkn][:, :, i], arrows = true, nodes = false)
+    # Convert the letter for the subplot title using char
+    title!(p, string('(', Char(96 + i), ')', " Flows good ", i))
+    push!(plots, p)
 end
 
+# Combine all the plots into a single figure with the specified layout
+final_plot = plot(plots..., layout = (rows, cols), size = (1200, 400))
 
-# Please note that the translation assumes that the functions `init_parameters`, `create_graph`, `optimal_network`, and `plot_graph` have been defined in Julia with the same functionality as in the original Matlab code. The translation also assumes that the `param` and `graph` objects have similar properties and that array indexing works in a similar way. If this is not the case, the code may need to be adjusted.
+# Display the final plot
+display(final_plot)
+
