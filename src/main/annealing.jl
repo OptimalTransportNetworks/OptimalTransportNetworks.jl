@@ -158,6 +158,7 @@ function annealing(param, graph, I0; kwargs...)
         print("STARTING SIMULATED ANNEALING...\n\n")
     end
 
+    score = NaN # To avoid scoping errors
     best_score = -Inf
     best_I = I0
 
@@ -165,6 +166,7 @@ function annealing(param, graph, I0; kwargs...)
     weight_old = 0.5
     counter = 0
     I1 = I0
+    results = nothing
 
     # rng(0) # set the seed of random number generator for replicability
     acceptance_str = ["rejected", "accepted"]
@@ -177,7 +179,7 @@ function annealing(param, graph, I0; kwargs...)
         end
 
         if counter > 0
-            I1 = perturbate(param, graph, I0, results)
+            I1 = perturbate(param, graph, I0, results, options)
         end
 
         if options.display
