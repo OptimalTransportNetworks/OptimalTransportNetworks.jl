@@ -13,46 +13,57 @@ Initialize the underlying graph, population and productivity parameters.
 
 # Keyword Arguments
 - `type`: Either "map", "square", "triangle", or "custom" (default "map")
-- `pareto_weights`: Vector of Pareto weights for each node (default ones(w*h)) 
+- `omega`: Vector of Pareto weights for each node/region (default ones(w*h), or ones(nregions) if partial mobility)
 - `adjacency`: Adjacency matrix (only used for custom network)
+- `x`: x coordinate (longitude) of each node (only used for custom network)
+- `y`: y coordinate (latitude) of each node (only used for custom network)
 - `nregions`: Number of regions (only for partial mobility)
 - `region`: Vector indicating region of each location (only for partial mobility)
 """
-function create_graph(param, w, h; kwargs...)
-    options = retrieve_options_create_graph(param, w, h; kwargs...)
+function create_graph(param, w, h; type = "map", kwargs...)
 
-    if options[:type] == "map"
+    options = retrieve_options_create_graph(param, w, h, type; kwargs...)
+
+    if type == "map"
         graph = create_map(w, h)
-    elseif options[:type] == "triangle"
+    elseif type == "triangle"
         graph = create_triangle(w, h)
-    elseif options[:type] == "square"
+    elseif type == "square"
         graph = create_square(w, h)
-    elseif options[:type] == "custom"
-        if !isadjacency(options[:adjacency])
-            error("adjacency matrix must be square and symmetric, and only contain 0 and 1")
-        end
+    elseif type == "custom"
         graph = create_custom(options[:adjacency], options[:x], options[:y])
     end
 
     param[:J] = graph.J
 
+    # Running checks on population / productivity / housing parameters
+    if haskey(param, :Lj) && param[:mobility] == 0 && length(param[:Lj]) != param[:J]
+        @warn "Lj does not have the right length J = $(param[:J])."
+    end
+    # Zjn is a two-dimensional array (JxN), so using size() is appropriate for this check
+    if haskey(param, :Zjn) && size(param[:Zjn]) != (param[:J], param[:N])
+        @warn "Zjn does not have the right size J ($(param[:J])) x N ($(param[:N]))."
+    end
+    if haskey(param, :Hj) && length(param[:Hj]) != param[:J]
+        @warn "Hj does not have the right length J = $(param[:J])."
+    end
+    if haskey(param, :hj) && length(param[:hj]) != param[:J]
+        @warn "hj does not have the right length J = $(param[:J])."
+    end
+
+    param[:Zjn] = get(param, :Zjn, ones(param[:J], param[:N]))
+    param[:Hj] = get(param, :Hj, ones(param[:J]))
+
     if param[:mobility] == false
-        param[:Lj] = ones(param[:J]) / param[:J]
-        param[:Zjn] = ones(param[:J], param[:N])
-        param[:Hj] = ones(param[:J])
+        param[:Lj] = get(param, :Lj, ones(param[:J]) / param[:J])
         param[:hj] = param[:Hj] ./ param[:Lj]
         param[:hj][param[:Lj] .== 0] .= 1
         param[:omegaj] = options[:omega]
-    elseif param[:mobility] == true
-        param[:Zjn] = ones(param[:J], param[:N])
-        param[:Hj] = ones(param[:J])
     elseif param[:mobility] == 0.5
-        param[:Zjn] = ones(param[:J], param[:N])
-        param[:Hj] = ones(param[:J])
         graph.region = options[:region]
         param[:nregions] = options[:nregions]
         param[:omegar] = options[:omega]
-        param[:Lr] = ones(options[:nregions]) / options[:nregions]
+        param[:Lr] = get(param, :Lr, ones(options[:nregions]) / options[:nregions])
     end
 
     return param, graph
@@ -64,28 +75,29 @@ function isadjacency(M)
     # check is matrix is square
     sz = size(M)
     if sz[1] != sz[2]
-        print("$(@__FILE__): adjacency matrix is not square.\n")
+        @warn "adjacency matrix is not square.\n"
         res = false
     end
 
     # check is matrix is symmetric 
     if any(M - M' .!= 0)
-        print("$(@__FILE__): adjacency matrix is not symmetric.\n")
+        @warn "adjacency matrix is not symmetric.\n"
         res = false
     end
 
     # check if matrix has only 0's and 1's
     if any(M .!= 0 .& M .!= 1)
-        print("$(@__FILE__): adjacency matrix should have only 0s and 1s.\n")
+        @warn "adjacency matrix should have only 0s and 1s.\n"
         res = false
     end
 
     return res
 end
 
-function retrieve_options_create_graph(param, w, h; kwargs...)
+function retrieve_options_create_graph(param, w, h, type; kwargs...)
+
     options = Dict(
-        :type => "map",
+        :type => type,
         :omega => ones(w * h),
         :adjacency => [],
         :x => [],
@@ -98,30 +110,27 @@ function retrieve_options_create_graph(param, w, h; kwargs...)
         options[k] = v
     end
 
-    options[:J] = w * h
-
-    if options[:type] == "triangle"
-        options[:J] = Int(w * ceil(h / 2) + (w - 1) * (ceil(h / 2) - 1))
-    end
-
-    if options[:type] == "custom"
+    if type == "custom"
         if isempty(options[:adjacency])
             error("Custom network requires an adjacency matrix to be provided.")
         end
-
+        if !isadjacency(options[:adjacency])
+            error("adjacency matrix must be square and symmetric, and only contain 0 and 1")
+        end
         if isempty(options[:x]) || isempty(options[:y])
             error("X and Y coordinates of locations must be provided.")
         end
-
         if length(options[:x]) != length(options[:y])
             error("The provided X and Y do not have the same size.")
         end
-
         if size(options[:adjacency], 1) != length(options[:x])
             error("The adjacency matrix and X should have the same number of locations.")
         end
-
         options[:J] = length(options[:x])
+    elseif type == "triangle"
+        options[:J] = Int(w * ceil(h / 2) + (w - 1) * (ceil(h / 2) - 1))
+    else
+        options[:J] = w * h
     end
 
     if param[:mobility] == 0.5 && isempty(options[:region])
