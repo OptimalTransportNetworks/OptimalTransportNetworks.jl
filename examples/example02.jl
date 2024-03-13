@@ -36,6 +36,8 @@ for i in 1:ncities
     end
 end
 
+# For Ipopt: population cannot be zero!
+param[:Lj][param[:Lj] .== 0] .= 1e-6
 
 # ==========
 # RESOLUTION
@@ -45,26 +47,33 @@ end
     # first, compute the optimal network in the convex case (beta>=gamma)
     res = Vector{Any}(undef, 3)
     res[1] = optimal_network(param, graph)
-
     # second, in the nonconvex case (gamma>beta)
-    param = init_parameters(param = param, gamma = 2) # change only gamma, keep other parameters
+    param[:gamma] = 2 # change only gamma, keep other parameters
     res[2] = optimal_network(param, graph) # optimize by iterating on FOCs
     res[3] = annealing(param, graph, res[2][:Ijk]) # improve with annealing, starting from previous result
 end
 
-# Plot them 
+# ==========
+# PLOT
+# ==========
 
 using Plots
 
 labels = ["Convex", "Nonconvex (FOC)", "Nonconvex (annealing)"]
+plots = [] # Initialize an empty array to hold the subplots
 
 for i in 1:3
     results = res[i]
     sizes = 4 * results[:Cj] / maximum(results[:Cj])
     shades = results[:Cj] / maximum(results[:Cj])
-    plot_graph(param, graph, results[:Ijk], node_sizes=sizes, node_shades=shades,
-              edge_max_thickness=4)
-    annotate!(0.5, 0.05, text(labels[i], :center))
+    p = plot_graph(graph, results[:Ijk], edge_max_thickness=4,
+                   node_sizes=sizes, node_shades=shades)
+    title!(p, labels[i])
+    push!(plots, p) # Add the subplot to the array of plots
 end
 
+# Combine the plots into a single figure with a layout of 1 row and 3 columns
+final_plot = plot(plots..., layout = (1, 3), size = (1200, 400))
 
+# Display the final plot
+display(final_plot)
