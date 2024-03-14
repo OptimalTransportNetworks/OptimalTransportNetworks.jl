@@ -29,7 +29,7 @@ This code is distributed under BSD-3 License. See LICENSE.txt for more informati
 
 
 # using LinearAlgebra
-# I0=nothing; Il=nothing; Iu=nothing; verbose=false;
+# I0=nothing; Il=nothing; Iu=nothing; verbose=false; return_model = false;
 
 function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbose=false, return_model = false)
 
@@ -134,6 +134,7 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
     counter = 0
     weight_old = 0.5
     I1 = zeros(graph.J, graph.J)
+    distance = 0.0
 
     while (!has_converged && counter < param[:kappa_max_iter]) || counter <= param[:kappa_min_iter]
 
