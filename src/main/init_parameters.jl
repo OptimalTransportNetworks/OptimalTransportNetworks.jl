@@ -7,9 +7,9 @@
 """
     init_parameters(; kwargs...)
 
-Returns a `param` structure with the model parameters.
+Returns a `param` dict with the model parameters.
 
-# Arguments
+# Keyword arguments
 - `alpha::Float64=0.5`: Cobb-Douglas coefficient on final good c^alpha * h^(1-alpha)
 - `beta::Float64=1`: parameter governing congestion in transport cost
 - `gamma::Float64=1`: elasticity of transport cost relative to infrastructure
