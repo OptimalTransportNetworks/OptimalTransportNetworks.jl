@@ -99,8 +99,14 @@ function apply_geography(graph, geography; kwargs...)
                     # normvec' * (Z2_obj - Z1_obj): Checking that the dot product of the normal vector and the obstacle vector is not close to zero (which would imply collinearity).
                     if (val1 <= 0 && val2 <= 0) && !isapprox(normvec' * (Z2_obj - Z1_obj), 0) # if the two edges intersect and are not colinears (=along obstacle)
                         if remove_edge
-                            deleteat!(nodes_new[i], findfirst(==(j), nodes_new[i]))
-                            deleteat!(nodes_new[j], findfirst(==(i), nodes_new[j]))
+                            rmi = findfirst(==(i), nodes_new[j])
+                            if rmi !== nothing
+                                deleteat!(nodes_new[j], rmi)
+                            end
+                            rmj = findfirst(==(j), nodes_new[i])
+                            if rmj !== nothing
+                                deleteat!(nodes_new[i], rmj)
+                            end
                             adjacency_new[i, j] = 0
                             adjacency_new[j, i] = 0
                             has_been_destroyed = true
