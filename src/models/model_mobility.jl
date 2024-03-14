@@ -26,14 +26,14 @@ function model_mobility(optimizer, auxdata)
     # Parameters: to be updated between solves
     @variable(model, kappa_ex[i = 1:graph.ndeg] in Parameter(kappa_ex_init[i]))
 
-    # If custom: set start values
-    if param.custom
-        set_start_value(u, 0.0)
-        set_start_value.(Cjn, 1.0e-6)
-        set_start_value.(Qin, 0.0)
-        set_start_value.(Lj, 1 / graph.J)
-        set_start_value.(Ljn, 1 / (graph.J * param.N))
-    end 
+    # # If custom: set start values: not necessary here
+    # if param.custom
+    #     set_start_value(u, 0.0)
+    #     set_start_value.(Cjn, 1.0e-6)
+    #     set_start_value.(Qin, 0.0)
+    #     set_start_value.(Lj, 1 / graph.J)
+    #     set_start_value.(Ljn, 1 / (graph.J * param.N))
+    # end 
 
     # Objective
     @objective(model, Max, u)
