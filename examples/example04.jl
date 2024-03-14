@@ -17,8 +17,8 @@ param, graph = create_graph(param, w, h, type = "map")
 # Draw populations
 
 Random.seed!(5)
-param[:Zjn] = ones(param.J, 1) .* 1e-3  # matrix of productivity (not 0 to avoid numerical glitches)
-param[:Lj] = zeros(param.J, 1)  # matrix of population
+param[:Zjn] = ones(param[:J], 1) .* 1e-3  # matrix of productivity (not 0 to avoid numerical glitches)
+param[:Lj] = ones(param[:J]) .* 1e-3  # matrix of population
 
 Ni = find_node(graph, ceil(w/2), ceil(h/2))  # center
 param[:Zjn][Ni] = 1  # more productive node
@@ -28,8 +28,8 @@ ncities = 20  # draw a number of random cities in space
 for i in 1:ncities-1
     newdraw = false
     while newdraw == false
-        j = round(1 + rand() * (param[:J] - 1))
-        if param[:Lj][j] <= param[:minpop]
+        j = round(Int, 1 + rand() * (param[:J] - 1))
+        if param[:Lj][j] <= 1e-3
             newdraw = true
             param[:Lj][j] = 1
         end
@@ -37,7 +37,8 @@ for i in 1:ncities-1
 end
 
 param[:hj] = param[:Hj] ./ param[:Lj]
-param[:hj][param[:Lj] .== 0] .= 1  # catch errors in places with infinite housing per capita
+param[:hj][param[:Lj] .== 1e-3] .= 1  # catch errors in places with infinite housing per capita
+
 
 # --------------
 # Draw geography
@@ -72,18 +73,16 @@ graph = apply_geography(graph, geography, across_obstacle_delta_i = Inf,
 # COMPUTE OPTIMAL NETWORK
 # =======================
 
-results = optimal_network(param, graph)
-
+@time results = optimal_network(param, graph)
 
 # ============
 # PLOT RESULTS
 # ============
 
+sizes = 2 .* results[:cj] .* (param[:Lj] .> 1e-3) / maximum(results[:cj])
+shades = results[:cj] .* (param[:Lj] .> 1e-3) / maximum(results[:cj])
 
-sizes = 2 .* results[:cj] .* (param[:Lj] .> param[:minpop]) / maximum(results[:cj])
-shades = results[:cj] .* (param[:Lj] .> param[:minpop]) / maximum(results[:cj])
-
-plot_graph(param, graph, results[:Ijk], 
+plot_graph(graph, results[:Ijk], 
            geography = geography, obstacles = true,
            mesh = true, mesh_transparency = 0.2, 
            node_sizes = sizes, node_shades = shades, 
