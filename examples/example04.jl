@@ -66,8 +66,7 @@ geography = (z = z, obstacles = obstacles)
 # now apply geography to existing graph and recover the new graph
 # we set the delta_i to infinite (no crossing possible) and some aversion
 # to changes in elevation in building costs (symmetric up/down)
-graph = apply_geography(graph, geography, across_obstacle_delta_i = Inf, 
-                        alpha_up_i = 10, alpha_down_i = 10)
+graph = apply_geography(graph, geography, alpha_up_i = 10, alpha_down_i = 10)
 
 # =======================
 # COMPUTE OPTIMAL NETWORK
