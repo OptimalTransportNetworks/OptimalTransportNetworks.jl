@@ -134,8 +134,14 @@ function apply_geography(graph, geography; kwargs...)
     if isinf(op.along_obstacle_delta_i) || isinf(op.along_obstacle_delta_tau)
         # if infinite, remove edge
         for (io, jo) in zip(obstacles[:, 1], obstacles[:, 2])
-            deleteat!(nodes_new[io], findfirst(==(jo), nodes_new[io]))
-            deleteat!(nodes_new[jo], findfirst(==(io), nodes_new[jo]))
+            rmio = findfirst(==(io), nodes_new[jo])
+            if rmio !== nothing
+                deleteat!(nodes_new[jo], rmio)
+            end
+            rmjo = findfirst(==(jo), nodes_new[io])
+            if rmjo !== nothing
+                deleteat!(nodes_new[io], rmjo)
+            end
             adjacency_new[io, jo] = 0
             adjacency_new[jo, io] = 0
         end
