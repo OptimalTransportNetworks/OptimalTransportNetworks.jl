@@ -1,38 +1,39 @@
 
 """
-    apply_geography(graph, geography; kwargs...)
+    apply_geography(graph, geography; kwargs...) -> updated_graph
 
-Applies a geography structure to a graph by updating its network building costs and removing edges where geographical barriers (obstacles) are.
+Update the network building costs of a graph based on geographical features and remove edges impeded by geographical barriers.
 
-The geography structure should contain the fields:
-- z: a Jx1 vector containing the z coordinate of each node
-- obstacles: a Nobs*2 matrix of (i,j) pairs of nodes that are linked by the obstacles (Nobs is an arbitrary number of obstacles)
+# Arguments
+- `graph`: The network graph to which the geographical features will be applied.
+- `geography`: A structure representing the geographical features, with the following fields:
+  - `z`: A `Jx1` vector containing the z-coordinate (elevation) for each node.
+  - `obstacles`: An `Nobs x 2` matrix specifying (i, j) pairs of nodes that are connected by obstacles, where `Nobs` is the number of obstacles.
 
-The function apply_geography takes the geography structure as an input and uses it to calibrate the building cost delta_i. Aversion to altitude changes rescales building costs by (see documentation):
-    1+alpha_up*max(0,Z2-Z1)^beta_up+alpha_down*max(0,Z1-Z2)^beta_down.
+The function apply_geography takes the geography structure as an input and uses it to calibrate the building cost `delta_i`. Aversion to altitude changes rescales building costs by (see documentation):
+    `1 + alpha_up * max(0, Z2-Z1)^beta_up + alpha_down * max(0, Z1-Z2)^beta_down`.
 
 Optional arguments:
-- 'across_obstacle_delta_i': rescaling parameter for building cost that cross an obstacle (default Inf)
-- 'along_obstacle_delta_i': rescaling parameter for building cost that goes along an obstacle (default 1)
-- 'across_obstacle_delta_tau': rescaling parameter for transport cost that cross an obstacle (default Inf)
-- 'along_obstacle_delta_tau': rescaling parameter for transport cost that goes along nn obstacle (default 1)
-- 'alpha_up_i': building cost parameter (scale) for roads that go up in elevation (default 0)
-- 'beta_up_i': building cost parameter (elasticity) for roads that go up in elevation (default 1)
-- 'alpha_up_tau': transport cost parameter (scale) for roads that go up in elevation (default 0)
-- 'beta_up_tau': transport cost parameter (elasticity) for roads that go up in elevation (default 1)
-- 'alpha_down_i': building cost parameter (scale) for roads that go down in elevation (default 0)
-- 'beta_down_i': building cost parameter (elasticity) for roads that go down in elevation (default 1)
-- 'alpha_down_tau': transport cost parameter (scale) for roads that go down in elevation (default 0)
-- 'beta_down_tau': transport cost parameter (elasticity) for roads that go down in elevation (default 1)
-
+- `across_obstacle_delta_i::Float64=Inf`: Rescaling parameter for building cost that crosses an obstacle.
+- `along_obstacle_delta_i::Float64=Inf`: Rescaling parameter for building cost that goes along an obstacle.
+- `across_obstacle_delta_tau::Float64=Inf`: Rescaling parameter for transport cost that crosses an obstacle.
+- `along_obstacle_delta_tau::Float64=Inf`: Rescaling parameter for transport cost that goes along an obstacle.
+- `alpha_up_i::Float64=0`: Building cost scale parameter for roads that go up in elevation.
+- `beta_up_i::Float64=1`: Building cost elasticity parameter for roads that go up in elevation.
+- `alpha_up_tau::Float64=0`: Transport cost scale parameter for roads that go up in elevation.
+- `beta_up_tau::Float64=1`: Transport cost elasticity parameter for roads that go up in elevation.
+- `alpha_down_i::Float64=0`: Building cost scale parameter for roads that go down in elevation.
+- `beta_down_i::Float64=1`: Building cost elasticity parameter for roads that go down in elevation.
+- `alpha_down_tau::Float64=0`: Transport cost scale parameter for roads that go down in elevation.
+- `beta_down_tau::Float64=1`: Transport cost elasticity parameter for roads that go down in elevation.
 """
 function apply_geography(graph, geography; kwargs...)
 
     options = Dict(
         :across_obstacle_delta_i => Inf,
-        :along_obstacle_delta_i => 1,
+        :along_obstacle_delta_i => Inf, # 1
         :across_obstacle_delta_tau => Inf,
-        :along_obstacle_delta_tau => 1,
+        :along_obstacle_delta_tau => Inf, # 1
         :alpha_up_i => 0,
         :beta_up_i => 1,
         :alpha_up_tau => 0,
