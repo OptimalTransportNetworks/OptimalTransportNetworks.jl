@@ -20,15 +20,19 @@ Returns a `param` structure with the model parameters.
 - `m::Vector{Float64}=ones(N,1)`: vector of weights Nx1 in the cross congestion cost function
 - `N::Int64=1`: number of goods
 - `nu::Float64=1`: elasticity of substitution b/w goods in transport costs if cross-good congestion
-- `labor_mobility::String="off"`: switch for labor mobility ('on'/'off'/'partial')
+- `labor_mobility::Any=false`: switch for labor mobility (true/false or 'partial')
 - `cross_good_congestion::Bool=false`: switch for cross-good congestion
-- `annealing::Bool=true`: switch for the use of annealing at the end of iterations
-- `custom::Bool=false`: switch for the use of custom lagrangian function
-- `verbose::Bool=true`: switch to turn on/off text output
+- `annealing::Bool=true`: switch for the use of annealing at the end of iterations (only if gamma > beta)
+- `verbose::Bool=true`: switch to turn on/off text output (from Ipopt or other optimizers)
 - `duality::Bool=true`: switch to turn on/off duality whenever available
+- `warm_start::Bool=false`: use the previous solution as a warm start for the next iteration
+- `kappa_tol::Float64=1e-7`: tolerance for convergence of road capacities κ
+- `kappa_min::Float64=1e-5`: minimum value for road capacities κ
+- `kappa_min_iter::Int64=20`: minimum number of iterations
+- `kappa_max_iter::Int64=200`: maximum number of iterations
 """
 function init_parameters(; alpha=0.5, beta=1, gamma=1, K=1, sigma=5, rho=2, a=0.8, N=1, m=ones(N,1), nu=1, 
-                         labor_mobility=false, cross_good_congestion=false, annealing=true, custom=false, 
+                         labor_mobility=false, cross_good_congestion=false, annealing=true, 
                          verbose=true, duality=true, warm_start = false, 
                          kappa_tol = 1e-7, kappa_min = 1e-5, kappa_min_iter = 20, kappa_max_iter = 200,
                          kwargs...)
@@ -60,7 +64,6 @@ function init_parameters(; alpha=0.5, beta=1, gamma=1, K=1, sigma=5, rho=2, a=0.
     end
     param[:cong] = cross_good_congestion
     param[:annealing] = annealing
-    param[:custom] = custom
     param[:verbose] = verbose
     param[:duality] = duality
     param[:warm_start] = warm_start
