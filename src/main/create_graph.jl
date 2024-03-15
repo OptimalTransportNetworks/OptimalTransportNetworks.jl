@@ -2,27 +2,31 @@
 # using LinearAlgebra
 
 """
-    create_graph(param, w, h; kwargs...)
+    create_graph(param, w = 10, h = 10; type = "map", kwargs...)
 
 Initialize the underlying graph, population and productivity parameters.
 
 # Arguments
 - `param::Dict`: Structure that contains the model parameters
-- `w::Int64`: Number of nodes along the width of the underlying graph (integer)  
-- `h::Int64`: Number of nodes along the height of the underlying graph (integer, odd if triangle)
+- `w::Int64=10`: Number of nodes along the width of the underlying graph (integer)  
+- `h::Int64=10`: Number of nodes along the height of the underlying graph (integer, odd if triangle)
 
 # Keyword Arguments
-- `type::String`: Either "map", "square", "triangle", or "custom" (default "map")
-- `omega::Vector{Float64}`: Vector of Pareto weights for each node/region (default ones(w*h), or ones(nregions) if partial mobility)
+- `type::String="map"`: Either "map", "square", "triangle", or "custom" 
+- `omega::Vector{Float64}`: Vector of Pareto weights for each node or region in partial mobility case (default 1s vector)
+- `Zjn::Matrix{Float64}`: J x N matrix of producties per node (j = 1:J) and good (n = 1:N) (default ones(J, N))
 - `adjacency::BitMatrix`: Adjacency matrix (only used for custom network)
 - `x::Vector{Float64}`: x coordinate (longitude) of each node (only used for custom network)
 - `y::Vector{Float64}`: y coordinate (latitude) of each node (only used for custom network)
 - `nregions::Int64`: Number of regions (only for partial mobility)
 - `region::Vector{Int64}`: Vector indicating region of each location (only for partial mobility)
+- `Lj::Vector{Float64}`: Vector of popultions in each node (only for no mobility)
+- `Lr::Vector{Float64}`: Vector of popultions in each region (only for partial mobility)
+- `Hj::Vector{Float64}`: Vector of immobile good (e.g. housing, default 1s vector)
 
 # Examples
 ```julia-repl
-julia> graph = create_graph(init_parameters(), 10, 10);
+julia> graph = create_graph(init_parameters());
 ````
 """
 function create_graph(param, w, h; type = "map", kwargs...)
