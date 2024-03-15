@@ -14,5 +14,6 @@ makedocs(
 
 deploydocs(
     repo = "github.com/SebKantz/OptimalTransportNetworks.jl.git",
-    push_preview = true,
+    # deploy_config = Dict("DOCUMENTER_KEY" => ENV["DOCUMENTER_KEY"]),
+    # push_preview = true,
 )
