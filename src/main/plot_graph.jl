@@ -4,13 +4,13 @@
 # using Colors
 
 """
-    plot_graph(graph, edges; kwargs...) -> Plots.Plot
+    plot_graph(graph, edges = nothing; kwargs...) -> Plots.Plot
 
 Plot a graph visualization with various styling options.
 
 # Arguments
 - `graph::NamedTuple`: The network graph (created with `create_graph()`)
-- `edges::Matrix{Float64}`: Matrix of edge weights (J x J)
+- `edges::Matrix{Float64}=nothing`: Matrix of edge weights (J x J)
 
 # Keyword Arguments
 - `grid::Bool=false`: Show gridlines 
@@ -54,7 +54,7 @@ result = optimal_network(param, graph)
 plot_graph(graph, result[:Ijk])
 ```
 """
-function plot_graph(graph, edges; kwargs...)
+function plot_graph(graph, edges = nothing; kwargs...)
 
     op = retrieve_options_plot_graph(graph, edges; kwargs...)
 
@@ -138,7 +138,7 @@ function plot_graph(graph, edges; kwargs...)
     end
 
     # PLOT EDGES
-    if op.edges
+    if op.edges && edges !== nothing
         if op.arrows
             # Define arrow
             if op.arrow_style == "long"
@@ -278,12 +278,12 @@ function retrieve_options_plot_graph(graph, edges; kwargs...)
         mesh_style = get(kwargs, :mesh_style, :dash),
         mesh_transparency = get(kwargs, :mesh_transparency, 1),
 
-        edges = get(kwargs, :edges, true),
+        edges = edges !== nothing,
         edge_color = get(kwargs, :edge_color, :blue), 
         edge_scaling = get(kwargs, :edge_scaling, false),
         edge_transparency = get(kwargs, :edge_transparency, true),
-        edge_min = get(kwargs, :edge_min, minimum(edges[edges .> 0])),
-        edge_max = get(kwargs, :edge_max, maximum(edges)),
+        edge_min = get(kwargs, :edge_min, edges !== nothing ? minimum(edges[edges .> 0]) : nothing),
+        edge_max = get(kwargs, :edge_max, edges !== nothing ? maximum(edges) : nothing),
         edge_min_thickness = get(kwargs, :edge_min_thickness, 0.1),
         edge_max_thickness = get(kwargs, :edge_max_thickness, 2),
 
