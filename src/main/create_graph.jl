@@ -13,16 +13,16 @@ Initialize the underlying graph, population and productivity parameters.
 
 # Keyword Arguments
 - `type::String="map"`: Either "map", "square", "triangle", or "custom" 
-- `omega::Vector{Float64}`: Vector of Pareto weights for each node or region in partial mobility case (default 1s vector)
+- `omega::Vector{Float64}`: Vector of Pareto weights for each node or region in partial mobility case (default ones(J or nregions))
 - `Zjn::Matrix{Float64}`: J x N matrix of producties per node (j = 1:J) and good (n = 1:N) (default ones(J, N))
-- `adjacency::BitMatrix`: Adjacency matrix (only used for custom network)
+- `adjacency::BitMatrix`: J x J Adjacency matrix (only used for custom network)
 - `x::Vector{Float64}`: x coordinate (longitude) of each node (only used for custom network)
 - `y::Vector{Float64}`: y coordinate (latitude) of each node (only used for custom network)
 - `nregions::Int64`: Number of regions (only for partial mobility)
 - `region::Vector{Int64}`: Vector indicating region of each location (only for partial mobility)
-- `Lj::Vector{Float64}`: Vector of popultions in each node (only for no mobility)
-- `Lr::Vector{Float64}`: Vector of popultions in each region (only for partial mobility)
-- `Hj::Vector{Float64}`: Vector of immobile good (e.g. housing, default 1s vector)
+- `Lj::Vector{Float64}`: Vector of popultions in each node (j = 1:J) (only for no mobility)
+- `Lr::Vector{Float64}`: Vector of popultions in each region (r = 1:nregions) (only for partial mobility)
+- `Hj::Vector{Float64}`: Vector of immobile good in each node (j = 1:J) (e.g. housing, default ones(J))
 
 # Examples
 ```julia-repl
