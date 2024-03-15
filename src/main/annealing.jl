@@ -2,44 +2,52 @@
 """
     annealing(param, graph, I0; kwargs...)
 
-Runs the simulated annealing method starting from network `I0`.
+Runs the simulated annealing method starting from network `I0`. Only sensible if `param[:gamma] > param[:beta]`.
 
 # Arguments
 - `param`: Dict that contains the model's parameters
 - `graph`: Named tuple that contains the underlying graph 
 - `I0`: (optional) provides the initial guess for the iterations
-- `kwargs...`: various optional arguments, see below
 
-# Optional Arguments
-- `perturbation_method`: method to be used to perturbate the network 
-  (random is purely random, works horribly; shake applies a gaussian blur
-  along a random direction, works alright; rebranching (default) is the algorithm
-  described in Appendix A.4 in the paper, works nicely )
-- `preserve_central_symmetry`: only applies to shake method
-- `preserve_vertical_symmetry`: only applies to shake method
-- `preserve_horizontal_symmetry`: only applies to shake method
-- `smoothing_radius`: parameters of the Gaussian blur
-- `mu_perturbation`: parameters of the Gaussian blur
-- `sigma_perturbation`: parameters of the Gaussian blur
-- `display`: display the graph as we go
-- `t_start`: initial temperature
-- `t_end`: final temperature
-- `t_step`: speed of cooling
-- `num_deepening`: number of FOC iterations between candidate draws
-- `num_random_perturbations`: number of links to be randomly affected
-  ('random' and 'random rebranching' only)
-- `Iu`: JxJ matrix of upper bounds on network infrastructure Ijk
-- `Il`: JxJ matrix of lower bounds on network infrastructure Ijk
-- `final_model`: a readily parameterized JuMP model to be used (from optimal_network)
-- `recover_allocation`: the corresponding recover_allocation function (from optimal_network)
+# Keyword Arguments
+- `perturbation_method::String="random rebranching"`: Method to be used to perturbate the network 
+    (random is purely random, works horribly; shake applies a gaussian blur
+     along a random direction, works alright; rebranching (default) is the algorithm
+     described in Appendix A.4 in the paper, works nicely )
+- `preserve_central_symmetry::Bool=false`: Only applies to shake method
+- `preserve_vertical_symmetry::Bool=false`: Only applies to shake method
+- `preserve_horizontal_symmetry::Bool=false`: Only applies to shake method
+- `smoothing_radius::Float64=0.25`: Parameters of the Gaussian blur
+- `mu_perturbation::Float64=log(0.3)`: Parameters of the Gaussian blur
+- `sigma_perturbation::Float64=0.05`: Parameters of the Gaussian blur
+- `display::Bool`: Display the graph in each iteration as we go
+- `t_start::Float64=100`: Initial temperature
+- `t_end::Float64=1`: Final temperature
+- `t_step::Float64=0.9`: Speed of cooling
+- `num_deepening::Int64=4`: Number of FOC iterations between candidate draws
+- `num_random_perturbations::Int64=1`: Number of links to be randomly affected ('random' and 'random rebranching' only)
+- `Iu::Matrix{Float64}=Inf * ones(J, J)`: J x J matrix of upper bounds on network infrastructure Ijk
+- `Il::Matrix{Float64}=zeros(J, J)`: J x J matrix of lower bounds on network infrastructure Ijk
+- `model::Function`: For custom models => a function that taks an optimizer and an 'auxdata' structure as created by create_auxdata() as input and returns a fully parameterized JuMP model
+- `final_model::JuMPModel`: Alternatively: a readily parameterized JuMP model to be used (from `optimal_network()`)
+- `recover_allocation::Function`: The `recover_allocation()` function corresponding to either `model` or `final_model`
 
+# Examples
+```julia
+# Nonconvex case, disabling automatic annealing
+param = init_parameters(annealing = false, gamma = 2)
+graph = create_graph(param)
+param[:Zjn][51] = 10.0
+result = optimal_network(param, graph)
 
-# Reference
-"Optimal Transport Networks in Spatial Equilibrium" (2019) by Pablo D.
-Fajgelbaum and Edouard Schaal.
+# Run annealing
+results_annealing = annealing(param, graph, result[:Ijk])
 
+# Comparison
+plot_graph(graph, result[:Ijk])
+plot_graph(graph, result_annealing[:Ijk])
+```
 """
-
 function annealing(param, graph, I0; kwargs...)
 
     # Retrieve economy's parameters
@@ -385,7 +393,6 @@ function retrieve_options_annealing(graph; kwargs...)
         :t_step => 0.9,
         :num_deepening => 4,
         :num_random_perturbations => 1,
-        :model => nothing,
         :Iu => Inf * ones(graph.J, graph.J),
         :Il => zeros(graph.J, graph.J)
     )
@@ -396,7 +403,7 @@ function retrieve_options_annealing(graph; kwargs...)
         if haskey(options, sym_key)
             options[sym_key] = v
         else 
-            if !(sym_key in [:final_model, :recover_allocation])
+            if !(sym_key in [:model, :final_model, :recover_allocation])
                 error("Unknown parameter: $sym_key")
             end
         end
