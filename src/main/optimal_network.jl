@@ -1,37 +1,36 @@
+# ==============================================================
+# OPTIMAL TRANSPORT NETWORKS IN SPATIAL EQUILIBRIUM
+# by P. Fajgelbaum, E. Schaal, D. Henricot, C. Mantovani 2017-19
+# ================================================ version 1.0.4
+
 """
- ==============================================================
- OPTIMAL TRANSPORT NETWORKS IN SPATIAL EQUILIBRIUM
- by P. Fajgelbaum, E. Schaal, D. Henricot, C. Mantovani 2017-19
- ================================================ version 1.0.4
+    optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, 
+                    verbose=false, return_model=0) -> Dict
 
-optimal_network.m: solve for the optimal network by solving the inner problem (dual if no mobility and
-no cross good congestion, primal otherwise) and the outer problem by iterating over the FOCs
+Solve for the optimal network by solving the inner problem (dual if no mobility and 
+no cross good congestion, primal otherwise) and the outer problem by iterating over the FOCs.
 
-Arguments:
-- param: structure that contains the model's parameters
-- graph: structure that contains the underlying graph (created by create_graph function)
-- I0: (optional) provides the initial guess for the iterations (matrix JxJ)
-- Il: (optional) exogenous lower bound on infrastructure levels (matrix JxJ)
-- Iu: (optional) exogenous upper bound on infrastructure levels (matrix JxJ)
-- verbose: (optional) tell IPOPT to display results
-- return_model: (optional) return the JuMP model and corresponding recover_allocation() function alongside the results. 
+# Arguments
+- `param::Dict`: Dict that contains the model's parameters
+- `graph::NamedTuple`: Named tuple that contains the underlying graph (created by `create_graph()` function)
+- `I0::Matrix{Float64}`: (Optional) J x J matrix providing the initial guess for the iterations 
+- `Il::Matrix{Float64}`: (Optional) J x J matrix providing exogenous lower bound on infrastructure levels
+- `Iu::Matrix{Float64}`: (Optional) J x J matrix providing exogenous upper bound on infrastructure levels
+- `verbose::Bool`: (Optional) tell IPOPT to display results
+- `return_model::Int=0`: (Optional) return the JuMP model and corresponding `recover_allocation()` function: 1 just returns these before solving the model, while 2 solves the model + optimal network and returns the two alongside the results. 
 
------------------------------------------------------------------------------------
-REFERENCE: "Optimal Transport Networks in Spatial Equilibrium" (2019) by Pablo D.
-Fajgelbaum and Edouard Schaal.
-
-Copyright (c) 2017-2019, Pablo D. Fajgelbaum, Edouard Schaal
-pfajgelbaum@ucla.edu, eschaal@crei.cat
-
-This code is distributed under BSD-3 License. See LICENSE.txt for more information.
------------------------------------------------------------------------------------
+# Examples
+```julia
+param = init_parameters()
+graph = create_graph(param)
+param[:Zjn][51] = 10.0
+result = optimal_network(param, graph)
+plot_graph(graph, result[:Ijk])
+```
 """
-
-
-# using LinearAlgebra
-# I0=nothing; Il=nothing; Iu=nothing; verbose=false; return_model = false;
-
 function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbose=false, return_model = false)
+
+    # I0=nothing; Il=nothing; Iu=nothing; verbose=false; return_model = false;
 
     J = graph.J
     TOL_I_BOUNDS = 1e-7
@@ -126,6 +125,10 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
     #    MOI.AutomaticDifferentiationBackend(),
     #    MathOptSymbolicAD.DefaultBackend(),
     # )
+
+    if return_model == 1
+        return model, recover_allocation
+    end
 
     # --------------------
     # NETWORK OPTIMIZATION
@@ -229,7 +232,7 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
         results = annealing(param, graph, I0, final_model = model, recover_allocation = recover_allocation)
     end
 
-    if return_model
+    if return_model == 2
         return results, model, recover_allocation
     end
     return results
