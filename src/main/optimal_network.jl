@@ -27,7 +27,7 @@ result = optimal_network(param, graph)
 plot_graph(graph, result[:Ijk])
 ```
 """
-function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbose=false, return_model = false)
+function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbose=false, return_model=0)
 
     # I0=nothing; Il=nothing; Iu=nothing; verbose=false; return_model = false;
 
