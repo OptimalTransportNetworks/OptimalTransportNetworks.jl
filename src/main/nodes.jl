@@ -7,13 +7,13 @@ Add a node in position (x,y) and list of neighbors. The new node is given an ind
 # Arguments
 - `param::Dict`: Dict that contains the model's parameters, or `nothing` to only update graph
 - `graph::NamedTuple`: Named tuple that contains the underlying graph (created by create_graph())
-- `x::Float64`: x-coordinate of the new node (any real number)
-- `y::Float64`: y-coordinate of the new node (any real number)
+- `x::Float64`: x coordinate of the new node (any real number)
+- `y::Float64`: y coordinate of the new node (any real number)
 - `neighbors::Vector{Int64}`: Vector of nodes to which it is connected (1 x n list of node indices between 1 and J, where n is an arbitrary # of neighbors) 
 
 The cost matrices `delta_tau` and `delta_i` are parametrized as a function of Euclidean distance between nodes.
 
-Returns the updated graph and param objects (param is affected too because the variable `Zjn`, `Lj`, `Hj` and others are reset to a uniform dist.)
+Returns the updated `graph` and `param` objects (`param` is affected too because the variable `Zjn`, `Lj`, `Hj` and others are reset to a uniform dist.)
 """
 function add_node(param, graph, x, y, neighbors)
 
@@ -109,8 +109,8 @@ Returns the index of the node closest to the coordinates (x,y) on the graph.
 
 # Arguments
 - `graph::NamedTuple`: structure that contains the underlying graph
-- `x::Float64`: x coordinate on the graph between 1 and w
-- `y::Float64`: y coordinate on the graph between 1 and h
+- `x::Float64`: x coordinate on the graph (between 1 and w)
+- `y::Float64`: y coordinate on the graph (between 1 and h)
 """
 function find_node(graph, x, y)
     distance = (graph.x .- x).^2 + (graph.y .- y).^2

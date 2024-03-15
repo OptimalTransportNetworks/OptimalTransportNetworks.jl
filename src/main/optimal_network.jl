@@ -7,8 +7,7 @@
     optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, 
                     verbose=false, return_model=0) -> Dict
 
-Solve for the optimal network by solving the inner problem (dual if no mobility and 
-no cross good congestion, primal otherwise) and the outer problem by iterating over the FOCs.
+Solve for the optimal network by solving the inner problem and the outer problem by iterating over the FOCs.
 
 # Arguments
 - `param::Dict`: Dict that contains the model's parameters
