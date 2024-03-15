@@ -11,3 +11,8 @@ makedocs(
         "API" => "api.md"
     ]
 )
+
+deploydocs(
+    repo = "github.com/SebKantz/OptimalTransportNetworks.jl.git",
+    push_preview = true,
+)
