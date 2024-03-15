@@ -30,10 +30,15 @@ Returns a `param` dict with the model parameters.
 - `kappa_min::Float64=1e-5`: Minimum value for road capacities κ
 - `kappa_min_iter::Int64=20`: Minimum number of iterations
 - `kappa_max_iter::Int64=200`: Maximum number of iterations
-- `optimizer_attr`: Dict of attributes passed to the optimizer (e.g. `Dict(:tol => 1e-5)`)
-- `model_attr`: Dict of tuples (length 2) passed to the model (e.g. `Dict(:backend => (MOI.AutomaticDifferentiationBackend(), MathOptSymbolicAD.DefaultBackend()))` to use Symbolic AD)
+- `optimizer_attr::Dict`: Dict of attributes passed to the optimizer (e.g. `Dict(:tol => 1e-5)`)
+- `model_attr::Dict`: Dict of tuples (length 2) passed to the model (e.g. `Dict(:backend => (MOI.AutomaticDifferentiationBackend(), MathOptSymbolicAD.DefaultBackend()))` to use Symbolic AD)
 - `model::Function`: For custom models => a function that taks an optimizer and an 'auxdata' structure as created by create_auxdata() as input and returns a fully parameterized JuMP model
 - `recover_allocation::Function`: For custom models => a function that takes a solution and 'auxdata' structure as input and returns the allocation variables. In particular, it should return a dict with symbol keys returning at least objects :welfare => scalar welfare measure, :Pjn => prices, :PCj => aggregate condumption, and :Qjkn => flows. 
+
+# Examples
+```julia-repl
+julia> param = init_parameters(labor_mobility = true, K = 10);
+````
 """
 function init_parameters(; alpha=0.5, beta=1, gamma=1, K=1, sigma=5, rho=2, a=0.8, N=1, m=ones(N,1), nu=1, 
                          labor_mobility=false, cross_good_congestion=false, annealing=true, 
@@ -104,8 +109,18 @@ function init_parameters(; alpha=0.5, beta=1, gamma=1, K=1, sigma=5, rho=2, a=0.
     param[:Fprime] = (L, a) -> a * L^(a - 1)
 
     # CHECK CONSISTENCY WITH ENDOWMENTS/PRODUCTIVITY (if applicable)
+    check_graph_param(param)
+
+    return param
+end
+
+function check_graph_param(param)
     if haskey(param, :omegaj) && length(param[:omegaj]) != param[:J]
         @warn "omegaj does not have the right length J = $(param[:J])."
+    end
+
+    if haskey(param, :omegar) && length(param[:omegar]) != param[:nregions]
+        @warn "omegar does not have the right length nregions = $(param[:nregions])."
     end
 
     if haskey(param, :Lj) && param[:mobility] == 0 && length(param[:Lj]) != param[:J]
@@ -123,6 +138,4 @@ function init_parameters(; alpha=0.5, beta=1, gamma=1, K=1, sigma=5, rho=2, a=0.
     if haskey(param, :hj) && length(param[:hj]) != param[:J]
         @warn "hj does not have the right length J = $(param[:J])."
     end
-    
-    return param
 end
