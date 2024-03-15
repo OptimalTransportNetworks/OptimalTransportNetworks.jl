@@ -29,7 +29,7 @@ Initialize the underlying graph, population and productivity parameters.
 graph = create_graph(init_parameters())
 ```
 """
-function create_graph(param, w, h; type = "map", kwargs...)
+function create_graph(param, w = 10, h = 10; type = "map", kwargs...)
 
     options = retrieve_options_create_graph(param, w, h, type; kwargs...)
 
