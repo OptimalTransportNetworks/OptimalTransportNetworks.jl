@@ -1,19 +1,19 @@
 
 """
-    add_node(param, graph, x, y, neighbors)
+    add_node(param, graph, x, y, neighbors) -> Dict, NamedTuple
 
 Add a node in position (x,y) and list of neighbors. The new node is given an index J+1.
 
 # Arguments
-- `param`: Dict that contains the model's parameters
-- `graph`: Dict that contains the underlying graph (created by create_graph)
-- `x`: x-coordinate of the new node (any real number)
-- `y`: y-coordinate of the new node (any real number)
-- `neighbors`: list of nodes to which it is connected (1 x n list of node indices between 1 and J, where n is an arbitrary # of neighbors) 
+- `param::Dict`: Dict that contains the model's parameters, or `nothing` to only update graph
+- `graph::NamedTuple`: Named tuple that contains the underlying graph (created by create_graph())
+- `x::Float64`: x-coordinate of the new node (any real number)
+- `y::Float64`: y-coordinate of the new node (any real number)
+- `neighbors::Vector{Int64}`: Vector of nodes to which it is connected (1 x n list of node indices between 1 and J, where n is an arbitrary # of neighbors) 
 
-The cost matrices delta_tau and delta_i are parametrized as a function of Euclidian distance between nodes.
+The cost matrices `delta_tau` and `delta_i` are parametrized as a function of Euclidean distance between nodes.
 
-Returns the updated graph and param Dict (param is affected too because the variable Zjn, Lj, Hj and others are reset to a uniform dist.)
+Returns the updated graph and param objects (param is affected too because the variable `Zjn`, `Lj`, `Hj` and others are reset to a uniform dist.)
 """
 function add_node(param, graph, x, y, neighbors)
 
@@ -21,7 +21,6 @@ function add_node(param, graph, x, y, neighbors)
     if any(neighbors .!= floor.(neighbors)) || any(neighbors .< 1) || any(neighbors .> graph.J)
         error("neighbors should be a list of integers between 1 and $(graph.J).")
     end
-
     Jnew = graph.J + 1
 
     # Add node
@@ -42,18 +41,17 @@ function add_node(param, graph, x, y, neighbors)
 
     for i in neighbors
         nodes[i] = [nodes[i]; Jnew]
-
         distance = sqrt((new_x[i] - x)^2 + (new_y[i] - y)^2)
 
-        # adjacency
+        # Adjacency
         adjacency[i, Jnew] = 1
         adjacency[Jnew, i] = 1
 
-        # travel cost: delta_tau
+        # Travel cost: delta_tau
         delta_tau[i, Jnew] = distance
         delta_tau[Jnew, i] = distance
 
-        # building cost: delta_i
+        # Building cost: delta_i
         delta_i[i, Jnew] = distance
         delta_i[Jnew, i] = distance
     end
@@ -73,31 +71,46 @@ function add_node(param, graph, x, y, neighbors)
         ndeg = ndeg
     )
 
-    # Now, update the param structure
-    param_new = copy(param)
-    param_new[:J] = Jnew
-    param_new[:Lj] = ones(Jnew) / Jnew
-    param_new[:Hj] = ones(Jnew)
-    param_new[:hj] = param[:Hj] ./ param[:Lj]
-    param_new[:omegaj] = ones(Jnew)
-    param_new[:Zjn] = ones(Jnew, param[:N])
+    if param !== nothing
+        # Now, update the param structure
+        param_new = copy(param)
+        if haskey(param, :J)
+            param_new[:J] = Jnew
+        end
+        if haskey(param, :Lj)
+            param_new[:Lj] = ones(Jnew) / Jnew
+        end
+        if haskey(param, :Hj)
+            param_new[:Hj] = ones(Jnew)
+        end
+        if haskey(param, :hj)
+            param_new[:hj] = param[:Hj] ./ param[:Lj]
+        end
+        if haskey(param, :omegaj)
+            param_new[:omegaj] = ones(Jnew)
+        end
+        if haskey(param, :Zjn)
+            param_new[:Zjn] = ones(Jnew, param[:N])
+        end
 
-    return param_new, graph_new
+        return param_new, graph_new
+    end
+
+    return graph_new
 end
 
 
 # Please note that in Julia, we use `Dict` to represent structures as in Matlab. The keys of the `Dict` are strings that correspond to the field names in the Matlab structure. Also, the `tril` function is not built-in in Julia, you may need to use a package like `LinearAlgebra` to use it.
 
 """
-    find_node(graph, x, y)
+    find_node(graph, x, y) -> Int64
 
 Returns the index of the node closest to the coordinates (x,y) on the graph.
 
 # Arguments
-- `graph`: structure that contains the underlying graph (created by
-create_map, create_rectangle or create_triangle functions)
-- `x`: x coordinate on the graph between 1 and w
-- `y`: y coordinate on the graph between 1 and h
+- `graph::NamedTuple`: structure that contains the underlying graph
+- `x::Float64`: x coordinate on the graph between 1 and w
+- `y::Float64`: y coordinate on the graph between 1 and h
 """
 function find_node(graph, x, y)
     distance = (graph.x .- x).^2 + (graph.y .- y).^2
@@ -108,16 +121,16 @@ end
 
 
 """
-    remove_node(param, graph, i)
+    remove_node(param, graph, i) -> updated_param, updated_graph
 
 Removes node i from the graph.
 
 # Arguments
-- `param`: structure that contains the model's parameters
-- `graph`: structure that contains the underlying graph (created by create_graph)
-- `i`: index of the mode to be removed (integer between 1 and graph.J)
+- `param::Dict`: structure that contains the model's parameters, or `nothing` to only update graph
+- `graph::NamedTuple`: structure that contains the underlying graph (created by create_graph())
+- `i::Int64`: index of the mode to be removed (integer between 1 and graph.J)
 
-Returns the updated graph and param structure (param is affected too because the variable Zjn, Lj, Hj and others are changed).
+Returns the updated graph and param objects (param is affected too because the variable Zjn, Lj, Hj and others are changed).
 """
 function remove_node(param, graph, i)
 
@@ -149,21 +162,45 @@ function remove_node(param, graph, i)
     graph_new[:delta_tau] = [graph.delta_tau[1:i-1, 1:i-1] graph.delta_tau[1:i-1, i+1:end];
                              graph.delta_tau[i+1:end, 1:i-1] graph.delta_tau[i+1:end, i+1:end]]
 
+    if haskey(graph, :across_obstacle)
+        graph_new[:across_obstacle] = [graph.across_obstacle[1:i-1, 1:i-1] graph.across_obstacle[1:i-1, i+1:end];
+                                       graph.across_obstacle[i+1:end, 1:i-1] graph.across_obstacle[i+1:end, i+1:end]]
+    end
+
+    if haskey(graph, :along_obstacle)
+        graph_new[:along_obstacle] = [graph.along_obstacle[1:i-1, 1:i-1] graph.along_obstacle[1:i-1, i+1:end];
+                                      graph.along_obstacle[i+1:end, 1:i-1] graph.along_obstacle[i+1:end, i+1:end]]
+    end
+
     graph_new[:ndeg] = sum(tril(graph_new[:adjacency]))
 
     if graph.region !== nothing
         graph_new[:region] = deleteat!(copy(graph.region), i)
     end
 
-    # Now, update the param structure
-    param_new = copy(param)
-    param_new[:J] = Jnew
-    param_new[:Lj] = vcat(param[:Lj][1:i-1], param[:Lj][i+1:end])
-    param_new[:Hj] = vcat(param[:Hj][1:i-1], param[:Hj][i+1:end])
-    param_new[:hj] = vcat(param[:hj][1:i-1], param[:hj][i+1:end])
-    param_new[:omegaj] = vcat(param[:omegaj][1:i-1], param[:omegaj][i+1:end])
-    param_new[:Zjn] = vcat(param[:Zjn][1:i-1, :], param[:Zjn][i+1:end, :])
+    if param !== nothing 
+        # Now, update the param structure
+        param_new = copy(param)
+        param_new[:J] = Jnew
+        if haskey(param, :Lj)
+            param_new[:Lj] = deleteat!(copy(param[:Lj]), i)
+        end
+        if haskey(param, :Hj)
+            param_new[:Hj] = deleteat!(copy(param[:Hj]), i)
+        end
+        if haskey(param, :hj)
+            param_new[:hj] = deleteat!(copy(param[:hj]), i)
+        end
+        if haskey(param, :omegaj)
+            param_new[:omegaj] = deleteat!(copy(param[:omegaj]), i)
+        end
+        if haskey(param, :Zjn)
+            param_new[:Zjn] = vcat(param[:Zjn][1:i-1, :], param[:Zjn][i+1:end, :])
+        end
 
-    return param_new, dict_to_namedtuple(graph_new)
+        return param_new, dict_to_namedtuple(graph_new)
+    end
+
+    return dict_to_namedtuple(graph_new)
 end
 
