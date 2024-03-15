@@ -7,18 +7,23 @@
 Initialize the underlying graph, population and productivity parameters.
 
 # Arguments
-- `param`: Structure that contains the model parameters
-- `w`: Number of nodes along the width of the underlying graph (integer)  
-- `h`: Number of nodes along the height of the underlying graph (integer, odd if triangle)
+- `param::Dict`: Structure that contains the model parameters
+- `w::Int64`: Number of nodes along the width of the underlying graph (integer)  
+- `h::Int64`: Number of nodes along the height of the underlying graph (integer, odd if triangle)
 
 # Keyword Arguments
-- `type`: Either "map", "square", "triangle", or "custom" (default "map")
-- `omega`: Vector of Pareto weights for each node/region (default ones(w*h), or ones(nregions) if partial mobility)
-- `adjacency`: Adjacency matrix (only used for custom network)
-- `x`: x coordinate (longitude) of each node (only used for custom network)
-- `y`: y coordinate (latitude) of each node (only used for custom network)
-- `nregions`: Number of regions (only for partial mobility)
-- `region`: Vector indicating region of each location (only for partial mobility)
+- `type::String`: Either "map", "square", "triangle", or "custom" (default "map")
+- `omega::Vector{Float64}`: Vector of Pareto weights for each node/region (default ones(w*h), or ones(nregions) if partial mobility)
+- `adjacency::BitMatrix`: Adjacency matrix (only used for custom network)
+- `x::Vector{Float64}`: x coordinate (longitude) of each node (only used for custom network)
+- `y::Vector{Float64}`: y coordinate (latitude) of each node (only used for custom network)
+- `nregions::Int64`: Number of regions (only for partial mobility)
+- `region::Vector{Int64}`: Vector indicating region of each location (only for partial mobility)
+
+# Examples
+```julia-repl
+julia> graph = create_graph(init_parameters(), 10, 10);
+````
 """
 function create_graph(param, w, h; type = "map", kwargs...)
 
@@ -35,36 +40,22 @@ function create_graph(param, w, h; type = "map", kwargs...)
     end
 
     param[:J] = graph.J
-
-    # Running checks on population / productivity / housing parameters
-    if haskey(param, :Lj) && param[:mobility] == 0 && length(param[:Lj]) != param[:J]
-        @warn "Lj does not have the right length J = $(param[:J])."
-    end
-    # Zjn is a two-dimensional array (JxN), so using size() is appropriate for this check
-    if haskey(param, :Zjn) && size(param[:Zjn]) != (param[:J], param[:N])
-        @warn "Zjn does not have the right size J ($(param[:J])) x N ($(param[:N]))."
-    end
-    if haskey(param, :Hj) && length(param[:Hj]) != param[:J]
-        @warn "Hj does not have the right length J = $(param[:J])."
-    end
-    if haskey(param, :hj) && length(param[:hj]) != param[:J]
-        @warn "hj does not have the right length J = $(param[:J])."
-    end
-
-    param[:Zjn] = get(param, :Zjn, ones(param[:J], param[:N]))
-    param[:Hj] = get(param, :Hj, ones(param[:J]))
+    param[:Zjn] = haskey(options, :Zjn) ? options[:Zjn] : get(param, :Zjn, ones(param[:J], param[:N]))
+    param[:Hj] = haskey(options, :Hj) ? options[:Hj] : get(param, :Hj, ones(param[:J]))
 
     if param[:mobility] == false
-        param[:Lj] = get(param, :Lj, ones(param[:J]) / param[:J])
+        param[:Lj] = haskey(options, :Lj) ? options[:Lj] : get(param, :Lj, ones(param[:J]) / param[:J])
         param[:hj] = param[:Hj] ./ param[:Lj]
         param[:hj][param[:Lj] .== 0] .= 1
         param[:omegaj] = options[:omega]
     elseif param[:mobility] == 0.5
         graph.region = options[:region]
-        param[:nregions] = options[:nregions]
         param[:omegar] = options[:omega]
-        param[:Lr] = get(param, :Lr, ones(options[:nregions]) / options[:nregions])
+        param[:Lr] = haskey(options, :Lr) ? options[:Lr] : get(param, :Lr, ones(options[:nregions]) / options[:nregions])
     end
+
+    # Running checks on population / productivity / housing parameters
+    check_graph_param(param)
 
     return param, graph
 end
