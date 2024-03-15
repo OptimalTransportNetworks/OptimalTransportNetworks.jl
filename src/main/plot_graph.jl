@@ -3,6 +3,57 @@
 # using Dierckx
 # using Colors
 
+"""
+    plot_graph(graph, edges; kwargs...) -> Plots.Plot
+
+Plot a graph visualization with various styling options.
+
+# Arguments
+- `graph::NamedTuple`: The network graph (created with `create_graph()`)
+- `edges::Matrix{Float64}`: Matrix of edge weights (J x J)
+
+# Keyword Arguments
+- `grid::Bool=false`: Show gridlines 
+- `axis::Tuple=([], false)`: Axis ticks and labels (see Plots.jl docs, default disable axis)
+- `margin::Real=-30mm`: Margin around plot 
+- `map::Vector=nothing`: Values mapped to graph for background heatmap
+- `map_color::Symbol=:YlOrBr_4`: Colorscale for background heatmap
+- `mesh::Bool=false`: Show mesh lines between nodes
+- `mesh_color::Symbol=:grey90`: Color for mesh lines 
+- `mesh_style::Symbol=:dash`: Linestyle for mesh lines
+- `mesh_transparency::Real=1`: Opacity for mesh lines
+- `edges::Bool=true`: Show edges between nodes
+- `edge_color::Symbol=:blue`: Edge color or color gradient
+- `edge_scaling::Bool=false`: Size edges based on raw values
+- `edge_transparency::Union{Bool,Real}=true`: Transparency for edges
+- `edge_min::Real`: Minimum edge value for scaling
+- `edge_max::Real`: Maximum edge value for scaling  
+- `edge_min_thickness::Real=0.1`: Minimum thickness for edges
+- `edge_max_thickness::Real=2`: Maximum thickness for edges
+- `arrows::Bool=false`: Show arrowheads on edges 
+- `arrow_scale::Real=1`: Scaling factor for arrowheads
+- `arrow_style::String="long"`: Style of arrowheads ("long" or "thin")
+- `nodes::Bool=true`: Show nodes
+- `node_sizes::Vector=ones(J)`: Sizes for nodes
+- `node_sizes_scale::Real=75`: Overall scaling for node sizes
+- `node_shades::Vector=nothing`: Shades mapped to nodes
+- `node_color::Symbol=:purple`: Node color or color gradient 
+- `node_stroke_width::Real=0`: Stroke width for node outlines
+- `node_stroke_color::Symbol=nothing`: Stroke color for node outlines 
+- `geography::NamedTuple=nothing`: Named tuple with geography data, see also `apply_geography()`
+- `obstacles::Bool=false`: Show obstacles from geography
+- `obstacle_color::Symbol=:black`: Color for obstacles
+- `obstacle_thickness::Symbol=3`: Thickness for obstacles
+
+# Examples
+```julia
+param = init_parameters()
+graph = create_graph(param)
+param[:Zjn][51] = 10.0
+result = optimal_network(param, graph)
+plot_graph(graph, result[:Ijk])
+```
+"""
 function plot_graph(graph, edges; kwargs...)
 
     op = retrieve_options_plot_graph(graph, edges; kwargs...)
@@ -29,7 +80,7 @@ function plot_graph(graph, edges; kwargs...)
     # PLOT COLORMAP
     if op.map !== nothing || op.geography !== nothing
         if op.geography !== nothing
-            vec_map = op.geography[:z]
+            vec_map = op.geography.z
         else
             vec_map = op.map
         end
@@ -53,7 +104,7 @@ function plot_graph(graph, edges; kwargs...)
 
     # PLOT OBSTACLES
     if op.obstacles
-        obstacles = op.geography[:obstacles]
+        obstacles = op.geography.obstacles
         for i in 1:size(obstacles, 1)
             x1 = vec_x[obstacles[i, 1]]
             y1 = vec_y[obstacles[i, 1]]
