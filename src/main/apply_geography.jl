@@ -1,12 +1,12 @@
 
 """
-    apply_geography(graph::NamedTuple, geography::NamedTuple; kwargs...) -> updated_graph
+    apply_geography(graph, geography; kwargs...) -> updated_graph
 
 Update the network building costs of a graph based on geographical features and remove edges impeded by geographical barriers.
 
 # Arguments
-- `graph`: The network graph to which the geographical features will be applied.
-- `geography`: A named tuple representing the geographical features, with the following fields:
+- `graph::NamedTuple`: The network graph to which the geographical features will be applied.
+- `geography::NamedTuple`: A named tuple representing the geographical features, with the following fields:
   - `z::Vector{Float64}`: A J x 1 vector containing the z-coordinate (elevation) for each node, or `nothing` if no elevation data.
   - `z_is_friction::Bool`: (Optional) logical value indicate that `z` represents friction rather than elevation. In that case, the measure of building cost is the average friction of the two nodes mean(Z1,Z2) rather than the difference Z2-Z1.
   - `obstacles::Matrix{Int64}`: An Nobs x 2 matrix specifying (i, j) pairs of nodes that are connected by obstacles, where Nobs is the number of obstacles, or `nothing` if no obstacles.

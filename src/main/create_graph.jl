@@ -2,7 +2,7 @@
 # using LinearAlgebra
 
 """
-    create_graph(param::Dict, w = 10, h = 10; type = "map", kwargs...) -> Dict, NamedTuple
+    create_graph(param, w = 10, h = 10; type = "map", kwargs...) -> Dict, NamedTuple
 
 Initialize the underlying graph, population and productivity parameters.
 
