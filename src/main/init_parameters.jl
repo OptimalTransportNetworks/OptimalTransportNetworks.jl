@@ -11,25 +11,29 @@ Returns a `param` dict with the model parameters.
 
 # Keyword arguments
 - `alpha::Float64=0.5`: Cobb-Douglas coefficient on final good c^alpha * h^(1-alpha)
-- `beta::Float64=1`: parameter governing congestion in transport cost
-- `gamma::Float64=1`: elasticity of transport cost relative to infrastructure
-- `K::Float64=1`: amount of concrete/asphalt
-- `sigma::Float64=5`: elasticity of substitution across goods (CES)
-- `rho::Float64=2`: curvature in utility (c^alpha * h^(1-alpha))^(1-rho)/(1-rho)
-- `a::Float64=0.8`: curvature of the production function L^alpha
-- `m::Vector{Float64}=ones(N,1)`: vector of weights Nx1 in the cross congestion cost function
-- `N::Int64=1`: number of goods
-- `nu::Float64=1`: elasticity of substitution b/w goods in transport costs if cross-good congestion
-- `labor_mobility::Any=false`: switch for labor mobility (true/false or 'partial')
-- `cross_good_congestion::Bool=false`: switch for cross-good congestion
-- `annealing::Bool=true`: switch for the use of annealing at the end of iterations (only if gamma > beta)
-- `verbose::Bool=true`: switch to turn on/off text output (from Ipopt or other optimizers)
-- `duality::Bool=true`: switch to turn on/off duality whenever available
-- `warm_start::Bool=false`: use the previous solution as a warm start for the next iteration
-- `kappa_tol::Float64=1e-7`: tolerance for convergence of road capacities κ
-- `kappa_min::Float64=1e-5`: minimum value for road capacities κ
-- `kappa_min_iter::Int64=20`: minimum number of iterations
-- `kappa_max_iter::Int64=200`: maximum number of iterations
+- `beta::Float64=1`: Parameter governing congestion in transport cost
+- `gamma::Float64=1`: Elasticity of transport cost relative to infrastructure
+- `K::Float64=1`: Amount of concrete/asphalt
+- `sigma::Float64=5`: Elasticity of substitution across goods (CES)
+- `rho::Float64=2`: Curvature in utility (c^alpha * h^(1-alpha))^(1-rho)/(1-rho)
+- `a::Float64=0.8`: Curvature of the production function L^alpha
+- `m::Vector{Float64}=ones(N,1)`: Vector of weights Nx1 in the cross congestion cost function
+- `N::Int64=1`: Number of goods
+- `nu::Float64=1`: Elasticity of substitution b/w goods in transport costs if cross-good congestion
+- `labor_mobility::Any=false`: Switch for labor mobility (true/false or 'partial')
+- `cross_good_congestion::Bool=false`: Switch for cross-good congestion
+- `annealing::Bool=true`: Switch for the use of annealing at the end of iterations (only if gamma > beta)
+- `verbose::Bool=true`: Switch to turn on/off text output (from Ipopt or other optimizers)
+- `duality::Bool=true`: Switch to turn on/off duality whenever available
+- `warm_start::Bool=false`: Use the previous solution as a warm start for the next iteration
+- `kappa_tol::Float64=1e-7`: Tolerance for convergence of road capacities κ
+- `kappa_min::Float64=1e-5`: Minimum value for road capacities κ
+- `kappa_min_iter::Int64=20`: Minimum number of iterations
+- `kappa_max_iter::Int64=200`: Maximum number of iterations
+- `optimizer_attr`: Dict of attributes passed to the optimizer (e.g. `Dict(:tol => 1e-5)`)
+- `model_attr`: Dict of tuples (length 2) passed to the model (e.g. `Dict(:backend => (MOI.AutomaticDifferentiationBackend(), MathOptSymbolicAD.DefaultBackend()))` to use Symbolic AD)
+- `model::Function`: For custom models => a function that taks an optimizer and an 'auxdata' structure as created by create_auxdata() as input and returns a fully parameterized JuMP model
+- `recover_allocation::Function`: For custom models => a function that takes a solution and 'auxdata' structure as input and returns the allocation variables. In particular, it should return a dict with symbol keys returning at least objects :welfare => scalar welfare measure, :Pjn => prices, :PCj => aggregate condumption, and :Qjkn => flows. 
 """
 function init_parameters(; alpha=0.5, beta=1, gamma=1, K=1, sigma=5, rho=2, a=0.8, N=1, m=ones(N,1), nu=1, 
                          labor_mobility=false, cross_good_congestion=false, annealing=true, 
