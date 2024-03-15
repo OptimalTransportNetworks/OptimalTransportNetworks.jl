@@ -9,7 +9,7 @@
 
 Returns a `param` dict with the model parameters.
 
-# Keyword arguments
+# Keyword Arguments
 - `alpha::Float64=0.5`: Cobb-Douglas coefficient on final good c^alpha * h^(1-alpha)
 - `beta::Float64=1`: Parameter governing congestion in transport cost
 - `gamma::Float64=1`: Elasticity of transport cost relative to infrastructure
