@@ -1,10 +1,11 @@
 name: Documentation
 
 on:
-  push:
-    branches:
-      - master # update to match your development branch (master, main, dev, trunk, ...)
-    tags: '*'
+  workflow_dispatch:
+  # push:
+  #   branches:
+  #     - main # update to match your development branch (master, main, dev, trunk, ...)
+  #   tags: '*'
   pull_request:
 
 jobs:
