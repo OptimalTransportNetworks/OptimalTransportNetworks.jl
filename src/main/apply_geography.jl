@@ -32,7 +32,7 @@ and similarly for graph traversal costs `delta_tau`.
 
 # Examples
 ```julia
-graph = create_graph(init_parameters())
+param, graph = create_graph(init_parameters())
 geography = (z = rand(graph.J), obstacles = [1 15; 70 72])
 updated_graph = apply_geography(graph, geography)
 ```

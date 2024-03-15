@@ -2,14 +2,14 @@
 # using LinearAlgebra
 
 """
-    create_graph(param, w = 10, h = 10; type = "map", kwargs...) -> Dict, NamedTuple
+    create_graph(param, w = 11, h = 11; type = "map", kwargs...) -> Dict, NamedTuple
 
 Initialize the underlying graph, population and productivity parameters.
 
 # Arguments
 - `param::Dict`: Structure that contains the model parameters
-- `w::Int64=10`: Number of nodes along the width of the underlying graph (integer)  
-- `h::Int64=10`: Number of nodes along the height of the underlying graph (integer, odd if triangle)
+- `w::Int64=11`: Number of nodes along the width of the underlying graph (integer)  
+- `h::Int64=11`: Number of nodes along the height of the underlying graph (integer, odd if triangle)
 
 # Keyword Arguments
 - `type::String="map"`: Either "map", "square", "triangle", or "custom" 
@@ -26,7 +26,7 @@ Initialize the underlying graph, population and productivity parameters.
 
 # Examples
 ```julia
-graph = create_graph(init_parameters())
+param, graph = create_graph(init_parameters())
 ```
 """
 function create_graph(param, w = 10, h = 10; type = "map", kwargs...)

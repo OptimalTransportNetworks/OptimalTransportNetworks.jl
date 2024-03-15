@@ -21,8 +21,8 @@ Solve for the optimal network by solving the inner problem and the outer problem
 # Examples
 ```julia
 param = init_parameters()
-graph = create_graph(param)
-param[:Zjn][51] = 10.0
+param, graph = create_graph(param)
+param[:Zjn][61] = 10.0
 result = optimal_network(param, graph)
 plot_graph(graph, result[:Ijk])
 ```
