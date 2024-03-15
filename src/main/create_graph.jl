@@ -2,7 +2,7 @@
 # using LinearAlgebra
 
 """
-    create_graph(param, w = 10, h = 10; type = "map", kwargs...)
+    create_graph(param::Dict, w = 10, h = 10; type = "map", kwargs...) -> Dict, NamedTuple
 
 Initialize the underlying graph, population and productivity parameters.
 
@@ -25,8 +25,8 @@ Initialize the underlying graph, population and productivity parameters.
 - `Hj::Vector{Float64}`: Vector of immobile good in each node (j = 1:J) (e.g. housing, default ones(J))
 
 # Examples
-```julia-repl
-julia> graph = create_graph(init_parameters());
+```julia
+graph = create_graph(init_parameters())
 ````
 """
 function create_graph(param, w, h; type = "map", kwargs...)

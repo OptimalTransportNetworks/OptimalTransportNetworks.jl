@@ -5,7 +5,7 @@
 # ================================================= version 1.0.4
 
 """
-    init_parameters(; kwargs...)
+    init_parameters(; kwargs...) -> Dict
 
 Returns a `param` dict with the model parameters.
 
@@ -36,8 +36,8 @@ Returns a `param` dict with the model parameters.
 - `recover_allocation::Function`: For custom models => a function that takes a solution and 'auxdata' structure as input and returns the allocation variables. In particular, it should return a dict with symbol keys returning at least objects :welfare => scalar welfare measure, :Pjn => prices, :PCj => aggregate condumption, and :Qjkn => flows. 
 
 # Examples
-```julia-repl
-julia> param = init_parameters(labor_mobility = true, K = 10);
+```julia
+param = init_parameters(labor_mobility = true, K = 10)
 ````
 """
 function init_parameters(; alpha=0.5, beta=1, gamma=1, K=1, sigma=5, rho=2, a=0.8, N=1, m=ones(N,1), nu=1, 

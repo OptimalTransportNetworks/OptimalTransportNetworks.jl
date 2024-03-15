@@ -1,6 +1,6 @@
 
 """
-    apply_geography(graph, geography; kwargs...) -> updated_graph
+    apply_geography(graph::NamedTuple, geography::NamedTuple; kwargs...) -> updated_graph
 
 Update the network building costs of a graph based on geographical features and remove edges impeded by geographical barriers.
 
@@ -29,10 +29,10 @@ The function apply_geography takes the geography structure as an input and uses 
 - `beta_down_tau::Float64=1`: Transport cost elasticity parameter for roads that go down in elevation.
 
 # Examples
-```julia-repl
-julia> graph = create_graph(init_parameters());
-julia> geography = (z = rand(graph.J), obstacles = [1 15; 70 72]);
-julia> updated_graph = apply_geography(graph, geography);
+```julia
+graph = create_graph(init_parameters())
+geography = (z = rand(graph.J), obstacles = [1 15; 70 72])
+updated_graph = apply_geography(graph, geography)
 ````
 """
 function apply_geography(graph, geography; kwargs...)
