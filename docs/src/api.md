@@ -1,19 +1,20 @@
 # API Documentation
 
+# Overview
 
 ```@autodocs
 Modules = [OptimalTransportNetworks]
 Pages   = ["OptimalTransportNetworks.jl"]
 ```
 
-# Index
+
+# Exported Functions
 
 ```@index
 Modules = [OptimalTransportNetworks]
+Private = false
 Order   = [:function]
 ```
-
-# Exported Functions
 
 ```@autodocs
 Modules = [OptimalTransportNetworks]
@@ -21,7 +22,14 @@ Private = false
 Order = [:function]
 ```
 
-# Internal Functions
+# Documented Internal Functions
+
+```@index
+Modules = [OptimalTransportNetworks]
+Public = false
+Private = true
+Order   = [:function]
+```
 
 ```@autodocs
 Modules = [OptimalTransportNetworks]
