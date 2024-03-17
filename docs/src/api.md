@@ -1,13 +1,24 @@
 # API Documentation
 
-```@index
+Index:
+
+```@autodocs
 Modules = [OptimalTransportNetworks]
-Private = false
-Order   = [:function]
+Pages   = ["OptimalTransportNetworks.jl"]
 ```
+
+Exported Functions:
 
 ```@autodocs
 Modules = [OptimalTransportNetworks]
 Private = false
+Order = [:function]
+```
+
+Internal Functions:
+
+```@autodocs
+Modules = [OptimalTransportNetworks]
+Private = true
 Order = [:function]
 ```
