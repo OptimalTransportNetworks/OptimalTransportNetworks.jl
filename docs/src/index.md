@@ -2,7 +2,9 @@
 **Optimal Transport Networks in Spatial Equilibrium - in Julia and MATLAB**
 
 ***
+
 *Note*: Library is under development, no guarantees whatsoever. Contributions welcome!
+
 ***
 
 Modern Julia ([JuMP](https://github.com/jump-dev/JuMP.jl)) translation of the MATLAB OptimalTransportNetworkToolbox (v1.0.4b) implementing the quantitative spatial economic model of:
