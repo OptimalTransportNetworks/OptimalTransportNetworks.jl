@@ -19,7 +19,7 @@ a simplified interface and only exports key functions, while retaining full flex
 **Compute Optimal Network + Refine Solution in Non-Convex Cases**
 
 `optimal_network()`   - Compute optimal network given parameters and graph\n
-`annealing()`         - Refine solution using simulated annealing in non-convex cases (automatically called in optimal_network() if param[:annealing] == true))\n
+`annealing()`         - Refine solution using simulated annealing in non-convex cases (automatically called in `optimal_network()` if `param[:annealing] == true`)\n
 
 **Plot Graph (Incl. Network Solution)**
 
