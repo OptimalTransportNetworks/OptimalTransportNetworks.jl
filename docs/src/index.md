@@ -12,23 +12,28 @@ a simplified interface and only exports key functions, while retaining full flex
 
 **Problem Setup**
 
-`init_paramaters()`   - Create parameters dictionary\n
-`create_graph()`      - Create network graph structure (named tuple)\n
-`apply_geography()`   - (Optional) apply geographical features to alter the graph edge weights (network building and traversing costs)\n
+`init_paramaters()`   - Create parameters dictionary
+
+`create_graph()`      - Create network graph structure (named tuple)
+
+`apply_geography()`   - (Optional) apply geographical features to alter the graph edge weights (network building and traversing costs)
 
 **Compute Optimal Network + Refine Solution in Non-Convex Cases**
 
-`optimal_network()`   - Compute optimal network given parameters and graph\n
-`annealing()`         - Refine solution using simulated annealing in non-convex cases (automatically called in `optimal_network()` if `param[:annealing] == true`)\n
+`optimal_network()`   - Compute optimal network given parameters and graph
+
+`annealing()`         - Refine solution using simulated annealing in non-convex cases (automatically called in `optimal_network()` if `param[:annealing] == true`)
 
 **Plot Graph (Incl. Network Solution)**
 
-`plot_graph()`        - Plot network graph and optimal infrastructure levels\n
+`plot_graph()`        - Plot network graph and optimal infrastructure levels
 
 **Helper Functions to Manipulate Graphs**
 
-`find_node()`         - Find index of node that is closest to a given pair of coordinates\n
-`add_node()`          - Add new node to graph with given coordinates and connected neighbors\n
+`find_node()`         - Find index of node that is closest to a given pair of coordinates
+
+`add_node()`          - Add new node to graph with given coordinates and connected neighbors
+
 `remove_node()`       - Remove node from graph\n
 
 # Examples
