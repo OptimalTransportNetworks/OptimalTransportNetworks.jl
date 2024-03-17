@@ -15,10 +15,3 @@ Private = false
 Order = [:function]
 ```
 
-Internal Functions:
-
-```@autodocs
-Modules = [OptimalTransportNetworks]
-Private = true
-Order = [:function]
-```
