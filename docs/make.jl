@@ -2,7 +2,7 @@ using Documenter
 using OptimalTransportNetworks
 
 makedocs(
-    sitename = "Optimal Transport Networks",
+    sitename = "OptimalTransportNetworks.jl",
     modules = [OptimalTransportNetworks],
     checkdocs = :none,
     format = Documenter.HTML(),
