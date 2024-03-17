@@ -13,7 +13,7 @@ makedocs(
 )
 
 deploydocs(
-    repo = "github.com/SebKantz/OptimalTransportNetworks.jl.git",
+    repo = "github.com/SebKrantz/OptimalTransportNetworks.jl.git",
     branch = "gh-pages",
     # deploy_config = Dict("DOCUMENTER_KEY" => ENV["DOCUMENTER_KEY"]), 
     # push_preview = true, ..
