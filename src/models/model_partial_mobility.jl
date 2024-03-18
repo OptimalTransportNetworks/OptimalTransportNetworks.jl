@@ -28,18 +28,18 @@ function model_partial_mobility(optimizer, auxdata)
     set_string_names_on_creation(model, false)
 
     # Variables + bounds
-    @variable(model, U)                                    # Overall utility
-    @variable(model, ur[1:param.nregions])                 # Utility per capita in each region
-    @variable(model, Cjn[1:graph.J, 1:param.N] >= 1e-8)    # Good specific consumption
-    @variable(model, Qin[1:graph.ndeg, 1:param.N])         # Good specific flow
-    @variable(model, 1e-8 <= Lj[1:graph.J] <= 1)           # Total labour
-    @variable(model, Ljn[1:graph.J, 1:param.N] >= 1e-8)    # Good specific labour
+    @variable(model, ur[1:param.nregions], container=Array)                 # Utility per capita in each region
+    @variable(model, Cjn[1:graph.J, 1:param.N] >= 1e-8, container=Array)    # Good specific consumption
+    @variable(model, Qin[1:graph.ndeg, 1:param.N], container=Array)         # Good specific flow
+    @variable(model, 1e-8 <= Lj[1:graph.J] <= 1, container=Array)           # Total labour
+    @variable(model, Ljn[1:graph.J, 1:param.N] >= 1e-8, container=Array)    # Good specific labour
 
     # Parameters: to be updated between solves
-    @variable(model, kappa_ex[i = 1:graph.ndeg] in Parameter(kappa_ex_init[i]))
+    @variable(model, kappa_ex[i = 1:graph.ndeg] in Parameter(i))
+    set_parameter_value.(kappa_ex, kappa_ex_init)
 
     # Objective
-    U = @expression(model, sum(param.omegar .* Lr .* ur))
+    @expression(model, U, sum(param.omegar .* Lr .* ur))   # Overall utility
     @objective(model, Max, U)
 
     # Utility constraint (Lj * ur <= ... )

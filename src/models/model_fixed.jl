@@ -17,19 +17,19 @@ function model_fixed(optimizer, auxdata)
     set_string_names_on_creation(model, false)
 
     # Variables
-    @variable(model, U)
-    @variable(model, Cjn[1:graph.J, 1:param.N] >= 1e-8)
-    @variable(model, Qin[1:graph.ndeg, 1:param.N])
-    @variable(model, Ljn[1:graph.J, 1:param.N] >= 1e-8)
+    @variable(model, Cjn[1:graph.J, 1:param.N] >= 1e-8, container=Array)
+    @variable(model, Qin[1:graph.ndeg, 1:param.N], container=Array)
+    @variable(model, Ljn[1:graph.J, 1:param.N] >= 1e-8, container=Array)
 
     # Parameters: to be updated between solves
-    @variable(model, kappa_ex[i = 1:graph.ndeg] in Parameter(kappa_ex_init[i]))
+    @variable(model, kappa_ex[i = 1:graph.ndeg] in Parameter(i))
+    set_parameter_value.(kappa_ex, kappa_ex_init)
 
     # Defining Utility Funcion: from Cjn + parameters (by operator overloading)
     @expression(model, Cj, sum(Cjn .^ psigma, dims=2) .^ (1 / psigma))
     @expression(model, cj, ifelse.(param.Lj .== 0, 0.0, Cj ./ param.Lj))
     @expression(model, uj, ((cj / param.alpha) .^ param.alpha .* (param.hj / (1-param.alpha)) .^ (1-param.alpha)) .^ (1-param.rho) / (1-param.rho))
-    U = @expression(model, sum(param.omegaj .* param.Lj .* uj))
+    @expression(model, U, sum(param.omegaj .* param.Lj .* uj))
     @objective(model, Max, U)
 
     # Define Yjn (production) as expression

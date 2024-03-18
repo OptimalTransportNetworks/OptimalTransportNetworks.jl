@@ -19,19 +19,19 @@ function model_fixed_cgc(optimizer, auxdata)
     set_string_names_on_creation(model, false)
 
     # Variables
-    @variable(model, U)                                             # Overall utility
-    @variable(model, Djn[1:graph.J, 1:param.N] >= 1e-8)             # Consumption per good pre-transport cost (Dj)
-    @variable(model, Qin_direct[1:graph.ndeg, 1:param.N] >= 1e-8)   # Direct aggregate flow
-    @variable(model, Qin_indirect[1:graph.ndeg, 1:param.N] >= 1e-8) # Indirect aggregate flow
-    @variable(model, Ljn[1:graph.J, 1:param.N] >= 1e-8)             # Good specific labour
-    @variable(model, cj[1:graph.J] >= 1e-8)                         # Overall consumption bundle, including transport costs
+    @variable(model, Djn[1:graph.J, 1:param.N] >= 1e-8, container=Array)             # Consumption per good pre-transport cost (Dj)
+    @variable(model, Qin_direct[1:graph.ndeg, 1:param.N] >= 1e-8, container=Array)   # Direct aggregate flow
+    @variable(model, Qin_indirect[1:graph.ndeg, 1:param.N] >= 1e-8, container=Array) # Indirect aggregate flow
+    @variable(model, Ljn[1:graph.J, 1:param.N] >= 1e-8, container=Array)             # Good specific labour
+    @variable(model, cj[1:graph.J] >= 1e-8, container=Array)                         # Overall consumption bundle, including transport costs
 
     # Parameters: to be updated between solves
-    @variable(model, kappa_ex[i = 1:graph.ndeg] in Parameter(kappa_ex_init[i]))
+    @variable(model, kappa_ex[i = 1:graph.ndeg] in Parameter(i))
+    set_parameter_value.(kappa_ex, kappa_ex_init)
 
     # Defining Utility Funcion: from cj + parameters (by operator overloading)
     @expression(model, uj, ((cj / param.alpha) .^ param.alpha .* (param.hj / (1-param.alpha)) .^ (1-param.alpha)) .^ (1-param.rho) / (1-param.rho))
-    U = @expression(model, sum(param.omegaj .* param.Lj .* uj))
+    @expression(model, U, sum(param.omegaj .* param.Lj .* uj))      # Overall Utility
     @objective(model, Max, U)
 
     # Final good constraints
