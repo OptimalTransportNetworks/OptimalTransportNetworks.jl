@@ -17,24 +17,15 @@ function model_mobility(optimizer, auxdata)
     set_string_names_on_creation(model, false)
 
     # Variables + bounds
-    @variable(model, u)                                                     # Overall utility
-    @variable(model, Cjn[1:graph.J, 1:param.N] >= 1e-8, container=Array)    # Good specific consumption
-    @variable(model, Qin[1:graph.ndeg, 1:param.N], container=Array)         # Good specific flow
-    @variable(model, 1e-8 <= Lj[1:graph.J] <= 1, container=Array)           # Total labour
-    @variable(model, Ljn[1:graph.J, 1:param.N] >= 1e-8, container=Array)    # Good specific labour
+    @variable(model, u, start = 0.0)                                                      # Overall utility
+    @variable(model, Cjn[1:graph.J, 1:param.N] >= 1e-8, container=Array, start = 1e-6)    # Good specific consumption
+    @variable(model, Qin[1:graph.ndeg, 1:param.N], container=Array, start = 0.0)          # Good specific flow
+    @variable(model, 1e-8 <= Lj[1:graph.J] <= 1, container=Array, start = 1 / graph.J)    # Total labour
+    @variable(model, Ljn[1:graph.J, 1:param.N] >= 1e-8, container=Array, start = 1 / (graph.J * param.N))  # Good specific labour
 
     # Parameters: to be updated between solves
-    @variable(model, kappa_ex[i = 1:graph.ndeg] in Parameter(i))
+    @variable(model, kappa_ex[i = 1:graph.ndeg] in Parameter(i), container=Array)
     set_parameter_value.(kappa_ex, kappa_ex_init)
-
-    # # If custom: set start values: not necessary here
-    # if param.custom
-    #     set_start_value(u, 0.0)
-    #     set_start_value.(Cjn, 1.0e-6)
-    #     set_start_value.(Qin, 0.0)
-    #     set_start_value.(Lj, 1 / graph.J)
-    #     set_start_value.(Ljn, 1 / (graph.J * param.N))
-    # end 
 
     # Objective
     @objective(model, Max, u)
