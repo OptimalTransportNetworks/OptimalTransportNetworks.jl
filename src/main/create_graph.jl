@@ -18,11 +18,10 @@ Initialize the underlying graph, population and productivity parameters.
 - `adjacency::BitMatrix`: J x J Adjacency matrix (only used for custom network)
 - `x::Vector{Float64}`: x coordinate (longitude) of each node (only used for custom network)
 - `y::Vector{Float64}`: y coordinate (latitude) of each node (only used for custom network)
-- `nregions::Int64`: Number of regions (only for partial mobility)
-- `region::Vector{Int64}`: Vector indicating region of each location (only for partial mobility)
-- `Lj::Vector{Float64}`: Vector of popultions in each node (j = 1:J) (only for no mobility)
-- `Lr::Vector{Float64}`: Vector of popultions in each region (r = 1:nregions) (only for partial mobility)
+- `Lj::Vector{Float64}`: Vector of populations in each node (j = 1:J) (only for no mobility)
 - `Hj::Vector{Float64}`: Vector of immobile good in each node (j = 1:J) (e.g. housing, default ones(J))
+- `Lr::Vector{Float64}`: Vector of populations in each region (r = 1:nregions) (only for partial mobility)
+- `region::Vector{Int64}`: Vector indicating region of each location (only for partial mobility)
 
 # Examples
 ```julia
@@ -91,28 +90,20 @@ end
 
 function retrieve_options_create_graph(param, w, h, type; kwargs...)
 
-    options = Dict(
-        :type => type,
-        :omega => ones(w * h),
-        :adjacency => [],
-        :x => [],
-        :y => [],
-        :nregions => 1,
-        :region => []
-    )
+    options = Dict(:type => type)
 
     for (k, v) in kwargs
         options[k] = v
     end
 
     if type == "custom"
-        if isempty(options[:adjacency])
+        if !haskey(options, :adjacency)
             error("Custom network requires an adjacency matrix to be provided.")
         end
         if !isadjacency(options[:adjacency])
             error("adjacency matrix must be square and symmetric, and only contain 0 and 1")
         end
-        if isempty(options[:x]) || isempty(options[:y])
+        if !haskey(options, :x) || !haskey(options, :y)
             error("X and Y coordinates of locations must be provided.")
         end
         if length(options[:x]) != length(options[:y])
@@ -128,28 +119,37 @@ function retrieve_options_create_graph(param, w, h, type; kwargs...)
         options[:J] = w * h
     end
 
-    if param[:mobility] == 0.5 && isempty(options[:region])
-        options[:region] = ones(options[:J])
-    end
-
-    if param[:mobility] == 0.5 && isempty(options[:nregions]) && !isempty(options[:region])
-        options[:nregions] = length(unique(options[:region]))
-    end
-
-    if param[:mobility] == 0.5 && !isempty(options[:nregions]) && !isempty(options[:region])
-        if length(unique(options[:region])) > options[:nregions]
-            error("NRegions does not match the provided Region vector.")
+    if param[:mobility] == 0.5 # || haskey(param, :nregions) || haskey(param, :region) || haskey(param, :omegar) || haskey(param, :Lr)
+        if !haskey(options, :Lr)
+            error("For partial mobility case need to provide a parameter 'Lr' containing a vector with the total populations of each region")        
         end
-    end
-
-    if length(options[:omega]) != options[:J] && param[:mobility] == 0
-        println("Pareto weights should be a vector of size $(options[:J]). Using default instead.")
-        options[:omega] = ones(options[:J])
-    end
-
-    if length(options[:omega]) != options[:nregions] && param[:mobility] == 0.5
-        println("Pareto weights should be a vector of size $(options[:nregions]). Using default instead.")
-        options[:omega] = ones(options[:nregions])
+        if !haskey(options, :region)
+            error("For partial mobility case need to provide a parameter 'region' containing an integer vector that maps each node of the graph to a region. The vector should have values in the range 1:nregions and be of length graph.J (=number of nodes).")        
+        end
+        if length(options[:region]) != options[:J]
+            error("Length of 'region' vector should match the number of locations/nodes in the network")
+        end
+        options[:nregions] = length(options[:Lr])
+        if !isinteger(options[:region][1])
+            error("'region' needs to be an integer vector.")
+        end
+        if minimum(options[:region]) != 1 || maximum(options[:region]) > options[:nregions]
+            error("'region' values need to be in the range 1:nregions")
+        end
+        if length(unique(options[:region])) != options[:nregions]
+            error("'region' needs to be a vector does not match the provided regional population vector.")
+        end
+        if !haskey(options, :omega)
+            options[:omega] = ones(options[:nregions])
+        elseif length(options[:omega]) != options[:nregions]
+            error("Pareto weights should be a vector of size $(options[:nregions]).")
+        end
+    elseif param[:mobility] == 0 
+        if !haskey(options, :omega) 
+            options[:omega] = ones(options[:J])
+        elseif length(options[:omega]) != options[:J]
+            error("Pareto weights should be a vector of size $(options[:J]).")
+        end
     end
 
     return options
