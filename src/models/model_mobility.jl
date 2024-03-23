@@ -49,7 +49,7 @@ function model_mobility(optimizer, auxdata)
     )
 
     # Labor resource constraint
-    @constraint(model, -1e-8 <= sum(Lj) - 1 <= 1e8)
+    @constraint(model, -1e-8 <= sum(Lj) - 1 <= 1e-8)
 
     # Local labor availability constraints ( sum Ljn <= Lj )
     @constraint(model, -1e-8 .<= sum(Ljn, dims=2) .- Lj .<= 1e-8)
