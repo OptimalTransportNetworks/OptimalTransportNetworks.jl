@@ -29,7 +29,7 @@ plot_graph(graph, result[:Ijk])
 """
 function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbose=false, return_model=0)
 
-    # I0=nothing; Il=nothing; Iu=nothing; verbose=false; return_model = false;
+    # I0=nothing; Il=nothing; Iu=nothing; verbose=false; return_model = false; return_model = 0;
 
     J = graph.J
     TOL_I_BOUNDS = 1e-7
@@ -137,6 +137,9 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
     weight_old = 0.5
     I1 = zeros(graph.J, graph.J)
     distance = 0.0
+    all_vars = all_variables(model)
+    start_values = start_value.(all_vars)
+    used_warm_start = false
 
     while (!has_converged && counter < param[:kappa_max_iter]) || counter <= param[:kappa_min_iter]
 
@@ -145,21 +148,26 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
         #     save(debug_file_str, "param", "graph", "kappa", "I0", "I1", "counter")
         # end
 
+        skip_update = false
+
         t0 = time()
         optimize!(model)
         t1 = time()
 
-        if !is_solved_and_feasible(model, allow_almost = true)
-            error("Solver returned with error code $(termination_status(model)).")
-        end
-
         results = recover_allocation(model, auxdata)
 
-        # Set next run starting values to previous run solution.
-        if param[:warm_start]
-            vars = all_variables(model)
-            vars_solution = value.(vars)
-            set_start_value.(vars, vars_solution)
+        if !is_solved_and_feasible(model, allow_almost = true)
+            if used_warm_start # if error happens with warm start, then try again starting cold
+                set_start_value.(all_vars, start_values)
+                used_warm_start = false
+                skip_update = true
+            else
+                error("Solver returned with error code $(termination_status(model)).")
+            end
+        elseif param[:warm_start] # Set next run starting values to previous run solution.
+            vars_solution = value.(all_vars)
+            set_start_value.(all_vars, vars_solution)
+            used_warm_start = true
         end
         
         # See macro defined below
@@ -204,12 +212,12 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
             println("Iteration No. $counter distance=$distance duration=$(t1 - t0) secs. Welfare=$(results[:welfare])")
         end
 
-        if !has_converged || counter <= param[:kappa_min_iter]
+        if (!has_converged || counter <= param[:kappa_min_iter]) && !skip_update
             I0 *= weight_old 
             I0 += (1 - weight_old) * I1
             # This creates kappa and updates the model
             auxdata = create_auxdata(param, graph, I0)
-            set_parameter_value.(model.obj_dict[:kappa_ex], auxdata.kappa_ex)
+            set_parameter_value.(model[:kappa_ex], auxdata.kappa_ex)
         end
     end
 
