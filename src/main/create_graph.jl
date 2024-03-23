@@ -121,13 +121,13 @@ function retrieve_options_create_graph(param, w, h, type; kwargs...)
     end
 
     if haskey(options, :Zjn) && size(options[:Zjn]) != (J, param[:N])
-        error("Zjn matrix should be of size J x N, where J is number of nodes and N number of goods")
+        error("Zjn matrix should be of size J x N, where J = $J is number of nodes and N = $(param[:N]) number of goods.")
     end
     if haskey(options, :Lj) && length(options[:Lj]) != J
-        error("Length of 'Lj' vector should match the number of locations/nodes in the network")
+        error("Length of 'Lj' vector should match the number of locations/nodes in the network = $J.")
     end
     if haskey(options, :Hj) && length(options[:Hj]) != J
-        error("Length of 'Hj' vector should match the number of locations/nodes in the network")
+        error("Length of 'Hj' vector should match the number of locations/nodes in the network = $J.")
     end
 
     if param[:mobility] == 0.5 # || haskey(param, :nregions) || haskey(param, :region) || haskey(param, :omegar) || haskey(param, :Lr)
@@ -135,20 +135,20 @@ function retrieve_options_create_graph(param, w, h, type; kwargs...)
             error("For partial mobility case need to provide a parameter 'Lr' containing a vector with the total populations of each region")        
         end
         if !haskey(options, :region)
-            error("For partial mobility case need to provide a parameter 'region' containing an integer vector that maps each node of the graph to a region. The vector should have values in the range 1:nregions and be of length graph.J (=number of nodes).")        
+            error("For partial mobility case need to provide a parameter 'region' containing an integer vector that maps each node of the graph to a region. The vector should have values in the range 1:length(Lr) and be of length $J.")        
         end
         if length(options[:region]) != J
-            error("Length of 'region' vector should match the number of locations/nodes in the network")
+            error("Length of 'region' vector should match the number of locations/nodes in the network = $J.")
         end
         options[:nregions] = length(options[:Lr])
         if !isinteger(options[:region][1])
             error("'region' needs to be an integer vector.")
         end
         if minimum(options[:region]) != 1 || maximum(options[:region]) > options[:nregions]
-            error("'region' values need to be in the range 1:nregions")
+            error("'region' values need to be in the range 1:nregions = $(options[:nregions]).")
         end
         if length(unique(options[:region])) != options[:nregions]
-            error("'region' needs to be a vector does not match the provided regional population vector.")
+            error("'region' does not match 'Lr'.")
         end
         if !haskey(options, :omega)
             options[:omega] = ones(options[:nregions])
@@ -159,7 +159,7 @@ function retrieve_options_create_graph(param, w, h, type; kwargs...)
         if !haskey(options, :omega) 
             options[:omega] = ones(J)
         elseif length(options[:omega]) != J
-            error("Pareto weights should be a vector of size $(J).")
+            error("Pareto weights should be a vector of size $J.")
         end
     end
 
