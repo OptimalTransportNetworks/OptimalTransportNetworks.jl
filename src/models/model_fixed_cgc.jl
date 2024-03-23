@@ -10,7 +10,7 @@ function model_fixed_cgc(optimizer, auxdata)
     Apos = auxdata[:Apos]
     Aneg = auxdata[:Aneg]
     Lj = param.Lj
-    m = param.m # Vector of weights on each goods flow for aggregate congestion term
+    m = param.m # 1:param.N: Vector of weights on each goods flow for aggregate congestion term
     psigma = (param.sigma - 1) / param.sigma
     beta_nu = (param.beta + 1) / param.nu
 
@@ -19,14 +19,14 @@ function model_fixed_cgc(optimizer, auxdata)
     set_string_names_on_creation(model, false)
 
     # Variables
-    @variable(model, Djn[1:graph.J, 1:param.N] >= 1e-8, container=Array)             # Consumption per good pre-transport cost (Dj)
-    @variable(model, Qin_direct[1:graph.ndeg, 1:param.N] >= 1e-8, container=Array)   # Direct aggregate flow
-    @variable(model, Qin_indirect[1:graph.ndeg, 1:param.N] >= 1e-8, container=Array) # Indirect aggregate flow
-    @variable(model, Ljn[1:graph.J, 1:param.N] >= 1e-8, container=Array)             # Good specific labour
-    @variable(model, cj[1:graph.J] >= 1e-8, container=Array)                         # Overall consumption bundle, including transport costs
+    @variable(model, Djn[1:graph.J, 1:param.N] >= 1e-8, container=Array, start = 1e-6)             # Consumption per good pre-transport cost (Dj)
+    @variable(model, Qin_direct[1:graph.ndeg, 1:param.N] >= 1e-8, container=Array, start = 0.0)    # Direct aggregate flow
+    @variable(model, Qin_indirect[1:graph.ndeg, 1:param.N] >= 1e-8, container=Array, start = 0.0)  # Indirect aggregate flow
+    @variable(model, Ljn[1:graph.J, 1:param.N] >= 1e-8, container=Array, start = 1e-6)             # Good specific labour
+    @variable(model, cj[1:graph.J] >= 1e-8, container=Array, start = 1e-6)                         # Overall consumption bundle, including transport costs
 
     # Parameters: to be updated between solves
-    @variable(model, kappa_ex[i = 1:graph.ndeg] in Parameter(i))
+    @variable(model, kappa_ex[i = 1:graph.ndeg] in Parameter(i), container=Array)
     set_parameter_value.(kappa_ex, kappa_ex_init)
 
     # Defining Utility Funcion: from cj + parameters (by operator overloading)
@@ -34,18 +34,12 @@ function model_fixed_cgc(optimizer, auxdata)
     @expression(model, U, sum(param.omegaj .* param.Lj .* uj))      # Overall Utility
     @objective(model, Max, U)
 
+    # Create the matrix B_direct (resp. B_indirect) of transport cost along the direction of the edge (resp. in edge opposite direction)
+    B_direct = @expression(model, ((Qin_direct .^ param.nu) * m) .^ beta_nu ./ kappa_ex)
+    B_indirect = @expression(model, ((Qin_indirect .^ param.nu) * m) .^ beta_nu ./ kappa_ex)
     # Final good constraints
-    for i in 1:graph.ndeg
-        # Create the matrix B_direct (resp. B_indirect) of transport cost along the direction of the edge (resp. in edge opposite direction)
-        B_direct = sum(m[n] * Qin_direct[i, n] ^ param.nu for n in 1:param.N) ^ beta_nu / kappa_ex[i]
-        B_indirect = sum(m[n] * Qin_indirect[i, n] ^ param.nu for n in 1:param.N) ^ beta_nu / kappa_ex[i]
-        @constraint(model, [j in 1:param.J],
-                    cj[j] * param.Lj[j] + 
-                    Apos[j, i] * B_direct + 
-                    Aneg[j, i] * B_indirect - 
-                    sum(Djn[j, n] ^ psigma for n in 1:param.N) ^ (1 / psigma) <= -1e-8
-        )
-    end
+    @expression(model, Dj, sum(Djn .^ psigma, dims=2) .^ (1 / psigma))
+    @constraint(model, cj .* param.Lj + Apos * B_direct + Aneg * B_indirect - Dj .<= -1e-8)
 
     # Balanced flow constraints
     @expression(model, Yjn, param.Zjn .* (Ljn .^ param.a))
@@ -69,7 +63,7 @@ function recover_allocation_fixed_cgc(model, auxdata)
     results[:Ljn] = value.(model_dict[:Ljn])
     results[:Lj] = param.Lj
     results[:Djn] = value.(model_dict[:Djn]) # Consumption per good pre-transport cost
-    results[:Dj] = dropdims(sum(results[:Djn] .^ ((param.sigma-1)/param.sigma), dims=2), dims = 2) .^ (param.sigma/(param.sigma-1))
+    results[:Dj] = value.(model_dict[:Dj])
     results[:cj] = value.(model_dict[:cj])
     results[:Cj] = results[:cj] .* param.Lj
     results[:hj] = ifelse.(results[:Lj] .== 0, 0.0, param.Hj ./ results[:Lj])
