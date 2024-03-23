@@ -21,7 +21,7 @@ param[:Zjn][:, 1:param[:N]-1] .= 0 # default locations cannot produce goods 1-10
 param[:Zjn][:, param[:N]] .= 1 # but they can all produce good 11 (agricultural)
 
 # Draw the cities randomly
-# Random.seed!(5) # reinit random number generator
+Random.seed!(5) # reinit random number generator
 for i in 1:param[:N]-1
     newdraw = false
     while newdraw == false
@@ -61,7 +61,7 @@ push!(plots, p1)
 for i in 1:param[:N]
     results = res
     p = plot_graph(graph, results[:Qjkn][:, :, i], arrows = true, nodes = false)
-    title!(p, string('(', Char(96 + i), ')', " Flows good ", i))
+    title!(p, string('(', Char(96 + i + 1), ')', " Flows good ", i))
     push!(plots, p)
 end
 
