@@ -43,11 +43,11 @@ function create_graph(param, w = 11, h = 11; type = "map", kwargs...)
     end
 
     param[:J] = graph.J
-    param[:Zjn] = haskey(options, :Zjn) ? options[:Zjn] : ones(param[:J], param[:N])
-    param[:Hj] = haskey(options, :Hj) ? options[:Hj] : ones(param[:J])
+    param[:Zjn] = haskey(options, :Zjn) ? options[:Zjn] : ones(graph.J, param[:N])
+    param[:Hj] = haskey(options, :Hj) ? options[:Hj] : ones(graph.J)
 
     if param[:mobility] == false
-        param[:Lj] = haskey(options, :Lj) ? options[:Lj] : ones(param[:J]) / param[:J]
+        param[:Lj] = haskey(options, :Lj) ? options[:Lj] : ones(graph.J) / graph.J
         param[:hj] = param[:Hj] ./ param[:Lj]
         param[:hj][param[:Lj] .== 0] .= 1
         param[:omegaj] = options[:omega]
@@ -107,13 +107,13 @@ function retrieve_options_create_graph(param, w, h, type; kwargs...)
         if !haskey(options, :x) || !haskey(options, :y)
             error("X and Y coordinates of locations must be provided.")
         end
-        if length(options[:x]) != length(options[:y])
+        J = length(options[:x])
+        if J != length(options[:y])
             error("The provided X and Y do not have the same size.")
         end
-        if size(options[:adjacency], 1) != length(options[:x])
+        if size(options[:adjacency], 1) != J
             error("The adjacency matrix and X should have the same number of locations.")
         end
-        J = length(options[:x])
     elseif type == "triangle"
         J = Int(w * ceil(h / 2) + (w - 1) * (ceil(h / 2) - 1))
     else
