@@ -17,7 +17,7 @@ Returns a `param` dict with the model parameters.
 - `sigma::Float64=5`: Elasticity of substitution across goods (CES)
 - `rho::Float64=2`: Curvature in utility (c^alpha * h^(1-alpha))^(1-rho)/(1-rho)
 - `a::Float64=0.8`: Curvature of the production function L^alpha
-- `m::Vector{Float64}=ones(N,1)`: Vector of weights Nx1 in the cross congestion cost function
+- `m::Vector{Float64}=ones(N)`: Vector of weights Nx1 in the cross congestion cost function
 - `N::Int64=1`: Number of goods
 - `nu::Float64=1`: Elasticity of substitution b/w goods in transport costs if cross-good congestion
 - `labor_mobility::Any=false`: Switch for labor mobility (true/false or 'partial')
@@ -25,7 +25,7 @@ Returns a `param` dict with the model parameters.
 - `annealing::Bool=true`: Switch for the use of annealing at the end of iterations (only if gamma > beta)
 - `verbose::Bool=true`: Switch to turn on/off text output (from Ipopt or other optimizers)
 - `duality::Bool=true`: Switch to turn on/off duality whenever available
-- `warm_start::Bool=false`: Use the previous solution as a warm start for the next iteration
+- `warm_start::Bool=true`: Use the previous solution as a warm start for the next iteration
 - `kappa_tol::Float64=1e-7`: Tolerance for convergence of road capacities κ
 - `kappa_min::Float64=1e-5`: Minimum value for road capacities κ
 - `kappa_min_iter::Int64=20`: Minimum number of iterations
@@ -40,9 +40,9 @@ Returns a `param` dict with the model parameters.
 param = init_parameters(labor_mobility = true, K = 10)
 ```
 """
-function init_parameters(; alpha=0.5, beta=1, gamma=1, K=1, sigma=5, rho=2, a=0.8, N=1, m=ones(N,1), nu=1, 
-                         labor_mobility=false, cross_good_congestion=false, annealing=true, 
-                         verbose=true, duality=true, warm_start = false, 
+function init_parameters(; alpha=0.5, beta=1, gamma=1, K=1, sigma=5, rho=2, a=0.8, N=1, m = ones(N), nu=1, 
+                         labor_mobility = false, cross_good_congestion=false, annealing=true, 
+                         verbose = true, duality = true, warm_start = true, 
                          kappa_tol = 1e-7, kappa_min = 1e-5, kappa_min_iter = 20, kappa_max_iter = 200,
                          kwargs...)
     param = Dict()
