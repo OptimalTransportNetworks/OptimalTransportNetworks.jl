@@ -8,7 +8,7 @@ using OptimalTransportNetworks
 # Set parameters: try with labor mobility: true/false, convex: beta>=gamma,
 # nonconvex: gamma>beta, cross good congestion: true/false
 
-param = init_parameters(labor_mobility = true, K = 1, gamma = 1, beta = 1, verbose = true,
+param = init_parameters(labor_mobility = true, K = 10, gamma = 1, beta = 1, verbose = true,
                         N = 1, kappa_tol = 1e-5, cross_good_congestion = false, nu = 1)
 
 # kappa_tol is the tolerance in distance b/w iterations for road capacity
