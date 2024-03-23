@@ -38,7 +38,7 @@ function model_fixed_cgc(optimizer, auxdata)
     B_direct = @expression(model, ((Qin_direct .^ param.nu) * m) .^ beta_nu ./ kappa_ex)
     B_indirect = @expression(model, ((Qin_indirect .^ param.nu) * m) .^ beta_nu ./ kappa_ex)
     # Final good constraints
-    @expression(model, Dj, dropdims(sum(Djn .^ psigma, dims=2) .^ (1 / psigma), dims=2))
+    @expression(model, Dj, sum(Djn .^ psigma, dims=2) .^ (1 / psigma))
     @constraint(model, cj .* param.Lj + Apos * B_direct + Aneg * B_indirect - Dj .<= -1e-8)
 
     # Balanced flow constraints
@@ -63,7 +63,7 @@ function recover_allocation_fixed_cgc(model, auxdata)
     results[:Ljn] = value.(model_dict[:Ljn])
     results[:Lj] = param.Lj
     results[:Djn] = value.(model_dict[:Djn]) # Consumption per good pre-transport cost
-    results[:Dj] = value.(model_dict[:Dj])
+    results[:Dj] = dropdims(value.(model_dict[:Dj]), dims = 2)
     results[:cj] = value.(model_dict[:cj])
     results[:Cj] = results[:cj] .* param.Lj
     results[:hj] = ifelse.(results[:Lj] .== 0, 0.0, param.Hj ./ results[:Lj])
