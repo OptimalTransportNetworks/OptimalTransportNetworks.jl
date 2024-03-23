@@ -31,7 +31,8 @@ function model_partial_mobility(optimizer, auxdata)
     @variable(model, ur[1:param.nregions], container=Array, start = 0.0)               # Utility per capita in each region
     @variable(model, Cjn[1:graph.J, 1:param.N] >= 1e-8, container=Array, start = 1e-6) # Good specific consumption
     @variable(model, Qin[1:graph.ndeg, 1:param.N], container=Array, start = 0.0)       # Good specific flow
-    @variable(model, Lj[1:graph.J] >= 1e-8, container=Array)                      # Total labour
+    # NOTE: Fajgelbaum et al (2019) only optimize Lj and distribute it equally for goods with positive productivity
+    @variable(model, Lj[1:graph.J] >= 1e-8, container=Array)                           # Total labour
     @variable(model, Ljn[1:graph.J, 1:param.N] >= 1e-8, container=Array)               # Good specific labour
     # Calculate start values for Lj and Ljn
     pop_start = (Lr ./ gsum(ones(param.nregions), param.nregions, region))[region]
