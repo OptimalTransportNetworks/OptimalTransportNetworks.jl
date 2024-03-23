@@ -12,10 +12,10 @@ Solve for the optimal network by solving the inner problem and the outer problem
 # Arguments
 - `param::Dict`: Dict that contains the model's parameters
 - `graph::NamedTuple`: Named tuple that contains the underlying graph (created by `create_graph()` function)
-- `I0::Matrix{Float64}`: (Optional) J x J matrix providing the initial guess for the iterations 
-- `Il::Matrix{Float64}`: (Optional) J x J matrix providing exogenous lower bound on infrastructure levels
-- `Iu::Matrix{Float64}`: (Optional) J x J matrix providing exogenous upper bound on infrastructure levels
-- `verbose::Bool`: (Optional) tell IPOPT to display results
+- `I0::Matrix{Float64}=nothing`: (Optional) J x J matrix providing the initial guess for the iterations 
+- `Il::Matrix{Float64}=nothing`: (Optional) J x J matrix providing exogenous lower bound on infrastructure levels
+- `Iu::Matrix{Float64}=nothing`: (Optional) J x J matrix providing exogenous upper bound on infrastructure levels
+- `verbose::Bool=false`: (Optional) tell IPOPT to display results
 - `return_model::Int=0`: (Optional) return the JuMP model and corresponding `recover_allocation()` function: 1 just returns these before solving the model, while 2 solves the model + optimal network and returns the two alongside the results. 
 
 # Examples
