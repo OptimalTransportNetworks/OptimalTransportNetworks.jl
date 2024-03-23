@@ -18,16 +18,16 @@ function model_mobility_cgc(optimizer, auxdata)
     set_string_names_on_creation(model, false)
 
     # Variable declarations
-    @variable(model, u)                                                             # Overall utility
-    @variable(model, Djn[1:graph.J, 1:param.N] >= 1e-8, container=Array)            # Consumption per good pre-transport cost (Dj)
-    @variable(model, Qin_direct[1:graph.ndeg, 1:param.N] >= 1e-8, container=Array)  # Direct aggregate flow
-    @variable(model, Qin_indirect[1:graph.ndeg, 1:param.N] >= 1e-8, container=Array)# Indirect aggregate flow
-    @variable(model, Ljn[1:graph.J, 1:param.N] >= 1e-8, container=Array)            # Good specific labour
-    @variable(model, Lj[1:graph.J] >= 1e-8, container=Array)                        # Overall labour
-    @variable(model, cj[1:graph.J] >= 1e-8, container=Array)                        # Overall consumption bundle, including transport costs
+    @variable(model, u, start = 0.0)                                                              # Overall utility
+    @variable(model, Djn[1:graph.J, 1:param.N] >= 1e-8, container=Array, start = 1e-6)            # Consumption per good pre-transport cost (Dj)
+    @variable(model, cj[1:graph.J] >= 1e-8, container=Array, start = 1e-6)                        # Overall consumption bundle, including transport costs
+    @variable(model, Qin_direct[1:graph.ndeg, 1:param.N] >= 1e-8, container=Array, start = 0.0)   # Direct aggregate flow
+    @variable(model, Qin_indirect[1:graph.ndeg, 1:param.N] >= 1e-8, container=Array, start = 0.0) # Indirect aggregate flow
+    @variable(model, Ljn[1:graph.J, 1:param.N] >= 1e-8, container=Array, start = 1 / (graph.J * param.N)) # Good specific labour
+    @variable(model, Lj[1:graph.J] >= 1e-8, container=Array, start = 1 / graph.J)                 # Overall labour
 
     # Parameters: to be updated between solves
-    @variable(model, kappa_ex[i = 1:graph.ndeg] in Parameter(i))
+    @variable(model, kappa_ex[i = 1:graph.ndeg] in Parameter(i), container=Array)
     set_parameter_value.(kappa_ex, kappa_ex_init)
 
     # Objective
