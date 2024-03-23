@@ -10,6 +10,7 @@ Runs the simulated annealing method starting from network `I0`. Only sensible if
 - `I0`: (optional) provides the initial guess for the iterations
 
 # Keyword Arguments
+- `verbose::Bool=false`: (Optional) tell IPOPT to display results
 - `perturbation_method::String="random rebranching"`: Method to be used to perturbate the network 
     (random is purely random, works horribly; shake applies a gaussian blur
      along a random direction, works alright; rebranching (default) is the algorithm
@@ -132,10 +133,6 @@ function annealing(param, graph, I0; kwargs...)
         # --------------
         # CUSTOMIZATIONS
 
-        if !param[:verbose]
-            set_silent(model)
-        end
-
         if haskey(param, :optimizer_attr)
             for (key, value) in param[:optimizer_attr]
                 set_optimizer_attribute(model, String(key), value)
@@ -155,6 +152,10 @@ function annealing(param, graph, I0; kwargs...)
         #    MOI.AutomaticDifferentiationBackend(),
         #    MathOptSymbolicAD.DefaultBackend(),
         # )
+    end
+
+    if !options.verbose
+        set_silent(model)
     end
 
     # =========
@@ -380,6 +381,7 @@ function retrieve_options_annealing(graph; kwargs...)
 
     # Set up default options with lowercase names
     options = Dict{Symbol, Any}(
+        :verbose => false,
         :perturbation_method => "random rebranching",
         :preserve_central_symmetry => false,
         :preserve_vertical_symmetry => false,
