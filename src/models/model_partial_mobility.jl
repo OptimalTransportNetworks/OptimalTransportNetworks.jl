@@ -28,14 +28,19 @@ function model_partial_mobility(optimizer, auxdata)
     set_string_names_on_creation(model, false)
 
     # Variables + bounds
-    @variable(model, ur[1:param.nregions], container=Array)                 # Utility per capita in each region
-    @variable(model, Cjn[1:graph.J, 1:param.N] >= 1e-8, container=Array)    # Good specific consumption
-    @variable(model, Qin[1:graph.ndeg, 1:param.N], container=Array)         # Good specific flow
-    @variable(model, 1e-8 <= Lj[1:graph.J] <= 1, container=Array)           # Total labour
-    @variable(model, Ljn[1:graph.J, 1:param.N] >= 1e-8, container=Array)    # Good specific labour
+    @variable(model, ur[1:param.nregions], container=Array, start = 0.0)               # Utility per capita in each region
+    @variable(model, Cjn[1:graph.J, 1:param.N] >= 1e-8, container=Array, start = 1e-6) # Good specific consumption
+    @variable(model, Qin[1:graph.ndeg, 1:param.N], container=Array, start = 0.0)       # Good specific flow
+    @variable(model, Lj[1:graph.J] >= 1e-8, container=Array)                      # Total labour
+    @variable(model, Ljn[1:graph.J, 1:param.N] >= 1e-8, container=Array)               # Good specific labour
+    # Calculate start values for Lj and Ljn
+    pop_start = (Lr ./ gsum(ones(param.nregions), param.nregions, region))[region]
+    set_start_value.(Lj, pop_start)
+    pop_start_goods = repeat(pop_start / param.N, 1, param.N)
+    set_start_value.(Ljn, pop_start_goods)
 
     # Parameters: to be updated between solves
-    @variable(model, kappa_ex[i = 1:graph.ndeg] in Parameter(i))
+    @variable(model, kappa_ex[i = 1:graph.ndeg] in Parameter(i), container=Array)
     set_parameter_value.(kappa_ex, kappa_ex_init)
 
     # Objective
@@ -61,7 +66,7 @@ function model_partial_mobility(optimizer, auxdata)
     )
 
     # Labor resource constraints (within each region)
-    @constraint(model, -1e-8 .<= gsum(Lj, param.nregions, region) - Lr .<= 1e8)
+    @constraint(model, -1e-8 .<= gsum(Lj, param.nregions, region) - Lr .<= 1e-8)
 
     # Local labor availability constraints ( sum Ljn <= Lj )
     @constraint(model, -1e-8 .<= sum(Ljn, dims=2) .- Lj .<= 1e-8)
