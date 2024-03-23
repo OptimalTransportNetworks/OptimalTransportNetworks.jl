@@ -36,18 +36,12 @@ function model_mobility_cgc(optimizer, auxdata)
     # Utility constraint (Lj*u <= ... )
     @constraint(model, Lj .* u - (cj .* Lj ./ param.alpha) .^ param.alpha .* (param.Hj ./ (1 - param.alpha)) .^ (1 - param.alpha) .<= -1e-8)
 
+    # Create the matrix B_direct (resp. B_indirect) of transport cost along the direction of the edge (resp. in edge opposite direction)
+    B_direct = @expression(model, ((Qin_direct .^ param.nu) * m) .^ beta_nu ./ kappa_ex)
+    B_indirect = @expression(model, ((Qin_indirect .^ param.nu) * m) .^ beta_nu ./ kappa_ex)
     # Final good constraints
-    for i in 1:graph.ndeg
-        # Create the matrix B_direct (resp. B_indirect) of transport cost along the direction of the edge (resp. in edge opposite direction)
-        B_direct = sum(m[n] * Qin_direct[i, n] ^ param.nu for n in 1:param.N) ^ beta_nu / kappa_ex[i]
-        B_indirect = sum(m[n] * Qin_indirect[i, n] ^ param.nu for n in 1:param.N) ^ beta_nu / kappa_ex[i]
-        @constraint(model, [j in 1:param.J],
-                    cj[j] * Lj[j] + 
-                    Apos[j, i] * B_direct + 
-                    Aneg[j, i] * B_indirect - 
-                    sum(Djn[j, n] ^ psigma for n in 1:param.N) ^ (1 / psigma) <= -1e-8
-        )
-    end
+    @expression(model, Dj, dropdims(sum(Djn .^ psigma, dims=2) .^ (1 / psigma), dims=2))
+    @constraint(model, cj .* param.Lj + Apos * B_direct + Aneg * B_indirect - Dj .<= -1e-8)
 
     # Balanced flow constraints
     @expression(model, Yjn, param.Zjn .* (Ljn .^ param.a))
@@ -74,7 +68,7 @@ function recover_allocation_mobility_cgc(model, auxdata)
     results[:Ljn] = value.(model_dict[:Ljn])
     results[:Lj] = value.(model_dict[:Lj])
     results[:Djn] = value.(model_dict[:Djn]) # Consumption per good pre-transport cost
-    results[:Dj] = dropdims(sum(results[:Djn] .^ ((param.sigma-1)/param.sigma), dims=2), dims=2) .^ (param.sigma/(param.sigma-1))
+    results[:Dj] = value.(model_dict[:Dj])
     results[:cj] = value.(model_dict[:cj])
     results[:Cj] = results[:cj] .* results[:Lj]
     results[:hj] = ifelse.(results[:Lj] .== 0, 0.0, param.Hj ./ results[:Lj])
