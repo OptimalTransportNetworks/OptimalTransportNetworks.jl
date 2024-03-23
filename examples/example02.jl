@@ -6,7 +6,7 @@ import Random
 # INITIALIZATION
 # ==============
 
-param = init_parameters(labor_mobility =false, K = 100, gamma = 1, beta = 1, N = 1, 
+param = init_parameters(labor_mobility = false, K = 100, gamma = 1, beta = 1, N = 1, 
                         annealing = false)
 
 # ------------
