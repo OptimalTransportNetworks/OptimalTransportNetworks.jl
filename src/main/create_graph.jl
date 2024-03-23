@@ -43,18 +43,19 @@ function create_graph(param, w = 11, h = 11; type = "map", kwargs...)
     end
 
     param[:J] = graph.J
-    param[:Zjn] = haskey(options, :Zjn) ? options[:Zjn] : get(param, :Zjn, ones(param[:J], param[:N]))
-    param[:Hj] = haskey(options, :Hj) ? options[:Hj] : get(param, :Hj, ones(param[:J]))
+    param[:Zjn] = haskey(options, :Zjn) ? options[:Zjn] : ones(param[:J], param[:N])
+    param[:Hj] = haskey(options, :Hj) ? options[:Hj] : ones(param[:J])
 
     if param[:mobility] == false
-        param[:Lj] = haskey(options, :Lj) ? options[:Lj] : get(param, :Lj, ones(param[:J]) / param[:J])
+        param[:Lj] = haskey(options, :Lj) ? options[:Lj] : ones(param[:J]) / param[:J]
         param[:hj] = param[:Hj] ./ param[:Lj]
         param[:hj][param[:Lj] .== 0] .= 1
         param[:omegaj] = options[:omega]
     elseif param[:mobility] == 0.5
         graph.region = options[:region]
         param[:omegar] = options[:omega]
-        param[:Lr] = haskey(options, :Lr) ? options[:Lr] : get(param, :Lr, ones(options[:nregions]) / options[:nregions])
+        param[:Lr] = options[:Lr]
+        param[:nregions] = options[:nregions]
     end
 
     # Running checks on population / productivity / housing parameters
@@ -112,11 +113,21 @@ function retrieve_options_create_graph(param, w, h, type; kwargs...)
         if size(options[:adjacency], 1) != length(options[:x])
             error("The adjacency matrix and X should have the same number of locations.")
         end
-        options[:J] = length(options[:x])
+        J = length(options[:x])
     elseif type == "triangle"
-        options[:J] = Int(w * ceil(h / 2) + (w - 1) * (ceil(h / 2) - 1))
+        J = Int(w * ceil(h / 2) + (w - 1) * (ceil(h / 2) - 1))
     else
-        options[:J] = w * h
+        J = w * h
+    end
+
+    if haskey(options, :Zjn) && size(options[:Zjn]) != (J, param[:N])
+        error("Zjn matrix should be of size J x N, where J is number of nodes and N number of goods")
+    end
+    if haskey(options, :Lj) && length(options[:Lj]) != J
+        error("Length of 'Lj' vector should match the number of locations/nodes in the network")
+    end
+    if haskey(options, :Hj) && length(options[:Hj]) != J
+        error("Length of 'Hj' vector should match the number of locations/nodes in the network")
     end
 
     if param[:mobility] == 0.5 # || haskey(param, :nregions) || haskey(param, :region) || haskey(param, :omegar) || haskey(param, :Lr)
@@ -126,7 +137,7 @@ function retrieve_options_create_graph(param, w, h, type; kwargs...)
         if !haskey(options, :region)
             error("For partial mobility case need to provide a parameter 'region' containing an integer vector that maps each node of the graph to a region. The vector should have values in the range 1:nregions and be of length graph.J (=number of nodes).")        
         end
-        if length(options[:region]) != options[:J]
+        if length(options[:region]) != J
             error("Length of 'region' vector should match the number of locations/nodes in the network")
         end
         options[:nregions] = length(options[:Lr])
@@ -146,9 +157,9 @@ function retrieve_options_create_graph(param, w, h, type; kwargs...)
         end
     elseif param[:mobility] == 0 
         if !haskey(options, :omega) 
-            options[:omega] = ones(options[:J])
-        elseif length(options[:omega]) != options[:J]
-            error("Pareto weights should be a vector of size $(options[:J]).")
+            options[:omega] = ones(J)
+        elseif length(options[:omega]) != J
+            error("Pareto weights should be a vector of size $(J).")
         end
     end
 
