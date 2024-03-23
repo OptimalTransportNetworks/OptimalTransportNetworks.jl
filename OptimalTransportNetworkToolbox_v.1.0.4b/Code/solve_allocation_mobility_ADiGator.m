@@ -71,7 +71,7 @@ funcs.hessian= @(x,sigma,lambda)objective_mobility_Hes(x,auxdata,sigma,lambda);
 
 % Options
 % Bounds on optimization variables
-options.lb = [-inf;1e-8*ones*ones(graph.J*param.N,1);-inf*ones(graph.ndeg*param.N,1);1e-8*ones(graph.J,1);1e-8*ones*ones(graph.J*param.N,1)];
+options.lb = [-inf;1e-8*ones(graph.J*param.N,1);-inf*ones(graph.ndeg*param.N,1);1e-8*ones(graph.J,1);1e-8*ones(graph.J*param.N,1)];
 options.ub = [inf;inf*ones(graph.J*param.N,1);inf*ones(graph.ndeg*param.N,1);ones(graph.J,1);inf*ones(graph.J*param.N,1)];
 % Bounds on constraints
 options.cl = [-inf*ones(graph.J,1);-inf*ones(graph.J*param.N,1);-1e-8;-1e-8*ones(graph.J,1)]; 
