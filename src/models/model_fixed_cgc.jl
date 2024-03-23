@@ -38,7 +38,7 @@ function model_fixed_cgc(optimizer, auxdata)
     B_direct = @expression(model, ((Qin_direct .^ param.nu) * m) .^ beta_nu ./ kappa_ex)
     B_indirect = @expression(model, ((Qin_indirect .^ param.nu) * m) .^ beta_nu ./ kappa_ex)
     # Final good constraints
-    @expression(model, Dj, sum(Djn .^ psigma, dims=2) .^ (1 / psigma))
+    @expression(model, Dj, dropdims(sum(Djn .^ psigma, dims=2) .^ (1 / psigma), dims=2))
     @constraint(model, cj .* param.Lj + Apos * B_direct + Aneg * B_indirect - Dj .<= -1e-8)
 
     # Balanced flow constraints
