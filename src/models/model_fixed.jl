@@ -17,12 +17,12 @@ function model_fixed(optimizer, auxdata)
     set_string_names_on_creation(model, false)
 
     # Variables
-    @variable(model, Cjn[1:graph.J, 1:param.N] >= 1e-8, container=Array)
-    @variable(model, Qin[1:graph.ndeg, 1:param.N], container=Array)
-    @variable(model, Ljn[1:graph.J, 1:param.N] >= 1e-8, container=Array)
+    @variable(model, Cjn[1:graph.J, 1:param.N] >= 1e-8, container=Array, start = 1e-6)
+    @variable(model, Qin[1:graph.ndeg, 1:param.N], container=Array, start = 0.0)
+    @variable(model, Ljn[1:graph.J, 1:param.N] >= 1e-8, container=Array, start = sum(Lj)/(graph.J*param.N))
 
     # Parameters: to be updated between solves
-    @variable(model, kappa_ex[i = 1:graph.ndeg] in Parameter(i))
+    @variable(model, kappa_ex[i = 1:graph.ndeg] in Parameter(i), container=Array)
     set_parameter_value.(kappa_ex, kappa_ex_init)
 
     # Defining Utility Funcion: from Cjn + parameters (by operator overloading)
