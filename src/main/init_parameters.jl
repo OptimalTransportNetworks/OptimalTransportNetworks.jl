@@ -100,6 +100,25 @@ function init_parameters(; alpha=0.5, beta=1, gamma=1, K=1, sigma=5, rho=2, a=0.
 end
 
 function check_graph_param(param)
+
+    ## These are graph parameters that should not be in the parameters dict
+
+    # if haskey(param, :x) && length(param[:x]) != param[:J]
+    #     @warn "x does not have the right length J = $(param[:J])."
+    # end
+
+    # if haskey(param, :y) && length(param[:y]) != param[:J]
+    #     @warn "y does not have the right length J = $(param[:J])."
+    # end
+
+    # if haskey(param, :adjacency) && size(param[:adjacency]) != (param[:J], param[:J])
+    #     @warn "adjacency matrix does not have the right dimensions J x J."
+    # end
+
+    # if haskey(param, :region) && length(param[:region]) != param[:J]
+    #     @warn "region does not have the right length J = $(param[:J])."
+    # end
+
     if haskey(param, :omegaj) && length(param[:omegaj]) != param[:J]
         @warn "omegaj does not have the right length J = $(param[:J])."
     end
@@ -108,10 +127,14 @@ function check_graph_param(param)
         @warn "omegar does not have the right length nregions = $(param[:nregions])."
     end
 
+    if haskey(param, :Lr) && length(param[:Lr]) != param[:nregions]
+        @warn "Lr does not have the right length nregions = $(param[:nregions])."
+    end
+
     if haskey(param, :Lj) && param[:mobility] == 0 && length(param[:Lj]) != param[:J]
         @warn "Lj does not have the right length J = $(param[:J])."
     end
-    # Zjn is a two-dimensional array (JxN), so using size() is appropriate for this check
+    
     if haskey(param, :Zjn) && size(param[:Zjn]) != (param[:J], param[:N])
         @warn "Zjn does not have the right size J ($(param[:J])) x N ($(param[:N]))."
     end
