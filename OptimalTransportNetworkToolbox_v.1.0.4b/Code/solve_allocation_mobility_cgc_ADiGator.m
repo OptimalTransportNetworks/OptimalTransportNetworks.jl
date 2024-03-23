@@ -43,7 +43,7 @@ if nargin<4
 end
 
 if isempty(x0)  
-    x0=[0;1e-6*ones(graph.J*param.N,1);zeros(2*graph.ndeg*param.N,1);sum(param.Lj)/graph.J*ones(graph.J,1);1e-6*ones(graph.J,1);sum(param.Lj)/(graph.J*param.N)*ones(graph.J*param.N,1)]; % starting point
+    x0=[0;1e-6*ones(graph.J*param.N,1);zeros(2*graph.ndeg*param.N,1);1/graph.J*ones(graph.J,1);1e-6*ones(graph.J,1);1/(graph.J*param.N)*ones(graph.J*param.N,1)]; % starting point
     % First term is u, next JN terms are Cjn, the next Ndeg*N are Q in the edge direction,
     % the next Ndeg*N are Q in the edge opposite direction, next J terms are Lj,
     % next J terms are c, the last JN terms are Ljn
