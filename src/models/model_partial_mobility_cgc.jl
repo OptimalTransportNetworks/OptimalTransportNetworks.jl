@@ -29,16 +29,22 @@ function model_partial_mobility_cgc(optimizer, auxdata)
     set_string_names_on_creation(model, false)
 
     # Variable declarations
-    @variable(model, ur[1:param.nregions], container=Array)                         # Utility per capita in each region
-    @variable(model, Djn[1:graph.J, 1:param.N] >= 1e-8, container=Array)            # Consumption per good pre-transport cost (Dj)
-    @variable(model, Qin_direct[1:graph.ndeg, 1:param.N] >= 1e-8, container=Array)  # Direct aggregate flow
-    @variable(model, Qin_indirect[1:graph.ndeg, 1:param.N] >= 1e-8, container=Array)# Indirect aggregate flow
+    @variable(model, ur[1:param.nregions], container=Array, start = 0.0)                          # Utility per capita in each region
+    @variable(model, Djn[1:graph.J, 1:param.N] >= 1e-8, container=Array, start = 1e-6)            # Consumption per good pre-transport cost (Dj)
+    @variable(model, cj[1:graph.J] >= 1e-8, container=Array, start = 1e-6)                        # Overall consumption bundle, including transport costs
+    @variable(model, Qin_direct[1:graph.ndeg, 1:param.N] >= 1e-8, container=Array, start = 0.0)   # Direct aggregate flow
+    @variable(model, Qin_indirect[1:graph.ndeg, 1:param.N] >= 1e-8, container=Array, start = 0.0) # Indirect aggregate flow
+    # NOTE: Fajgelbaum et al (2019) only optimize Lj and distribute it equally for goods with positive productivity
     @variable(model, Ljn[1:graph.J, 1:param.N] >= 1e-8, container=Array)            # Good specific labour
     @variable(model, Lj[1:graph.J] >= 1e-8, container=Array)                        # Overall labour
-    @variable(model, cj[1:graph.J] >= 1e-8, container=Array)                        # Overall consumption bundle, including transport costs
+    # Calculate start values for Lj and Ljn
+    pop_start = (Lr ./ gsum(ones(param.nregions), param.nregions, region))[region]
+    set_start_value.(Lj, pop_start)
+    pop_start_goods = repeat(pop_start / param.N, 1, param.N)
+    set_start_value.(Ljn, pop_start_goods)
 
     # Parameters: to be updated between solves
-    @variable(model, kappa_ex[i = 1:graph.ndeg] in Parameter(i))
+    @variable(model, kappa_ex[i = 1:graph.ndeg] in Parameter(i), container=Array)
     set_parameter_value.(kappa_ex, kappa_ex_init)
 
     # Objective
@@ -48,25 +54,19 @@ function model_partial_mobility_cgc(optimizer, auxdata)
     # Utility constraint (Lj * ur <= ... )
     @constraint(model, Lj .* ur[region] - (cj .* Lj ./ param.alpha) .^ param.alpha .* (param.Hj ./ (1 - param.alpha)) .^ (1 - param.alpha) .<= -1e-8)
 
-    # Final good constraints: same as full mobility
-    for i in 1:graph.ndeg
-        # Create the matrix B_direct (resp. B_indirect) of transport cost along the direction of the edge (resp. in edge opposite direction)
-        B_direct = sum(m[n] * Qin_direct[i, n] ^ param.nu for n in 1:param.N) ^ beta_nu / kappa_ex[i]
-        B_indirect = sum(m[n] * Qin_indirect[i, n] ^ param.nu for n in 1:param.N) ^ beta_nu / kappa_ex[i]
-        @constraint(model, [j in 1:param.J],
-                    cj[j] * Lj[j] + 
-                    Apos[j, i] * B_direct + 
-                    Aneg[j, i] * B_indirect - 
-                    sum(Djn[j, n] ^ psigma for n in 1:param.N) ^ (1 / psigma) <= -1e-8
-        )
-    end
+    # Create the matrix B_direct (resp. B_indirect) of transport cost along the direction of the edge (resp. in edge opposite direction)
+    B_direct = @expression(model, ((Qin_direct .^ param.nu) * m) .^ beta_nu ./ kappa_ex)
+    B_indirect = @expression(model, ((Qin_indirect .^ param.nu) * m) .^ beta_nu ./ kappa_ex)
+    # Final good constraints
+    @expression(model, Dj, sum(Djn .^ psigma, dims=2) .^ (1 / psigma))
+    @constraint(model, cj .* Lj + Apos * B_direct + Aneg * B_indirect - Dj .<= -1e-8)
 
     # Balanced flow constraints: same as full mobility
     @expression(model, Yjn, param.Zjn .* (Ljn .^ param.a))
     @constraint(model, Pjn, Djn + A * Qin_direct - A * Qin_indirect - Yjn .<= -1e-8)
 
     # Labor resource constraints (within each region)
-    @constraint(model, -1e-8 .<= gsum(Lj, param.nregions, region) - Lr .<= 1e8)
+    @constraint(model, -1e-8 .<= gsum(Lj, param.nregions, region) - Lr .<= 1e-8)
 
     # Local labor availability constraints ( sum Ljn <= Lj )
     @constraint(model, -1e-8 .<= sum(Ljn, dims=2) .- Lj .<= 1e-8)
@@ -87,7 +87,7 @@ function recover_allocation_partial_mobility_cgc(model, auxdata)
     results[:Ljn] = value.(model_dict[:Ljn])
     results[:Lj] = value.(model_dict[:Lj])
     results[:Djn] = value.(model_dict[:Djn]) # Consumption per good pre-transport cost
-    results[:Dj] = dropdims(sum(results[:Djn] .^ ((param.sigma-1)/param.sigma), dims=2), dims=2) .^ (param.sigma/(param.sigma-1))
+    results[:Dj] = dropdims(value.(model_dict[:Dj]), dims=2)
     results[:cj] = value.(model_dict[:cj])
     results[:Cj] = results[:cj] .* results[:Lj]
     results[:hj] = ifelse.(results[:Lj] .== 0, 0.0, param.Hj ./ results[:Lj])
