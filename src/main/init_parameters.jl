@@ -83,21 +83,6 @@ function init_parameters(; alpha=0.5, beta=1, gamma=1, K=1, sigma=5, rho=2, a=0.
     param[:kappa_min_iter] = kappa_min_iter
     param[:kappa_max_iter] = kappa_max_iter
 
-    if param[:mobility] == 0.5 || haskey(param, :nregions) || haskey(param, :region) || haskey(param, :omegar) || haskey(param, :Lr)
-        if !haskey(param, :Lr)
-            error("For partial mobility case need to provide a parameter 'Lr' containing a vector with the total populations of each region")        
-        end
-        if !haskey(param, :region)
-            error("For partial mobility case need to provide a parameter 'region' containing an integer vector that maps each node of the graph to a region. The vector should have values in the range 1:nregions and be of length graph.J (=number of nodes).")        
-        end
-        if !haskey(param, :omegar)
-            param[:omegar] = ones(length(param[:Lr]))
-        end
-        if !haskey(param, :nregions)
-            param[:nregions] = length(param[:Lr])
-        end
-    end
-
     # Define utility function, marginal utility of consumtion and inverse
     param[:u] = (c, h) -> ((c / alpha)^alpha * (h / (1 - alpha))^(1 - alpha))^(1 - rho) / (1 - rho)
     param[:uprime] = (c, h) -> ((c / alpha)^alpha * (h / (1 - alpha))^(1 - alpha))^-rho * ((c / alpha)^(alpha - 1) * (h / (1 - alpha))^(1 - alpha))
