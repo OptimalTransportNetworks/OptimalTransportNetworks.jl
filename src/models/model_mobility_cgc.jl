@@ -24,7 +24,7 @@ function model_mobility_cgc(optimizer, auxdata)
     @variable(model, Qin_direct[1:graph.ndeg, 1:param.N] >= 1e-8, container=Array, start = 0.0)   # Direct aggregate flow
     @variable(model, Qin_indirect[1:graph.ndeg, 1:param.N] >= 1e-8, container=Array, start = 0.0) # Indirect aggregate flow
     @variable(model, Ljn[1:graph.J, 1:param.N] >= 1e-8, container=Array, start = 1 / (graph.J * param.N)) # Good specific labour
-    @variable(model, Lj[1:graph.J] >= 1e-8, container=Array, start = 1 / graph.J)                 # Overall labour
+    @variable(model, 1e-8 <= Lj[1:graph.J] <= 1, container=Array, start = 1 / graph.J)                 # Overall labour
 
     # Parameters: to be updated between solves
     @variable(model, kappa_ex[i = 1:graph.ndeg] in Parameter(i), container=Array)
@@ -34,21 +34,21 @@ function model_mobility_cgc(optimizer, auxdata)
     @objective(model, Max, u)
 
     # Utility constraint (Lj*u <= ... )
-    @constraint(model, Lj .* u - (cj .* Lj ./ param.alpha) .^ param.alpha .* (param.Hj ./ (1 - param.alpha)) .^ (1 - param.alpha) .<= -1e-8)
+    @constraint(model, Lj .* u - (cj .* Lj / param.alpha) .^ param.alpha .* (param.Hj / (1 - param.alpha)) .^ (1 - param.alpha) .<= -1e-8)
 
     # Create the matrix B_direct (resp. B_indirect) of transport cost along the direction of the edge (resp. in edge opposite direction)
     B_direct = @expression(model, ((Qin_direct .^ param.nu) * m) .^ beta_nu ./ kappa_ex)
     B_indirect = @expression(model, ((Qin_indirect .^ param.nu) * m) .^ beta_nu ./ kappa_ex)
     # Final good constraints
     @expression(model, Dj, dropdims(sum(Djn .^ psigma, dims=2) .^ (1 / psigma), dims=2))
-    @constraint(model, cj .* param.Lj + Apos * B_direct + Aneg * B_indirect - Dj .<= -1e-8)
+    @constraint(model, cj .* Lj + Apos * B_direct + Aneg * B_indirect - Dj .<= -1e-8)
 
     # Balanced flow constraints
     @expression(model, Yjn, param.Zjn .* (Ljn .^ param.a))
     @constraint(model, Pjn, Djn + A * Qin_direct - A * Qin_indirect - Yjn .<= -1e-8)
 
     # Labor resource constraint
-    @constraint(model, -1e-8 <= sum(Lj) - 1 <= 1e8)
+    @constraint(model, -1e-8 <= sum(Lj) - 1 <= 1e-8)
 
     # Local labor availability constraints ( sum Ljn <= Lj )
     @constraint(model, -1e-8 .<= sum(Ljn, dims=2) .- Lj .<= 1e-8)
