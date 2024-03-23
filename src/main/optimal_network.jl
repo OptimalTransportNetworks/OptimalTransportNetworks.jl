@@ -137,7 +137,7 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
     weight_old = 0.5
     I1 = zeros(graph.J, graph.J)
     distance = 0.0
-    all_vars = all_variables(model)
+    all_vars = all_variables_except_kappa_ex(model)
     start_values = start_value.(all_vars)
     used_warm_start = false
 

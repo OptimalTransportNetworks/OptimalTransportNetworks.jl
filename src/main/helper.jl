@@ -129,3 +129,8 @@ function create_auxdata(param, graph, I)
 
     return auxdata
 end
+
+function all_variables_except_kappa_ex(model)
+    all_vars = all_variables(model)
+    return setdiff(all_vars, model[:kappa_ex])
+end
