@@ -67,7 +67,14 @@ function gsum(x, ng, g)
     if length(g) != n
         error("length(region) = $(length(g)) must match number of edges (graph.J) = $n")
     end
-    res = zeros(ng)
+    # Determine the type for the result based on the type of elements in x
+    if eltype(x) <: JuMP.AbstractVariableRef
+        # Initialize a vector of affine expressions
+        res = Vector{JuMP.GenericAffExpr{Float64, JuMP.VariableRef}}(undef, ng)
+        res .= zero(JuMP.GenericAffExpr{Float64, JuMP.VariableRef})
+    else
+        res = zeros(ng)
+    end
     for i in 1:n
         @inbounds res[g[i]] += x[i]
     end
