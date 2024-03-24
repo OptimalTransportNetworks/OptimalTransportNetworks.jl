@@ -38,7 +38,7 @@ function model_partial_mobility_cgc(optimizer, auxdata)
     @variable(model, Ljn[1:graph.J, 1:param.N] >= 1e-8, container=Array)            # Good specific labour
     @variable(model, Lj[1:graph.J] >= 1e-8, container=Array)                        # Overall labour
     # Calculate start values for Lj and Ljn
-    pop_start = (Lr ./ gsum(ones(param.nregions), param.nregions, region))[region]
+    pop_start = (Lr ./ gsum(ones(graph.J), param.nregions, region))[region]
     set_start_value.(Lj, pop_start)
     pop_start_goods = repeat(pop_start / param.N, 1, param.N)
     set_start_value.(Ljn, pop_start_goods)
