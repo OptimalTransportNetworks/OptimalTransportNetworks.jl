@@ -144,7 +144,7 @@ function retrieve_options_create_graph(param, w, h, type; kwargs...)
             error("Length of 'region' vector should match the number of locations/nodes in the network = $J.")
         end
         options[:nregions] = length(options[:Lr])
-        if !isinteger(options[:region][1])
+        if !isinteger(options[:region][1]) || typeof(options[:region][1]) == Float64
             error("'region' needs to be an integer vector.")
         end
         if minimum(options[:region]) != 1 || maximum(options[:region]) > options[:nregions]
