@@ -12,9 +12,9 @@ Runs the simulated annealing method starting from network `I0`. Only sensible if
 # Keyword Arguments
 - `verbose::Bool=false`: (Optional) tell IPOPT to display results
 - `perturbation_method::String="random rebranching"`: Method to be used to perturbate the network 
-    (random is purely random, works horribly; shake applies a gaussian blur
-     along a random direction, works alright; rebranching (default) is the algorithm
-     described in Appendix A.4 in the paper, works nicely )
+    ("random" is purely random, works horribly; "shake" applies a gaussian blur
+     along a random direction, works alright; "rebranching" (deterministic) and "random rebranching" (default) is the algorithm
+     described in Appendix A.4 in the paper, works nicely)
 - `preserve_central_symmetry::Bool=false`: Only applies to shake method
 - `preserve_vertical_symmetry::Bool=false`: Only applies to shake method
 - `preserve_horizontal_symmetry::Bool=false`: Only applies to shake method
