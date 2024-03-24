@@ -91,7 +91,8 @@ end
 
 function retrieve_options_create_graph(param, w, h, type; kwargs...)
 
-    options = Dict(:type => type)
+    options = Dict()
+    options[:type] = type
 
     for (k, v) in kwargs
         options[k] = v
