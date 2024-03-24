@@ -66,7 +66,7 @@ function model_partial_mobility_cgc(optimizer, auxdata)
     @constraint(model, Pjn, Djn + A * Qin_direct - A * Qin_indirect - Yjn .<= -1e-8)
 
     # Labor resource constraints (within each region)
-    @constraint(model, -1e-8 .<= gsum(Lj, param.nregions, region) - Lr .<= 1e-8)
+    @constraint(model, -1e-8 .<= gsum(Lj, param.nregions, region) .- Lr .<= 1e-8)
 
     # Local labor availability constraints ( sum Ljn <= Lj )
     @constraint(model, -1e-8 .<= sum(Ljn, dims=2) .- Lj .<= 1e-8)
