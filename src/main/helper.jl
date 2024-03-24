@@ -65,7 +65,7 @@ end
 function gsum(x, ng, g)
     n = length(x)
     if length(g) != n
-        error("length(regions) must match number of edges (graph.J)")
+        error("length(region) = $(length(g)) must match number of edges (graph.J) = $n")
     end
     res = zeros(ng)
     for i in 1:n
