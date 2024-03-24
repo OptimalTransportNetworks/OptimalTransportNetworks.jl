@@ -52,7 +52,9 @@ function create_graph(param, w = 11, h = 11; type = "map", kwargs...)
         param[:hj][param[:Lj] .== 0] .= 1
         param[:omegaj] = options[:omega]
     elseif param[:mobility] == 0.5
-        graph.region = options[:region]
+        graph = namedtuple_to_dict(graph)
+        graph[:region] = options[:region]
+        graph = dict_to_namedtuple(graph)
         param[:omegar] = options[:omega]
         param[:Lr] = options[:Lr]
         param[:nregions] = options[:nregions]
@@ -236,7 +238,7 @@ function create_map(w, h)
 
     ndeg = sum(tril(adjacency))
 
-    return (J=J, x=x, y=y, nodes=nodes, adjacency=adjacency, delta_i=delta, delta_tau=delta, ndeg=ndeg, region = nothing)
+    return (J=J, x=x, y=y, nodes=nodes, adjacency=adjacency, delta_i=delta, delta_tau=delta, ndeg=ndeg)
 end
 
 
@@ -343,7 +345,7 @@ function create_triangle(w, h)
 
     ndeg = sum(tril(adjacency))
 
-    return (J=J, x=x, y=y, nodes=nodes, adjacency=adjacency, delta_i=delta, delta_tau=delta, ndeg=ndeg, region = nothing)
+    return (J=J, x=x, y=y, nodes=nodes, adjacency=adjacency, delta_i=delta, delta_tau=delta, ndeg=ndeg)
 end
 
 
@@ -403,7 +405,7 @@ function create_square(w, h)
 
     ndeg = sum(tril(adjacency))
 
-    return (J=J, x=x, y=y, nodes=nodes, adjacency=adjacency, delta_i=delta, delta_tau=delta, ndeg=ndeg, region = nothing)
+    return (J=J, x=x, y=y, nodes=nodes, adjacency=adjacency, delta_i=delta, delta_tau=delta, ndeg=ndeg)
 end
 
 
@@ -435,7 +437,7 @@ function create_custom(adjacency, x, y)
     delta = sqrt.((xx .- xx').^2 + (yy .- yy').^2)
     delta[adjacency .== 0] .= 0.0
 
-    return (J=J, x=x, y=y, nodes=nodes, adjacency=adjacency, delta_i=delta, delta_tau=delta, ndeg=ndeg, region = nothing)
+    return (J=J, x=x, y=y, nodes=nodes, adjacency=adjacency, delta_i=delta, delta_tau=delta, ndeg=ndeg)
 end
 
 
