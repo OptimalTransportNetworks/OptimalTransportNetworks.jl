@@ -59,7 +59,7 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
     Il = Il === nothing ? zeros(graph.J, graph.J) : Il
     Iu = Iu === nothing ? Inf * ones(graph.J, graph.J) : Iu
 
-    if param[:mobility] || param[:beta] > 1 || param[:cong]
+    if param[:mobility] != 0 || param[:beta] > 1 || param[:cong]
         Il = max.(1e-6 * graph.adjacency, Il)
     end
 

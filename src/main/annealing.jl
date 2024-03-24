@@ -61,7 +61,7 @@ function annealing(param, graph, I0; kwargs...)
     Iu = options.Iu
     Il = options.Il
 
-    if param[:mobility] || param[:beta] > 1 # use with the primal version only
+    if param[:mobility] != 0 || param[:beta] > 1 # use with the primal version only
         Il = max.(1e-6 * graph.adjacency, Il) # the primal approach in the mobility case requires a non-zero lower bound on kl, otherwise derivatives explode
     end
 
