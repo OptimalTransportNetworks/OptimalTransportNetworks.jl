@@ -67,6 +67,11 @@ function create_graph(param, w = 11, h = 11; type = "map", kwargs...)
 end
 
 function isadjacency(M)
+    # check if M is BitMatrix or Integer matrix
+    if !(typeof(M) <: BitMatrix || typeof(M) <: Matrix{Int})
+        error("adjacency matrix must be a BitMatrix or Integer Matrix")
+    end
+
     res = true
 
     # check is matrix is square
@@ -83,7 +88,7 @@ function isadjacency(M)
     end
 
     # check if matrix has only 0's and 1's
-    if any(M .!= 0 .& M .!= 1)
+    if any(M .!= 0 .&& M .!= 1)
         @warn "adjacency matrix should have only 0s and 1s.\n"
         res = false
     end
