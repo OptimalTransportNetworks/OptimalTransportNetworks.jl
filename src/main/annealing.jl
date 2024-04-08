@@ -328,7 +328,7 @@ function annealing(param, graph, I0; kwargs...)
         distance = sum(abs.(I1 .- I0)) / (J^2)
         I0 *= weight_old 
         I0 += (1 - weight_old) * I1
-        has_converged = distance < param[:kappa_tol]
+        has_converged = distance < param[:tol]
         counter += 1
 
         if param[:verbose]

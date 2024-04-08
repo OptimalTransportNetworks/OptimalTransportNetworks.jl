@@ -134,7 +134,7 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
     start_values = start_value.(all_vars)
     used_warm_start = false
 
-    while (!has_converged && counter < param[:kappa_max_iter]) || counter <= param[:kappa_min_iter]
+    while (!has_converged && counter < param[:max_iter]) || counter <= param[:min_iter]
 
         # if save_before_it_crashes
         #     debug_file_str = "debug.mat"
@@ -183,14 +183,14 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
         I1 = rescale_network!(param, graph, I1, Il, Iu)
 
         distance = maximum(abs.(I1 - I0)) / K_infra
-        has_converged = distance < param[:kappa_tol]
+        has_converged = distance < param[:tol]
         counter += 1
 
         if param[:verbose]
             println("Iteration No. $counter distance=$distance duration=$(t1 - t0) secs. Welfare=$(results[:welfare])")
         end
 
-        if (!has_converged || counter <= param[:kappa_min_iter]) && !skip_update
+        if (!has_converged || counter <= param[:min_iter]) && !skip_update
             I0 *= weight_old 
             I0 += (1 - weight_old) * I1
             # This creates kappa and updates the model
@@ -199,7 +199,7 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
         end
     end
 
-    if counter <= param[:kappa_max_iter] && !has_converged && param[:verbose]
+    if counter <= param[:max_iter] && !has_converged && param[:verbose]
         println("Reached MAX iterations with convergence at $distance.")
         error_status = true
     end

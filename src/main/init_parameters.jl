@@ -26,10 +26,10 @@ Returns a `param` dict with the model parameters.
 - `verbose::Bool=true`: Switch to turn on/off text output (from Ipopt or other optimizers)
 - `duality::Bool=true`: Switch to turn on/off duality whenever available
 - `warm_start::Bool=true`: Use the previous solution as a warm start for the next iteration
-- `kappa_tol::Float64=1e-7`: Tolerance for convergence of road capacities κ
 - `kappa_min::Float64=1e-5`: Minimum value for road capacities κ
-- `kappa_min_iter::Int64=20`: Minimum number of iterations
-- `kappa_max_iter::Int64=200`: Maximum number of iterations
+- `min_iter::Int64=20`: Minimum number of iterations
+- `max_iter::Int64=200`: Maximum number of iterations
+- `tol::Float64=1e-7`: Tolerance for convergence of road capacities κ
 - `optimizer_attr::Dict`: Dict of attributes passed to the optimizer (e.g. `Dict(:tol => 1e-5)`)
 - `model_attr::Dict`: Dict of tuples (length 2) passed to the model (e.g. `Dict(:backend => (MOI.AutomaticDifferentiationBackend(), MathOptSymbolicAD.DefaultBackend()))` to use Symbolic AD)
 - `model::Function`: For custom models => a function that taks an optimizer and an 'auxdata' structure as created by create_auxdata() as input and returns a fully parameterized JuMP model
@@ -40,11 +40,10 @@ Returns a `param` dict with the model parameters.
 param = init_parameters(labor_mobility = true, K = 10)
 ```
 """
-function init_parameters(; alpha=0.5, beta=1, gamma=1, K=1, sigma=5, rho=2, a=0.8, N=1, m = ones(N), nu=1, 
+function init_parameters(; alpha = 0.5, beta = 1, gamma = 1, K = 1, sigma = 5, rho = 2, a = 0.8, N = 1, m = ones(N), nu = 1, 
                          labor_mobility = false, cross_good_congestion=false, annealing=true, 
                          verbose = true, duality = true, warm_start = true, 
-                         kappa_tol = 1e-7, kappa_min = 1e-5, kappa_min_iter = 20, kappa_max_iter = 200,
-                         kwargs...)
+                         kappa_min = 1e-5, min_iter = 20, max_iter = 200, tol = 1e-7, kwargs...)
     param = Dict()
 
     if !isempty(kwargs)
@@ -78,10 +77,10 @@ function init_parameters(; alpha=0.5, beta=1, gamma=1, K=1, sigma=5, rho=2, a=0.
     param[:warm_start] = warm_start
 
     # Additional parameters for the numerical part
-    param[:kappa_tol] = kappa_tol
+    param[:tol] = tol
     param[:kappa_min] = kappa_min
-    param[:kappa_min_iter] = kappa_min_iter
-    param[:kappa_max_iter] = kappa_max_iter
+    param[:min_iter] = min_iter
+    param[:max_iter] = max_iter
 
     # Define utility function, marginal utility of consumtion and inverse
     param[:u] = (c, h) -> ((c / alpha)^alpha * (h / (1 - alpha))^(1 - alpha))^(1 - rho) / (1 - rho)
