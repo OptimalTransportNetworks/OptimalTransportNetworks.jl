@@ -32,7 +32,6 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
     # I0=nothing; Il=nothing; Iu=nothing; verbose=false; return_model = false; return_model = 0;
 
     J = graph.J
-    TOL_I_BOUNDS = 1e-7
     error_status = false
 
     # ---------------------------------------------
@@ -46,18 +45,10 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
         error("nu has to be larger or equal to one for the problem to be guaranteed convex.")
     end
 
-    if I0 === nothing
-        I0 = zeros(J, J)
-        for i in 1:J
-            for j in graph.nodes[i]
-                I0[i, j] = 1
-            end
-        end
-        I0 = param[:K] * I0 / sum(graph.delta_i .* I0)
-    end
-
-    Il = Il === nothing ? zeros(graph.J, graph.J) : Il
-    Iu = Iu === nothing ? Inf * ones(graph.J, graph.J) : Iu
+    Il = Il === nothing ? zeros(J, J) : max.(Il, 0.0)
+    Iu = Iu === nothing ? fill(Inf, J, J) : max.(Iu, 0.0)
+    I0 = I0 === nothing ? Float64.(graph.adjacency) : max.(I0, 0.0)
+    I0 = rescale_network!(param, graph, I0, Il, Iu)
 
     if param[:mobility] != 0 || param[:beta] > 1 || param[:cong]
         Il = max.(1e-6 * graph.adjacency, Il)
@@ -135,7 +126,9 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
     has_converged = false
     counter = 0
     weight_old = 0.5
-    I1 = zeros(graph.J, graph.J)
+    I1 = zeros(J, J)
+    # K in average infrastructure units
+    K_infra = (param[:K] / mean(graph.delta_i[graph.adjacency.==1]))
     distance = 0.0
     all_vars = all_variables_except_kappa_ex(model)
     start_values = start_value.(all_vars)
@@ -172,11 +165,11 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
         
         # See macro defined below
         if !param[:cong]
-            PQ = permutedims(repeat(results[:Pjn], 1, 1, graph.J), [1, 3, 2]) .* results[:Qjkn] .^ (1 + param[:beta])
+            PQ = permutedims(repeat(results[:Pjn], 1, 1, J), [1, 3, 2]) .* results[:Qjkn] .^ (1 + param[:beta])
             PQ = dropdims(sum(PQ + permutedims(PQ, [2, 1, 3]), dims=3), dims = 3)
         else
-            PQ = repeat(results[:PCj], 1, graph.J)
-            matm = permutedims(repeat(param[:m], 1, graph.J, graph.J), [3, 2, 1])
+            PQ = repeat(results[:PCj], 1, J)
+            matm = permutedims(repeat(param[:m], 1, J, J), [3, 2, 1])
             cost = dropdims(sum(matm .* results[:Qjkn] .^ param[:nu], dims=3), dims = 3) .^ ((param[:beta] + 1) / param[:nu])
             PQ .*= cost
             PQ += PQ'
@@ -187,24 +180,9 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
         I1[PQ .== 0] .= 0
         I1[graph.delta_i .== 0] .= 0
         I1 *= param[:K] / sum(graph.delta_i .* I1)
-        
-        distance_lb = max(maximum(Il - I1), 0)
-        distance_ub = max(maximum(I1 - Iu), 0)
-        counter_rescale = 0
-        
-        while distance_lb + distance_ub > TOL_I_BOUNDS && counter_rescale < 100
-            I1 = max.(min.(I1, Iu), Il)
-            I1 *= param[:K] / sum(graph.delta_i .* I1)
-            distance_lb = max(maximum(Il - I1), 0)
-            distance_ub = max(maximum(I1 - Iu), 0)
-            counter_rescale += 1
-        end
-        
-        if counter_rescale == 100 && distance_lb + distance_ub > param[:kappa_tol] && param[:verbose]
-            println("Warning! Could not impose bounds on network properly.")
-        end
+        I1 = rescale_network!(param, graph, I1, Il, Iu)
 
-        distance = maximum(abs.(I1 - I0)) / (param[:K] / mean(graph.delta_i[graph.adjacency.==1]))
+        distance = maximum(abs.(I1 - I0)) / K_infra
         has_converged = distance < param[:kappa_tol]
         counter += 1
 

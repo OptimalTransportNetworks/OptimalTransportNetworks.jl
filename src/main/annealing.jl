@@ -246,22 +246,7 @@ function annealing(param, graph, I0; kwargs...)
                 # I1[PQ .== 0] .= 0
                 # I1[graph.delta_i .== 0] .= 0
                 I1 *= param[:K] / sum(graph.delta_i .* I1)
-                
-                distance_lb = max(maximum(Il - I1), 0)
-                distance_ub = max(maximum(I1 - Iu), 0)
-                counter_rescale = 0
-                
-                while distance_lb + distance_ub > TOL_I_BOUNDS && counter_rescale < 100
-                    I1 = max.(min.(I1, Iu), Il)
-                    I1 *= param[:K] / sum(graph.delta_i .* I1)
-                    distance_lb = max(maximum(Il - I1), 0)
-                    distance_ub = max(maximum(I1 - Iu), 0)
-                    counter_rescale += 1
-                end
-                
-                if counter_rescale == 100 && distance_lb + distance_ub > param[:kappa_tol] && param[:verbose]
-                    println("Warning! Could not impose bounds on network properly.")
-                end
+                I1 = rescale_network!(param, graph, I1, Il, Iu)
             end
             k += 1
         end
@@ -338,22 +323,7 @@ function annealing(param, graph, I0; kwargs...)
         # I1[PQ .== 0] .= 0
         # I1[graph.delta_i .== 0] .= 0
         I1 *= param[:K] / sum(graph.delta_i .* I1)
-        
-        distance_lb = max(maximum(Il - I1), 0)
-        distance_ub = max(maximum(I1 - Iu), 0)
-        counter_rescale = 0
-        
-        while distance_lb + distance_ub > TOL_I_BOUNDS && counter_rescale < 100
-            I1 = max.(min.(I1, Iu), Il)
-            I1 *= param[:K] / sum(graph.delta_i .* I1)
-            distance_lb = max(maximum(Il - I1), 0)
-            distance_ub = max(maximum(I1 - Iu), 0)
-            counter_rescale += 1
-        end
-        
-        if counter_rescale == 100 && distance_lb + distance_ub > param[:kappa_tol] && param[:verbose]
-            println("Warning! Could not impose bounds on network properly.")
-        end
+        I1 = rescale_network!(param, graph, I1, Il, Iu)
 
         # UPDATE AND DISPLAY RESULTS
         distance = sum(abs.(I1 .- I0)) / (J^2)

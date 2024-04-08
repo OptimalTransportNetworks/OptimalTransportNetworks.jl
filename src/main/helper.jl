@@ -141,3 +141,24 @@ function all_variables_except_kappa_ex(model)
     all_vars = all_variables(model)
     return setdiff(all_vars, model[:kappa_ex])
 end
+
+function rescale_network!(param, graph, I1, Il, Iu; max_iter = 100)
+    distance_lb = max(maximum(Il - I1), 0.0)
+    distance_ub = max(maximum(I1 - Iu), 0.0)
+    counter_rescale = 0
+    TOL_I_BOUNDS = min(param[:kappa_tol], 1e-7)
+    
+    while distance_lb + distance_ub > TOL_I_BOUNDS && counter_rescale < max_iter
+        I1 = max.(min.(I1, Iu), Il)
+        I1 *= param[:K] / sum(graph.delta_i .* I1)
+        distance_lb = max(maximum(Il - I1), 0.0)
+        distance_ub = max(maximum(I1 - Iu), 0.0)
+        counter_rescale += 1
+    end
+    
+    if counter_rescale == 100 && distance_lb + distance_ub > param[:kappa_tol] && param[:verbose]
+        println("Warning! Could not impose bounds on network properly.")
+    end
+
+    return I1
+end
