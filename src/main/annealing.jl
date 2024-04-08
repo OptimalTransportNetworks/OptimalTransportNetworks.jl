@@ -53,7 +53,6 @@ function annealing(param, graph, I0; kwargs...)
 
     # Retrieve economy's parameters
     J = graph.J
-    TOL_I_BOUNDS = 1e-7 
     best_results = nothing
 
     # Retrieve optional parameters
@@ -231,11 +230,11 @@ function annealing(param, graph, I0; kwargs...)
             # Deepen network
             if k < num_deepening - 1
                 if !param[:cong]
-                    PQ = permutedims(repeat(results[:Pjn], 1, 1, graph.J), [1, 3, 2]) .* results[:Qjkn] .^ (1 + param[:beta])
+                    PQ = permutedims(repeat(results[:Pjn], 1, 1, J), [1, 3, 2]) .* results[:Qjkn] .^ (1 + param[:beta])
                     PQ = dropdims(sum(PQ + permutedims(PQ, [2, 1, 3]), dims=3), dims = 3)
                 else
-                    PQ = repeat(results[:PCj], 1, graph.J)
-                    matm = permutedims(repeat(param[:m], 1, graph.J, graph.J), [3, 2, 1])
+                    PQ = repeat(results[:PCj], 1, J)
+                    matm = permutedims(repeat(param[:m], 1, J, J), [3, 2, 1])
                     cost = dropdims(sum(matm .* results[:Qjkn] .^ param[:nu], dims=3), dims = 3) .^ ((param[:beta] + 1) / param[:nu])
                     PQ .*= cost
                     PQ += PQ'
@@ -308,11 +307,11 @@ function annealing(param, graph, I0; kwargs...)
 
         # DEEPEN NETWORK
         if !param[:cong]
-            PQ = permutedims(repeat(results[:Pjn], 1, 1, graph.J), [1, 3, 2]) .* results[:Qjkn] .^ (1 + param[:beta])
+            PQ = permutedims(repeat(results[:Pjn], 1, 1, J), [1, 3, 2]) .* results[:Qjkn] .^ (1 + param[:beta])
             PQ = dropdims(sum(PQ + permutedims(PQ, [2, 1, 3]), dims=3), dims = 3)
         else
-            PQ = repeat(results[:PCj], 1, graph.J)
-            matm = permutedims(repeat(param[:m], 1, graph.J, graph.J), [3, 2, 1])
+            PQ = repeat(results[:PCj], 1, J)
+            matm = permutedims(repeat(param[:m], 1, J, J), [3, 2, 1])
             cost = dropdims(sum(matm .* results[:Qjkn] .^ param[:nu], dims=3), dims = 3) .^ ((param[:beta] + 1) / param[:nu])
             PQ .*= cost
             PQ += PQ'
@@ -644,11 +643,11 @@ function hybrid(param, graph, I0, results, options)
     J = graph.J
 
     if !param[:cong] # no cross-good congestion
-        PQ = permutedims(repeat(results[:Pjn], 1, 1, graph.J), [1, 3, 2]) .* results[:Qjkn] .^ (1 + param[:beta])
+        PQ = permutedims(repeat(results[:Pjn], 1, 1, J), [1, 3, 2]) .* results[:Qjkn] .^ (1 + param[:beta])
         PQ = dropdims(sum(PQ + permutedims(PQ, [2, 1, 3]), dims=3), dims = 3)
     else # cross-good congestion
-        PQ = repeat(results[:PCj], 1, graph.J)
-        matm = permutedims(repeat(param[:m], 1, graph.J, graph.J), [3, 2, 1])
+        PQ = repeat(results[:PCj], 1, J)
+        matm = permutedims(repeat(param[:m], 1, J, J), [3, 2, 1])
         cost = dropdims(sum(matm .* results[:Qjkn] .^ param[:nu], dims=3), dims = 3) .^ ((param[:beta] + 1) / param[:nu])
         PQ .*= cost
         PQ += PQ'
