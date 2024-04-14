@@ -2,12 +2,12 @@
 # using LinearAlgebra
 
 """
-    create_graph(param, w = 11, h = 11; type = "map", kwargs...) -> Dict, NamedTuple
+    create_graph(param, w = 11, h = 11; type = "map", kwargs...) -> Dict, Dict
 
 Initialize the underlying graph, population and productivity parameters.
 
 # Arguments
-- `param::Dict`: Structure that contains the model parameters
+- `param::Dict`: Dict that contains the model parameters
 - `w::Int64=11`: Number of nodes along the width of the underlying graph (integer)  
 - `h::Int64=11`: Number of nodes along the height of the underlying graph (integer, odd if triangle)
 
@@ -42,19 +42,17 @@ function create_graph(param, w = 11, h = 11; type = "map", kwargs...)
         graph = create_custom(options[:adjacency], options[:x], options[:y])
     end
 
-    param[:J] = graph.J
-    param[:Zjn] = haskey(options, :Zjn) ? options[:Zjn] : ones(graph.J, param[:N])
-    param[:Hj] = haskey(options, :Hj) ? options[:Hj] : ones(graph.J)
+    param[:J] = graph[:J]
+    param[:Zjn] = haskey(options, :Zjn) ? options[:Zjn] : ones(graph[:J], param[:N])
+    param[:Hj] = haskey(options, :Hj) ? options[:Hj] : ones(graph[:J])
 
     if param[:mobility] == false
-        param[:Lj] = haskey(options, :Lj) ? options[:Lj] : ones(graph.J) / graph.J
+        param[:Lj] = haskey(options, :Lj) ? options[:Lj] : ones(graph[:J]) / graph[:J]
         param[:hj] = param[:Hj] ./ param[:Lj]
         param[:hj][param[:Lj] .== 0] .= 1
         param[:omegaj] = options[:omega]
     elseif param[:mobility] == 0.5
-        graph = namedtuple_to_dict(graph)
         graph[:region] = options[:region]
-        graph = dict_to_namedtuple(graph)
         param[:omegar] = options[:omega]
         param[:Lr] = options[:Lr]
         param[:nregions] = options[:nregions]
@@ -175,7 +173,7 @@ function retrieve_options_create_graph(param, w, h, type; kwargs...)
 end
 
 """
-    create_map(w, h)
+    create_map(w, h) -> Dict
 
 Creates a square graph structure with width `w` and height `h` 
 (nodes have 8 neighbors in total, along horizontal and vertical 
@@ -243,12 +241,13 @@ function create_map(w, h)
 
     ndeg = sum(tril(adjacency))
 
-    return (J=J, x=x, y=y, nodes=nodes, adjacency=adjacency, delta_i=delta, delta_tau=delta, ndeg=ndeg)
+    return Dict(:J => J, :x => x, :y => y, :nodes => nodes, :adjacency => adjacency, :delta_i => delta, :delta_tau => delta, :ndeg => ndeg)
 end
 
 
+
 """
-    create_triangle(w, h)
+    create_triangle(w, h) -> Dict
 
 Creates a triangular graph structure with width `w` and height `h` 
 (each node is the center of a hexagon and each node has 6 neighbors, 
@@ -350,13 +349,13 @@ function create_triangle(w, h)
 
     ndeg = sum(tril(adjacency))
 
-    return (J=J, x=x, y=y, nodes=nodes, adjacency=adjacency, delta_i=delta, delta_tau=delta, ndeg=ndeg)
+    return Dict(:J => J, :x => x, :y => y, :nodes => nodes, :adjacency => adjacency, :delta_i => delta, :delta_tau => delta, :ndeg => ndeg)
 end
 
 
 
 """
-    create_square(w, h)
+    create_square(w, h) -> Dict
 
 Creates a square graph structure
 with width w and height h (nodes have 4 neighbors in total, along
@@ -410,12 +409,12 @@ function create_square(w, h)
 
     ndeg = sum(tril(adjacency))
 
-    return (J=J, x=x, y=y, nodes=nodes, adjacency=adjacency, delta_i=delta, delta_tau=delta, ndeg=ndeg)
+    return Dict(:J => J, :x => x, :y => y, :nodes => nodes, :adjacency => adjacency, :delta_i => delta, :delta_tau => delta, :ndeg => ndeg)
 end
 
 
 """
-    create_custom(adjacency, x, y)
+    create_custom(adjacency, x, y) -> Dict
 
 Creates a custom graph structure with given adjacency matrix, x and y vectors 
 of coordinates.
@@ -442,7 +441,7 @@ function create_custom(adjacency, x, y)
     delta = sqrt.((xx .- xx').^2 + (yy .- yy').^2)
     delta[adjacency .== 0] .= 0.0
 
-    return (J=J, x=x, y=y, nodes=nodes, adjacency=adjacency, delta_i=delta, delta_tau=delta, ndeg=ndeg)
+    return Dict(:J => J, :x => x, :y => y, :nodes => nodes, :adjacency => adjacency, :delta_i => delta, :delta_tau => delta, :ndeg => ndeg)
 end
 
 

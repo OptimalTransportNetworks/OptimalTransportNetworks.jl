@@ -51,6 +51,7 @@ plot_graph(graph, result_annealing[:Ijk])
 """
 function annealing(param, graph, I0; kwargs...)
 
+    graph = dict_to_namedtuple(graph) # convert graph to namedtuple for cleaner access
     # Retrieve economy's parameters
     J = graph.J
     best_results = nothing

@@ -9,7 +9,7 @@
 Plot a graph visualization with various styling options.
 
 # Arguments
-- `graph::NamedTuple`: The network graph (created with `create_graph()`)
+- `graph::Dict`: The network graph (created with `create_graph()`)
 - `edges::Matrix{Float64}=nothing`: Matrix of edge weights (J x J)
 
 # Keyword Arguments
@@ -56,10 +56,12 @@ plot_graph(graph, result[:Ijk])
 """
 function plot_graph(graph, edges = nothing; kwargs...)
 
+    graph = dict_to_namedtuple(graph)
+
     op = retrieve_options_plot_graph(graph, edges; kwargs...)
 
     # Empty plot
-    pl = plot(grid = op.grid, axis = op.axis, margin = op.margin)
+    pl = plot(grid = op.grid, axis = op.axis, margin = op.margin) # aspect_ratio=:equal?
 
     # # Set margins
     # margin = op.margin

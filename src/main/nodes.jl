@@ -1,12 +1,12 @@
 
 """
-    add_node(param, graph, x, y, neighbors) -> Dict, NamedTuple
+    add_node(param, graph, x, y, neighbors) -> Dict, Dict
 
 Add a node in position (x,y) and list of neighbors. The new node is given an index J+1.
 
 # Arguments
 - `param::Dict`: Dict that contains the model's parameters, or `nothing` to only update graph
-- `graph::NamedTuple`: Named tuple that contains the underlying graph (created by create_graph())
+- `graph::Dict`: Dict that contains the underlying graph (created by create_graph())
 - `x::Float64`: x coordinate of the new node (any real number)
 - `y::Float64`: y coordinate of the new node (any real number)
 - `neighbors::Vector{Int64}`: Vector of nodes to which it is connected (1 x n list of node indices between 1 and J, where n is an arbitrary # of neighbors) 
@@ -16,6 +16,8 @@ The cost matrices `delta_tau` and `delta_i` are parametrized as a function of Eu
 Returns the updated `graph` and `param` objects (`param` is affected too because the variable `Zjn`, `Lj`, `Hj` and others are reset to a uniform dist.)
 """
 function add_node(param, graph, x, y, neighbors)
+
+    graph = dict_to_namedtuple(graph)
 
     # Check validity of neighbors list
     if any(neighbors .!= floor.(neighbors)) || any(neighbors .< 1) || any(neighbors .> graph.J)
@@ -60,15 +62,15 @@ function add_node(param, graph, x, y, neighbors)
     ndeg = sum(tril(adjacency)) # nb of degrees of liberty in adjacency matrix
 
     # Return new graph structure
-    graph_new = (
-        J = Jnew,
-        x = new_x,
-        y = new_y,
-        nodes = nodes,
-        adjacency = adjacency,
-        delta_i = delta_i,
-        delta_tau = delta_tau,
-        ndeg = ndeg
+    graph_new = Dict(
+        :J => Jnew,
+        :x => new_x,
+        :y => new_y,
+        :nodes => nodes,
+        :adjacency => adjacency,
+        :delta_i => delta_i,
+        :delta_tau => delta_tau,
+        :ndeg => ndeg
     )
 
     if param !== nothing
@@ -108,12 +110,13 @@ end
 Returns the index of the node closest to the coordinates (x,y) on the graph.
 
 # Arguments
-- `graph::NamedTuple`: structure that contains the underlying graph
+- `graph::Dict`: Dict that contains the underlying graph (created by create_graph())
 - `x::Float64`: x coordinate on the graph (between 1 and w)
 - `y::Float64`: y coordinate on the graph (between 1 and h)
 """
 function find_node(graph, x, y)
-    distance = (graph.x .- x).^2 + (graph.y .- y).^2
+    graph = namedtuple_to_dict(graph)
+    distance = (graph[:x] .- x).^2 + (graph[:y] .- y).^2
     _, id = findmin(distance)
     return id
 end
@@ -126,20 +129,26 @@ end
 Removes node i from the graph.
 
 # Arguments
-- `param::Dict`: structure that contains the model's parameters, or `nothing` to only update graph
-- `graph::NamedTuple`: structure that contains the underlying graph (created by create_graph())
+- `param::Dict`: Dict that contains the model's parameters, or `nothing` to only update graph
+- `graph::Dict`: Dict that contains the underlying graph (created by create_graph())
 - `i::Int64`: index of the mode to be removed (integer between 1 and graph.J)
 
 Returns the updated graph and param objects (param is affected too because the variable Zjn, Lj, Hj and others are changed).
 """
 function remove_node(param, graph, i)
 
+    if graph isa Dict
+        graph_new = copy(dict)
+    else
+        graph_new = Dict(pairs(namedtuple))
+    end
+    graph = dict_to_namedtuple(graph)
+
     if i < 1 || i > graph.J || i != floor(i)
         error("remove_node: node i should be an integer between 1 and $(graph.J).")
     end
 
     Jnew = graph.J - 1
-    graph_new = namedtuple_to_dict(graph)
 
     graph_new[:J] = Jnew
     graph_new[:x] = deleteat!(copy(graph.x), i)
@@ -198,9 +207,9 @@ function remove_node(param, graph, i)
             param_new[:Zjn] = vcat(param[:Zjn][1:i-1, :], param[:Zjn][i+1:end, :])
         end
 
-        return param_new, dict_to_namedtuple(graph_new)
+        return param_new, graph_new
     end
 
-    return dict_to_namedtuple(graph_new)
+    return graph_new
 end
 

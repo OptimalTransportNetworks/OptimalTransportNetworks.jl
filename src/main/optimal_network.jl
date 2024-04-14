@@ -11,7 +11,7 @@ Solve for the optimal network by solving the inner problem and the outer problem
 
 # Arguments
 - `param::Dict`: Dict that contains the model's parameters
-- `graph::NamedTuple`: Named tuple that contains the underlying graph (created by `create_graph()` function)
+- `graph::Dict`: Dict that contains the underlying graph (created by `create_graph()` function)
 - `I0::Matrix{Float64}=nothing`: (Optional) J x J matrix providing the initial guess for the iterations 
 - `Il::Matrix{Float64}=nothing`: (Optional) J x J matrix providing exogenous lower bound on infrastructure levels
 - `Iu::Matrix{Float64}=nothing`: (Optional) J x J matrix providing exogenous upper bound on infrastructure levels
@@ -30,7 +30,7 @@ plot_graph(graph, result[:Ijk])
 function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbose=false, return_model=0)
 
     # I0=nothing; Il=nothing; Iu=nothing; verbose=false; return_model = false; return_model = 0;
-
+    graph = dict_to_namedtuple(graph)
     J = graph.J
     error_status = false
 
