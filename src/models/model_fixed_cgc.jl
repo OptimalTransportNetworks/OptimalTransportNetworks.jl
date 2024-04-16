@@ -3,12 +3,12 @@
 function model_fixed_cgc(optimizer, auxdata)
 
     # Extract parameters
-    param = dict_to_namedtuple(auxdata[:param])
-    graph = auxdata[:graph]
-    kappa_ex_init = auxdata[:kappa_ex]
-    A = auxdata[:A]
-    Apos = auxdata[:Apos]
-    Aneg = auxdata[:Aneg]
+    param = dict_to_namedtuple(auxdata.param)
+    graph = auxdata.graph
+    kappa_ex_init = auxdata.kappa_ex
+    A = auxdata.edges.A
+    Apos = auxdata.edges.Apos
+    Aneg = auxdata.edges.Aneg
     Lj = param.Lj
     m = param.m # 1:param.N: Vector of weights on each goods flow for aggregate congestion term
     psigma = (param.sigma - 1) / param.sigma
@@ -52,8 +52,8 @@ function model_fixed_cgc(optimizer, auxdata)
 end
 
 function recover_allocation_fixed_cgc(model, auxdata)
-    param = dict_to_namedtuple(auxdata[:param])
-    graph = auxdata[:graph]
+    param = dict_to_namedtuple(auxdata.param)
+    graph = auxdata.graph
     model_dict = model.obj_dict
     results = Dict()
 

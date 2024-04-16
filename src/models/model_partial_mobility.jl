@@ -3,16 +3,16 @@
 function model_partial_mobility(optimizer, auxdata)
     
     # Parameters and data
-    param = dict_to_namedtuple(auxdata[:param])
-    graph = auxdata[:graph]
+    param = dict_to_namedtuple(auxdata.param)
+    graph = auxdata.graph
     region = graph.region
     if length(region) != graph.J
         error("length(region) = $(length(region)) does not match number of nodes = $(graph.J)")
     end
-    kappa_ex_init = auxdata[:kappa_ex]
-    A = auxdata[:A]
-    Apos = auxdata[:Apos]
-    Aneg = auxdata[:Aneg]
+    kappa_ex_init = auxdata.kappa_ex
+    A = auxdata.edges.A
+    Apos = auxdata.edges.Apos
+    Aneg = auxdata.edges.Aneg
     psigma = (param.sigma - 1) / param.sigma
     Hj = param.Hj
     Lr = param.Lr
@@ -76,8 +76,8 @@ function model_partial_mobility(optimizer, auxdata)
 end
 
 function recover_allocation_partial_mobility(model, auxdata)
-    param = dict_to_namedtuple(auxdata[:param])
-    graph = auxdata[:graph]
+    param = dict_to_namedtuple(auxdata.param)
+    graph = auxdata.graph
     model_dict = model.obj_dict
     results = Dict()
 

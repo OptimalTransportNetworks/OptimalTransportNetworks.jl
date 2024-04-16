@@ -31,6 +31,7 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
 
     # I0=nothing; Il=nothing; Iu=nothing; verbose=false; return_model = false; return_model = 0;
     graph = dict_to_namedtuple(graph)
+    edges = represent_edges(graph)
     J = graph.J
     error_status = false
 
@@ -57,7 +58,7 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
     # --------------
     # INITIALIZATION
 
-    auxdata = create_auxdata(param, graph, I0)
+    auxdata = create_auxdata(param, graph, edges, I0)
 
     optimizer = get(param, :optimizer, Ipopt.Optimizer)
 
@@ -194,7 +195,7 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
             I0 *= weight_old 
             I0 += (1 - weight_old) * I1
             # This creates kappa and updates the model
-            auxdata = create_auxdata(param, graph, I0)
+            auxdata = create_auxdata(param, graph, edges, I0)
             set_parameter_value.(model[:kappa_ex], auxdata.kappa_ex)
         end
     end

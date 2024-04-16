@@ -52,6 +52,7 @@ plot_graph(graph, result_annealing[:Ijk])
 function annealing(param, graph, I0; kwargs...)
 
     graph = dict_to_namedtuple(graph) # convert graph to namedtuple for cleaner access
+    edges = represent_edges(graph)
     # Retrieve economy's parameters
     J = graph.J
     best_results = nothing
@@ -99,7 +100,7 @@ function annealing(param, graph, I0; kwargs...)
         recover_allocation = kwargs[:recover_allocation]
         # TODO: set IO (kappa_ex)?
     else
-        auxdata = create_auxdata(param, graph, I0)
+        auxdata = create_auxdata(param, graph, edges, I0)
         optimizer = get(param, :optimizer, Ipopt.Optimizer)
 
         if haskey(param, :model)
@@ -202,7 +203,7 @@ function annealing(param, graph, I0; kwargs...)
         k = 0
         while k <= num_deepening - 1
 
-            auxdata = create_auxdata(param, graph, I1)
+            auxdata = create_auxdata(param, graph, edges, I1)
             set_parameter_value.(model.obj_dict[:kappa_ex], auxdata.kappa_ex)
 
             optimize!(model)
@@ -279,7 +280,7 @@ function annealing(param, graph, I0; kwargs...)
     I0 = best_I
     while !has_converged && counter < 100
         # Update auxdata
-        auxdata = create_auxdata(param, graph, I0)
+        auxdata = create_auxdata(param, graph, edges, I0)
         set_parameter_value.(model.obj_dict[:kappa_ex], auxdata.kappa_ex)
 
         # Solve allocation
