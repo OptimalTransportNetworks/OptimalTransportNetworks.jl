@@ -3,7 +3,7 @@
 function model_partial_mobility_cgc(optimizer, auxdata)
 
     # Extract parameters
-    param = dict_to_namedtuple(auxdata.param)
+    param = auxdata.param
     graph = auxdata.graph
     region = graph.region
     if length(region) != graph.J
@@ -75,7 +75,7 @@ function model_partial_mobility_cgc(optimizer, auxdata)
 end
 
 function recover_allocation_partial_mobility_cgc(model, auxdata)
-    param = dict_to_namedtuple(auxdata.param)
+    param = auxdata.param
     graph = auxdata.graph
     model_dict = model.obj_dict
     results = Dict()

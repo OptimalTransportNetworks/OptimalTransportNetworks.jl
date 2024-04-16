@@ -2,11 +2,11 @@
 """
     annealing(param, graph, I0; kwargs...)
 
-Runs the simulated annealing method starting from network `I0`. Only sensible if `param[:gamma] > param[:beta]`.
+Runs the simulated annealing method starting from network `I0`. Only sensible if `param.gamma > param.beta`.
 
 # Arguments
-- `param`: Dict that contains the model's parameters
-- `graph`: Named tuple that contains the underlying graph 
+- `param`: Dict or NamedTuple that contains the model's parameters
+- `graph`: Dict or NamedTuple that contains the underlying graph 
 - `I0`: (optional) provides the initial guess for the iterations
 
 # Keyword Arguments
@@ -51,6 +51,7 @@ plot_graph(graph, result_annealing[:Ijk])
 """
 function annealing(param, graph, I0; kwargs...)
 
+    param = dict_to_namedtuple(param) # convert param to namedtuple for cleaner access
     graph = dict_to_namedtuple(graph) # convert graph to namedtuple for cleaner access
     edges = represent_edges(graph)
     # Retrieve economy's parameters
@@ -62,7 +63,7 @@ function annealing(param, graph, I0; kwargs...)
     Iu = options.Iu
     Il = options.Il
 
-    if param[:mobility] != 0 || param[:beta] > 1 # use with the primal version only
+    if param.mobility != 0 || param.beta > 1 # use with the primal version only
         Il = max.(1e-6 * graph.adjacency, Il) # the primal approach in the mobility case requires a non-zero lower bound on kl, otherwise derivatives explode
     end
 
@@ -104,44 +105,44 @@ function annealing(param, graph, I0; kwargs...)
         optimizer = get(param, :optimizer, Ipopt.Optimizer)
 
         if haskey(param, :model)
-            model = param[:model](optimizer, auxdata)
+            model = param.model(optimizer, auxdata)
             if !haskey(param, :recover_allocation)
                 error("The custom model does not have the recover_allocation function.")
             end
-            recover_allocation = param[:recover_allocation] 
-        elseif param[:mobility] == 1 && param[:cong]
+            recover_allocation = param.recover_allocation 
+        elseif param.mobility == 1 && param.cong
             model = model_mobility_cgc(optimizer, auxdata)
             recover_allocation = recover_allocation_mobility_cgc
-        elseif param[:mobility] == 0.5 && param[:cong]
+        elseif param.mobility == 0.5 && param.cong
             model = model_partial_mobility_cgc(optimizer, auxdata)
             recover_allocation = recover_allocation_partial_mobility_cgc
-        elseif param[:mobility] == 0 && param[:cong]
+        elseif param.mobility == 0 && param.cong
             model = model_fixed_cgc(optimizer, auxdata)
             recover_allocation = recover_allocation_fixed_cgc
-        elseif param[:mobility] == 1 && !param[:cong]
+        elseif param.mobility == 1 && !param.cong
             model = model_mobility(optimizer, auxdata)
             recover_allocation = recover_allocation_mobility
-        elseif param[:mobility] == 0.5 && !param[:cong]
+        elseif param.mobility == 0.5 && !param.cong
             model = model_partial_mobility(optimizer, auxdata)
             recover_allocation = recover_allocation_partial_mobility    
-        elseif param[:mobility] == 0 && !param[:cong]
+        elseif param.mobility == 0 && !param.cong
             model = model_fixed(optimizer, auxdata)
             recover_allocation = recover_allocation_fixed
         else
-            error("Usupported model configuration with labor_mobility = $(param[:mobility]) and cross_good_congestion = $(param[:cong])")
+            error("Usupported model configuration with labor_mobility = $(param.mobility) and cross_good_congestion = $(param.cong)")
         end
 
         # --------------
         # CUSTOMIZATIONS
 
         if haskey(param, :optimizer_attr)
-            for (key, value) in param[:optimizer_attr]
+            for (key, value) in param.optimizer_attr
                 set_optimizer_attribute(model, String(key), value)
             end
         end
 
         if haskey(param, :model_attr) 
-            for value in values(param[:model_attr])
+            for value in values(param.model_attr)
                 if !(value isa Tuple)  
                     error("model_attr must be a dict of tuples.")
                 end
@@ -163,7 +164,7 @@ function annealing(param, graph, I0; kwargs...)
     # ANNEALING
     # =========
 
-    if param[:verbose]
+    if param.verbose
         print("\n-------------------------------\n")
         print("STARTING SIMULATED ANNEALING...\n\n")
     end
@@ -184,7 +185,7 @@ function annealing(param, graph, I0; kwargs...)
     while T > T_min
         accepted = false
 
-        if param[:verbose]
+        if param.verbose
             println("Perturbating network (Temperature=$(T))...")
         end
 
@@ -196,7 +197,7 @@ function annealing(param, graph, I0; kwargs...)
             plot_graph(graph, I1)
         end
 
-        if param[:verbose]
+        if param.verbose
             println("Iterating on FOCs...")
         end
 
@@ -208,7 +209,7 @@ function annealing(param, graph, I0; kwargs...)
 
             optimize!(model)
 
-            if !is_solved_and_feasible(model, allow_almost = true) && param[:verbose] # optimization failed
+            if !is_solved_and_feasible(model, allow_almost = true) && param.verbose # optimization failed
                 println("optimization failed! k=$(k), return flag=$(termination_status(model))")
                 k = num_deepening - 1
                 score = -Inf
@@ -217,7 +218,7 @@ function annealing(param, graph, I0; kwargs...)
             results = recover_allocation(model, auxdata)
             score = results[:welfare]
 
-            if param[:warm_start]
+            if param.warm_start
                 vars = all_variables(model)
                 vars_solution = value.(vars)
                 set_start_value.(vars, vars_solution)
@@ -231,22 +232,22 @@ function annealing(param, graph, I0; kwargs...)
 
             # Deepen network
             if k < num_deepening - 1
-                if !param[:cong]
-                    PQ = permutedims(repeat(results[:Pjn], 1, 1, J), [1, 3, 2]) .* results[:Qjkn] .^ (1 + param[:beta])
+                if !param.cong
+                    PQ = permutedims(repeat(results[:Pjn], 1, 1, J), [1, 3, 2]) .* results[:Qjkn] .^ (1 + param.beta)
                     PQ = dropdims(sum(PQ + permutedims(PQ, [2, 1, 3]), dims=3), dims = 3)
                 else
                     PQ = repeat(results[:PCj], 1, J)
-                    matm = permutedims(repeat(param[:m], 1, J, J), [3, 2, 1])
-                    cost = dropdims(sum(matm .* results[:Qjkn] .^ param[:nu], dims=3), dims = 3) .^ ((param[:beta] + 1) / param[:nu])
+                    matm = permutedims(repeat(param.m, 1, J, J), [3, 2, 1])
+                    cost = dropdims(sum(matm .* results[:Qjkn] .^ param.nu, dims=3), dims = 3) .^ ((param.beta + 1) / param.nu)
                     PQ .*= cost
                     PQ += PQ'
                 end
                 
-                I1 = (graph.delta_tau ./ graph.delta_i .* PQ) .^ (1 / (1 + param[:gamma]))
+                I1 = (graph.delta_tau ./ graph.delta_i .* PQ) .^ (1 / (1 + param.gamma))
                 I1[graph.adjacency .== 0] .= 0
                 # I1[PQ .== 0] .= 0
                 # I1[graph.delta_i .== 0] .= 0
-                I1 *= param[:K] / sum(graph.delta_i .* I1)
+                I1 *= param.K / sum(graph.delta_i .* I1)
                 I1 = rescale_network!(param, graph, I1, Il, Iu)
             end
             k += 1
@@ -267,7 +268,7 @@ function annealing(param, graph, I0; kwargs...)
             plot_graph(graph, I1, node_sizes = results[:Lj])
         end
 
-        if param[:verbose]
+        if param.verbose
             println("Iteration No.$(counter), score=$(score), $(acceptance_str[1 + convert(Int32, accepted)]), (best=$(best_score))")
         end
 
@@ -291,7 +292,7 @@ function annealing(param, graph, I0; kwargs...)
         results = recover_allocation(model, auxdata)
         score = results[:welfare]
 
-        if param[:warm_start]
+        if param.warm_start
             vars = all_variables(model)
             vars_solution = value.(vars)
             set_start_value.(vars, vars_solution)
@@ -308,37 +309,37 @@ function annealing(param, graph, I0; kwargs...)
         end
 
         # DEEPEN NETWORK
-        if !param[:cong]
-            PQ = permutedims(repeat(results[:Pjn], 1, 1, J), [1, 3, 2]) .* results[:Qjkn] .^ (1 + param[:beta])
+        if !param.cong
+            PQ = permutedims(repeat(results[:Pjn], 1, 1, J), [1, 3, 2]) .* results[:Qjkn] .^ (1 + param.beta)
             PQ = dropdims(sum(PQ + permutedims(PQ, [2, 1, 3]), dims=3), dims = 3)
         else
             PQ = repeat(results[:PCj], 1, J)
-            matm = permutedims(repeat(param[:m], 1, J, J), [3, 2, 1])
-            cost = dropdims(sum(matm .* results[:Qjkn] .^ param[:nu], dims=3), dims = 3) .^ ((param[:beta] + 1) / param[:nu])
+            matm = permutedims(repeat(param.m, 1, J, J), [3, 2, 1])
+            cost = dropdims(sum(matm .* results[:Qjkn] .^ param.nu, dims=3), dims = 3) .^ ((param.beta + 1) / param.nu)
             PQ .*= cost
             PQ += PQ'
         end
         
-        I1 = (graph.delta_tau ./ graph.delta_i .* PQ) .^ (1 / (1 + param[:gamma]))
+        I1 = (graph.delta_tau ./ graph.delta_i .* PQ) .^ (1 / (1 + param.gamma))
         I1[graph.adjacency .== 0] .= 0
         # I1[PQ .== 0] .= 0
         # I1[graph.delta_i .== 0] .= 0
-        I1 *= param[:K] / sum(graph.delta_i .* I1)
+        I1 *= param.K / sum(graph.delta_i .* I1)
         I1 = rescale_network!(param, graph, I1, Il, Iu)
 
         # UPDATE AND DISPLAY RESULTS
         distance = sum(abs.(I1 .- I0)) / (J^2)
         I0 *= weight_old 
         I0 += (1 - weight_old) * I1
-        has_converged = distance < param[:tol]
+        has_converged = distance < param.tol
         counter += 1
 
-        if param[:verbose]
+        if param.verbose
             println("Iteration No.$counter - final iterations - distance=$distance - welfare=$(score)")
         end
     end
 
-    if param[:verbose]
+    if param.verbose
         println("Welfare = ", score)
     end
 
@@ -408,7 +409,7 @@ end
 # This function adds #num_random_perturbations random links to the network and
 # applies a Gaussian smoothing to prevent falling too quickly in a local optimum
 function random_perturbation(param, graph, I0, results, options)
-    size_perturbation = 0.1 * param[:K] / graph.J
+    size_perturbation = 0.1 * param.K / graph.J
     I1 = copy(I0)
 
     # Draw random perturbations
@@ -423,7 +424,7 @@ function random_perturbation(param, graph, I0, results, options)
     # Make sure graph satisfies symmetry and capacity constraint
     I1 += I1'  # make sure kappa is symmetric
     I1 ./= 2
-    I1 *= param[:K] / sum(graph.delta_i .* I1)  # rescale
+    I1 *= param.K / sum(graph.delta_i .* I1)  # rescale
 
     # Smooth network (optional)
     I1 = smooth_network(param, graph, I1)
@@ -473,7 +474,7 @@ function smooth_network(param, graph, I0)
     # Make sure graph satisfies symmetry and capacity constraint
     I1 += I1'  # make sure kappa is symmetric
     I1 ./= 2
-    I1 *= param[:K] / sum(graph.delta_i .* I1)  # rescale
+    I1 *= param.K / sum(graph.delta_i .* I1)  # rescale
 
     return I1
 end
@@ -536,7 +537,7 @@ function shake_network(param, graph, I0, results, options)
     # Make sure graph satisfies symmetry and capacity constraint
     I1 += I1'  # make sure kappa is symmetric
     I1 ./= 2
-    I1 *= param[:K] / sum(graph.delta_i .* I1)  # rescale
+    I1 *= param.K / sum(graph.delta_i .* I1)  # rescale
 
     return I1
 end
@@ -580,7 +581,7 @@ function rebranch_network(param, graph, I0, results, options)
     # Make sure graph satisfies symmetry and capacity constraint
     I1 += I1'  # make sure kappa is symmetric
     I1 ./= 2
-    I1 *= param[:K] / sum(graph.delta_i .* I1)  # rescale
+    I1 *= param.K / sum(graph.delta_i .* I1)  # rescale
 
     return I1
 end
@@ -626,7 +627,7 @@ function random_rebranch_network(param, graph, I0, results, options)
     # Make sure graph satisfies symmetry and capacity constraint
     I1 += I1'  # make sure kappa is symmetric
     I1 ./= 2
-    I1 *= param[:K] / sum(graph.delta_i .* I1)  # rescale
+    I1 *= param.K / sum(graph.delta_i .* I1)  # rescale
 
     return I1
 end
@@ -644,18 +645,18 @@ function hybrid(param, graph, I0, results, options)
     # ========================
     J = graph.J
 
-    if !param[:cong] # no cross-good congestion
-        PQ = permutedims(repeat(results[:Pjn], 1, 1, J), [1, 3, 2]) .* results[:Qjkn] .^ (1 + param[:beta])
+    if !param.cong # no cross-good congestion
+        PQ = permutedims(repeat(results[:Pjn], 1, 1, J), [1, 3, 2]) .* results[:Qjkn] .^ (1 + param.beta)
         PQ = dropdims(sum(PQ + permutedims(PQ, [2, 1, 3]), dims=3), dims = 3)
     else # cross-good congestion
         PQ = repeat(results[:PCj], 1, J)
-        matm = permutedims(repeat(param[:m], 1, J, J), [3, 2, 1])
-        cost = dropdims(sum(matm .* results[:Qjkn] .^ param[:nu], dims=3), dims = 3) .^ ((param[:beta] + 1) / param[:nu])
+        matm = permutedims(repeat(param.m, 1, J, J), [3, 2, 1])
+        cost = dropdims(sum(matm .* results[:Qjkn] .^ param.nu, dims=3), dims = 3) .^ ((param.beta + 1) / param.nu)
         PQ .*= cost
         PQ += PQ'
     end
     
-    grad = param[:gamma] * graph.delta_tau ./ graph.delta_i .* PQ .* I0.^-(1 + param[:gamma])
+    grad = param.gamma * graph.delta_tau ./ graph.delta_i .* PQ .* I0.^-(1 + param.gamma)
     grad[graph.adjacency .== 0] .= 0
     # I1[PQ .== 0] .= 0
     # I1[graph.delta_i .== 0] .= 0
@@ -685,17 +686,17 @@ function hybrid(param, graph, I0, results, options)
     # ====================
     results = solve_allocation(param, graph, I1) # Assuming this function is defined elsewhere
 
-    if !param[:cong] # no cross-good congestion
+    if !param.cong # no cross-good congestion
         Pjkn = repeat(permute(results[:Pjn], [1, 3, 2]), outer=[1, J, 1])
-        PQ = Pjkn .* results[:Qjkn].^(1 + param[:beta])
-        grad = param[:gamma] * graph.delta_tau .* sum(PQ + permute(PQ, [2, 1, 3]), dims=3) .* I0.^-(1 + param[:gamma]) ./ graph.delta_i
+        PQ = Pjkn .* results[:Qjkn].^(1 + param.beta)
+        grad = param.gamma * graph.delta_tau .* sum(PQ + permute(PQ, [2, 1, 3]), dims=3) .* I0.^-(1 + param.gamma) ./ graph.delta_i
         grad[.!graph.adjacency] .= 0
     else # cross-good congestion
         PCj = repeat(results[:PCj], outer=[1, J])
-        matm = permutedims(repeat(param[:m], outer=[1, J, J]), [2, 1, 3])
-        cost = sum(matm .* results[:Qjkn].^param[:nu], dims=3).^((param[:beta] + 1) / param[:nu])
+        matm = permutedims(repeat(param.m, outer=[1, J, J]), [2, 1, 3])
+        cost = sum(matm .* results[:Qjkn].^param.nu, dims=3).^((param.beta + 1) / param.nu)
         PQ = PCj .* cost
-        grad = param[:gamma] * graph.delta_tau .* (PQ + PQ') .* I0.^-(1 + param[:gamma]) ./ graph.delta_i
+        grad = param.gamma * graph.delta_tau .* (PQ + PQ') .* I0.^-(1 + param.gamma) ./ graph.delta_i
         grad[.!graph.adjacency] .= 0
     end
 
@@ -711,8 +712,7 @@ function hybrid(param, graph, I0, results, options)
     for j in 1:J
         for k in graph.nodes[j]
             if id == add_link # if link is the one to add
-                I2[j, k] = param[:K] / (2 * graph.ndeg)
-                I2[k, j] = param[:K] / (2 * graph.ndeg)
+                I2[j, k] = I2[j, k] = param.K / (2 * graph.ndeg)
             end
             id += 1
         end
@@ -725,7 +725,7 @@ function hybrid(param, graph, I0, results, options)
     # Make sure graph satisfies symmetry and capacity constraint
     I2 = (I2 + I2') / 2 # make sure kappa is symmetric
     total_delta_i = sum(graph.delta_i .* I2)
-    I2 *= param[:K] / total_delta_i # rescale
+    I2 *= param.K / total_delta_i # rescale
 
     return I2
 end

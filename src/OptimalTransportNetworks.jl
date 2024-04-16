@@ -78,6 +78,7 @@ using SparseArrays: sparse
 using Statistics: mean
 using Dierckx: Spline2D, evaluate
 import Ipopt, Plots, Random #, MathOptSymbolicAD
+# import MathOptInterface as MOI
 
 # Function to include all .jl files in a directory
 function include_directory(directory)

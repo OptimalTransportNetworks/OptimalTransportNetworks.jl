@@ -38,9 +38,10 @@ Description: auxiliary function that converts kappa_jk into kappa_i
 """
 function kappa_extract(graph, kappa)
     kappa_ex = zeros(graph.ndeg)
+    nodes = graph.nodes
     id = 1
     for i in 1:graph.J
-        for j in graph.nodes[i]
+        for j in nodes[i]
             if j > i
                 kappa_ex[id] = kappa[i, j]
                 id += 1
@@ -90,15 +91,16 @@ function represent_edges(graph)
     A = zeros(Int, graph.J, graph.ndeg)
     edge_start = zeros(Int, graph.ndeg)    
     edge_end = zeros(Int, graph.ndeg) 
+    nodes = graph.nodes
 
     id = 1
     for j in 1:graph.J
-        for k in 1:length(graph.nodes[j])
-            if graph.nodes[j][k] > j # This enforces that the graph is undirected
+        for k in 1:length(nodes[j])
+            if nodes[j][k] > j # This enforces that the graph is undirected
                 A[j, id] = 1
                 edge_start[id] = j
-                A[graph.nodes[j][k], id] = -1
-                edge_end[id] = graph.nodes[j][k]
+                A[nodes[j][k], id] = -1
+                edge_end[id] = nodes[j][k]
                 id += 1
             end
         end
@@ -129,7 +131,7 @@ function create_auxdata(param, graph, edges, I)
     # graph = dict_to_namedtuple(graph)
 
     # Initialize kappa
-    kappa = max.(I.^param[:gamma] ./ graph.delta_tau, param[:kappa_min])
+    kappa = max.(I.^param.gamma ./ graph.delta_tau, param.kappa_min)
     kappa[.!graph.adjacency] .= 0
     kappa_ex = kappa_extract(graph, kappa)  # extract the ndeg free values of matrix kappa (due to symmetry)
 
@@ -155,17 +157,17 @@ function rescale_network!(param, graph, I1, Il, Iu; max_iter = 100)
     distance_lb = max(maximum(Il - I1), 0.0)
     distance_ub = max(maximum(I1 - Iu), 0.0)
     counter_rescale = 0
-    TOL_I_BOUNDS = min(param[:tol], 1e-7)
+    TOL_I_BOUNDS = min(param.tol, 1e-7)
     
     while distance_lb + distance_ub > TOL_I_BOUNDS && counter_rescale < max_iter
         I1 = max.(min.(I1, Iu), Il)
-        I1 *= param[:K] / sum(graph.delta_i .* I1)
+        I1 *= param.K / sum(graph.delta_i .* I1)
         distance_lb = max(maximum(Il - I1), 0.0)
         distance_ub = max(maximum(I1 - Iu), 0.0)
         counter_rescale += 1
     end
     
-    if counter_rescale == 100 && distance_lb + distance_ub > param[:tol] && param[:verbose]
+    if counter_rescale == 100 && distance_lb + distance_ub > param.tol && param.verbose
         println("Warning! Could not impose bounds on network properly.")
     end
 

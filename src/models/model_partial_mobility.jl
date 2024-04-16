@@ -3,7 +3,7 @@
 function model_partial_mobility(optimizer, auxdata)
     
     # Parameters and data
-    param = dict_to_namedtuple(auxdata.param)
+    param = auxdata.param
     graph = auxdata.graph
     region = graph.region
     if length(region) != graph.J
@@ -76,7 +76,7 @@ function model_partial_mobility(optimizer, auxdata)
 end
 
 function recover_allocation_partial_mobility(model, auxdata)
-    param = dict_to_namedtuple(auxdata.param)
+    param = auxdata.param
     graph = auxdata.graph
     model_dict = model.obj_dict
     results = Dict()

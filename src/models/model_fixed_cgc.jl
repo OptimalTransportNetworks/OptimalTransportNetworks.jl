@@ -3,7 +3,7 @@
 function model_fixed_cgc(optimizer, auxdata)
 
     # Extract parameters
-    param = dict_to_namedtuple(auxdata.param)
+    param = auxdata.param
     graph = auxdata.graph
     kappa_ex_init = auxdata.kappa_ex
     A = auxdata.edges.A
@@ -52,7 +52,7 @@ function model_fixed_cgc(optimizer, auxdata)
 end
 
 function recover_allocation_fixed_cgc(model, auxdata)
-    param = dict_to_namedtuple(auxdata.param)
+    param = auxdata.param
     graph = auxdata.graph
     model_dict = model.obj_dict
     results = Dict()

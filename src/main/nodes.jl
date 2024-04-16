@@ -75,7 +75,11 @@ function add_node(param, graph, x, y, neighbors)
 
     if param !== nothing
         # Now, update the param structure
-        param_new = copy(param)
+        if param isa Dict
+            param_new = copy(param)
+        else
+            param_new = Dict(pairs(param))
+        end
         if haskey(param, :J)
             param_new[:J] = Jnew
         end
@@ -115,7 +119,6 @@ Returns the index of the node closest to the coordinates (x,y) on the graph.
 - `y::Float64`: y coordinate on the graph (between 1 and h)
 """
 function find_node(graph, x, y)
-    graph = namedtuple_to_dict(graph)
     distance = (graph[:x] .- x).^2 + (graph[:y] .- y).^2
     _, id = findmin(distance)
     return id
@@ -189,7 +192,11 @@ function remove_node(param, graph, i)
 
     if param !== nothing 
         # Now, update the param structure
-        param_new = copy(param)
+        if param isa Dict
+            param_new = copy(param)
+        else
+            param_new = Dict(pairs(param))
+        end
         param_new[:J] = Jnew
         if haskey(param, :Lj)
             param_new[:Lj] = deleteat!(copy(param[:Lj]), i)

@@ -10,7 +10,7 @@ Aversion to altitude changes rescales building infrastructure costs `delta_i` by
 and similarly for graph traversal costs `delta_tau`.
 
 # Arguments
-- `graph::Dict`: The network graph to which the geographical features will be applied.
+- `graph`: Dict or NamedTuple that contains the network graph to which the geographical features will be applied.
 - `geography::NamedTuple`: A named tuple representing the geographical features, with the following fields:\n
    - `z::Vector{Float64}`: A J x 1 vector containing the z-coordinate (elevation) for each node, or `nothing` if no elevation data.\n
    - `z_is_friction::Bool`: (Optional) logical value indicate that `z` represents friction rather than elevation. In that case, the measure of building cost is the average friction of the two nodes mean(Z1,Z2) rather than the difference Z2-Z1.\n
