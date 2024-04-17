@@ -106,7 +106,7 @@ function represent_edges(graph)
         end
     end
 
-    Apos = max.(A, 0),
+    Apos = max.(A, 0)
     Aneg = max.(-A, 0)
 
     return (A = A, Apos = Apos, Aneg = Aneg, edge_start = edge_start, edge_end = edge_end)
