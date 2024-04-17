@@ -80,7 +80,7 @@ function model_fixed_duality(model, auxdata)
     return model
 end
 
-function recover_allocation_duality(model, auxdata)
+function recover_allocation_fixed_duality(model, auxdata)
     param = auxdata.param
     graph = auxdata.graph
     model_dict = model.obj_dict

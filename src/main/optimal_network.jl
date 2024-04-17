@@ -86,8 +86,13 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
         model = model_partial_mobility(optimizer, auxdata)
         recover_allocation = recover_allocation_partial_mobility    
     elseif param.mobility == 0 && !param.cong
-        model = model_fixed(optimizer, auxdata)
-        recover_allocation = recover_allocation_fixed
+        if param.beta <= 1 && param.a < 1 && param.duality
+            model = model_fixed_duality(optimizer, auxdata)
+            recover_allocation = recover_allocation_fixed_duality
+        else
+            model = model_fixed(optimizer, auxdata)
+            recover_allocation = recover_allocation_fixed
+        end
     else
         error("Usupported model configuration with labor_mobility = $(param.mobility) and cross_good_congestion = $(param.cong)")
     end
