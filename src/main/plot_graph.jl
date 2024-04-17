@@ -16,8 +16,8 @@ Plot a graph visualization with various styling options.
 - `grid::Bool=false`: Show gridlines 
 - `axis::Tuple=([], false)`: Axis ticks and labels (see Plots.jl docs, default disable axis)
 - `margin::Real=0mm`: Margin around plot 
-- `aspect_ratio::Symbol=:equal`: Plot aspect ratio
-- `size::Tuple=(700, 700)`: Plot size in pixels
+- `aspect_ratio::Symbol=:equal`: Plot aspect ratio (set to a real number (h/w) if not :equal)
+- `height::Tuple=600`: Plot height in pixels (width is proportional to height / aspect_ratio, but also depends on the relative ranges of the x and y coordinates of the graph)
 - `map::Vector=nothing`: Values mapped to graph for background heatmap
 - `map_color::Symbol=:YlOrBr_4`: Colorscale for background heatmap
 - `mesh::Bool=false`: Show mesh lines between nodes
@@ -62,20 +62,24 @@ function plot_graph(graph, edges = nothing; kwargs...)
 
     op = retrieve_options_plot_graph(graph, edges; kwargs...)
 
+    # Resize graph to fit window
+    graph_w = maximum(graph.x) - minimum(graph.x)
+    graph_h = maximum(graph.y) - minimum(graph.y)
+    graph_ext = max(graph_w, graph_h)
+    
+    plot_width = graph_w / graph_h * op.height
+    if !(op.aspect_ratio isa Symbol)
+        plot_width /= op.aspect_ratio
+    end
+
     # Empty plot
     pl = plot(grid = op.grid, axis = op.axis, margin = op.margin, 
-              aspect_ratio = op.aspect_ratio, size = op.size) 
+              aspect_ratio = op.aspect_ratio, size = (plot_width, op.height)) 
 
     # # Set margins
     # margin = op.margin
     # lb = margin
     # ub = 1 - margin
-
-    # Resize graph to fit window
-    graph_w = maximum(graph.x) - minimum(graph.x)
-    graph_h = maximum(graph.y) - minimum(graph.y)
-    graph_ext = max(graph_w, graph_h)
-
     # vec_x = lb .+ (graph.x .- minimum(graph.x)) .* (ub - lb) ./ graph_ext
     # vec_y = lb .+ (graph.y .- minimum(graph.y)) .* (ub - lb) ./ graph_ext
 
@@ -273,7 +277,7 @@ function retrieve_options_plot_graph(graph, edges; kwargs...)
         axis = get(kwargs, :axis, ([], false)),
         margin = get(kwargs, :margin, 0Plots.mm),
         aspect_ratio = get(kwargs, :aspect_ratio, :equal),
-        size = get(kwargs, :size, (700, 700)),
+        height = get(kwargs, :height, 600),
 
         map = get(kwargs, :map, nothing),
         map_color = get(kwargs, :map_color, :YlOrBr_4),
