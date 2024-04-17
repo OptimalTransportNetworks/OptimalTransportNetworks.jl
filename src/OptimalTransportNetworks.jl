@@ -29,7 +29,7 @@ a simplified interface and only exports key functions, while retaining full flex
 **Problem Setup**
 
 `init_paramaters()`   - Create parameters dictionary\n
-`create_graph()`      - Create network graph structure (named tuple)\n
+`create_graph()`      - Create network graph dictionary\n
 `apply_geography()`   - (Optional) apply geographical features to alter the graph edge weights (network building and traversing costs)\n
 
 **Compute Optimal Network + Refine Solution in Non-Convex Cases**
