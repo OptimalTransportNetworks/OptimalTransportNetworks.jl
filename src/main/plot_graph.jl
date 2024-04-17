@@ -15,7 +15,9 @@ Plot a graph visualization with various styling options.
 # Keyword Arguments
 - `grid::Bool=false`: Show gridlines 
 - `axis::Tuple=([], false)`: Axis ticks and labels (see Plots.jl docs, default disable axis)
-- `margin::Real=-30mm`: Margin around plot 
+- `margin::Real=0mm`: Margin around plot 
+- `aspect_ratio::Symbol=:equal`: Plot aspect ratio
+- `size::Tuple=(700, 700)`: Plot size in pixels
 - `map::Vector=nothing`: Values mapped to graph for background heatmap
 - `map_color::Symbol=:YlOrBr_4`: Colorscale for background heatmap
 - `mesh::Bool=false`: Show mesh lines between nodes
@@ -61,7 +63,8 @@ function plot_graph(graph, edges = nothing; kwargs...)
     op = retrieve_options_plot_graph(graph, edges; kwargs...)
 
     # Empty plot
-    pl = plot(grid = op.grid, axis = op.axis, margin = op.margin) # aspect_ratio=:equal?
+    pl = plot(grid = op.grid, axis = op.axis, margin = op.margin, 
+              aspect_ratio = op.aspect_ratio, size = op.size) 
 
     # # Set margins
     # margin = op.margin
@@ -265,12 +268,12 @@ end
 
 function retrieve_options_plot_graph(graph, edges; kwargs...)
 
-    axis = get(kwargs, :axis, ([], false))
-
     options = (
         grid = get(kwargs, :grid, false),
-        axis = axis,
-        margin = get(kwargs, :margin, axis !== ([], false) ? 0Plots.mm : -30Plots.mm),
+        axis = get(kwargs, :axis, ([], false)),
+        margin = get(kwargs, :margin, 0Plots.mm),
+        aspect_ratio = get(kwargs, :aspect_ratio, :equal),
+        size = get(kwargs, :size, (700, 700)),
 
         map = get(kwargs, :map, nothing),
         map_color = get(kwargs, :map_color, :YlOrBr_4),
