@@ -1,10 +1,10 @@
 # Note: See their supplementary material for details
 
-function model_fixed_duality(model, auxdata)
+function model_fixed_duality(optimizer, auxdata)
     # Extract parameters
     param = auxdata.param
     graph = auxdata.graph
-    kappa_ex = auxdata.kappa_ex
+    kappa_ex_init = auxdata.kappa_ex
     A = auxdata.edges.A
     Apos = auxdata.edges.Apos
     Aneg = auxdata.edges.Aneg
@@ -20,8 +20,15 @@ function model_fixed_duality(model, auxdata)
     beta = param.beta
     a = param.a
 
+    model = Model(optimizer)
+    set_string_names_on_creation(model, false)
+
     # Define price vector variable Pjn
-    @variable(model, Pjn[1:graph.J, 1:param.N] >= 1e-6)
+    @variable(model, Pjn[1:graph.J, 1:param.N] >= 1e-6, container=Array)
+
+    # Parameters: to be updated between solves
+    @variable(model, kappa_ex[i = 1:graph.ndeg] in Parameter(i), container=Array)
+    set_parameter_value.(kappa_ex, kappa_ex_init)
 
     # Calculate consumption cj
     @expression(model, cj[j=1:graph.J],
@@ -90,7 +97,7 @@ function recover_allocation_fixed_duality(model, auxdata)
     results[:Yjn] = value.(model_dict[:Yjn])
     results[:Yj] = dropdims(sum(results[:Yjn], dims=2), dims = 2)
     results[:Cjn] = value.(model_dict[:cjn]) .* param.Lj'
-    results[:cj] = dropdims(value.(model_dict[:cj]), dims = 2)
+    results[:cj] = value.(model_dict[:cj])
     results[:Cj] = results[:cj] .* param.Lj
     results[:Ljn] = value.(model_dict[:Ljn])
     results[:Lj] = param.Lj
