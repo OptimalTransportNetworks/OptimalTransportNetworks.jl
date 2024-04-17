@@ -20,11 +20,16 @@ function model_fixed_duality(optimizer, auxdata)
     beta = param.beta
     a = param.a
 
-    model = Model(optimizer)
+    model = Model(optimizer) # ; add_bridges = false
     set_string_names_on_creation(model, false)
 
     # Define price vector variable Pjn
     @variable(model, Pjn[1:graph.J, 1:param.N] >= 1e-6, container=Array)
+    # Generate starting values
+    v1 = range(1, 2, length=graph.J)
+    v2 = param.N == 1 ? 1.0 : range(1, 2, length=param.N)
+    x0 = vec(v1 * v2')
+    set_start_value.(Pjn, x0)
 
     # Parameters: to be updated between solves
     @variable(model, kappa_ex[i = 1:graph.ndeg] in Parameter(i), container=Array)
