@@ -24,7 +24,7 @@ Returns a `param` dict with the model parameters.
 - `cross_good_congestion::Bool=false`: Switch for cross-good congestion
 - `annealing::Bool=true`: Switch for the use of annealing at the end of iterations (only if gamma > beta)
 - `verbose::Bool=true`: Switch to turn on/off text output (from Ipopt or other optimizers)
-- `duality::Bool=true`: Switch to turn on/off duality whenever available
+- `duality::Bool=false`: Switch to turn on/off duality whenever available
 - `warm_start::Bool=true`: Use the previous solution as a warm start for the next iteration
 - `kappa_min::Float64=1e-5`: Minimum value for road capacities κ
 - `min_iter::Int64=20`: Minimum number of iterations
@@ -45,7 +45,7 @@ param = init_parameters(labor_mobility = true, K = 10)
 """
 function init_parameters(; alpha = 0.5, beta = 1, gamma = 1, K = 1, sigma = 5, rho = 2, a = 0.8, N = 1, m = ones(N), nu = 1, 
                          labor_mobility = false, cross_good_congestion=false, annealing=true, 
-                         verbose = true, duality = true, warm_start = true, 
+                         verbose = true, duality = false, warm_start = true, 
                          kappa_min = 1e-5, min_iter = 20, max_iter = 200, tol = 1e-7, kwargs...)
     param = Dict()
 
