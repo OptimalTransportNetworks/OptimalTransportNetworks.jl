@@ -30,6 +30,9 @@ Returns a `param` dict with the model parameters.
 - `min_iter::Int64=20`: Minimum number of iterations
 - `max_iter::Int64=200`: Maximum number of iterations
 - `tol::Float64=1e-7`: Tolerance for convergence of road capacities κ
+
+# Optional Parameters
+- `optimizer = Ipopt.Optimizer`: Optimizer to be used
 - `optimizer_attr::Dict`: Dict of attributes passed to the optimizer (e.g. `Dict(:tol => 1e-5)`)
 - `model_attr::Dict`: Dict of tuples (length 2) passed to the model (e.g. `Dict(:backend => (MOI.AutomaticDifferentiationBackend(), MathOptSymbolicAD.DefaultBackend()))` to use Symbolic AD)
 - `model::Function`: For custom models => a function that taks an optimizer and an 'auxdata' structure as created by create_auxdata() as input and returns a fully parameterized JuMP model
