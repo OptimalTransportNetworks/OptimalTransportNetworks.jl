@@ -17,7 +17,7 @@ Plot a graph visualization with various styling options.
 - `axis::Tuple=([], false)`: Axis ticks and labels (see Plots.jl docs, default disable axis)
 - `margin::Real=0mm`: Margin around plot 
 - `aspect_ratio::Symbol=:equal`: Plot aspect ratio (set to a real number (h/w) if not :equal)
-- `height::Tuple=600`: Plot height in pixels (width is proportional to height / aspect_ratio, but also depends on the relative ranges of the x and y coordinates of the graph)
+- `height::Int=600`: Plot height in pixels (width is proportional to height / aspect_ratio, but also depends on the relative ranges of the x and y coordinates of the graph)
 - `map::Vector=nothing`: Values mapped to graph for background heatmap
 - `map_color::Symbol=:YlOrBr_4`: Colorscale for background heatmap
 - `mesh::Bool=false`: Show mesh lines between nodes
