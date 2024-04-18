@@ -87,7 +87,7 @@ function isadjacency(M)
     end
 
     # check if matrix has only 0's and 1's
-    if any(M .!= 0 .&& M .!= 1)
+    if !issetequal(Int.(unique(M)), [0, 1]) # any(M .!= 0 .&& M .!= 1)
         @warn "adjacency matrix should have only 0s and 1s.\n"
         res = false
     end
