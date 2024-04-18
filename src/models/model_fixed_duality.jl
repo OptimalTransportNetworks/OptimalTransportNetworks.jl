@@ -43,7 +43,7 @@ function model_fixed_duality(optimizer, auxdata)
     # Utility per worker in location j
     @expression(model, uj[j=1:graph.J], ((cj[j]/alpha)^alpha * hj1malpha[j])^(1-rho)/(1-rho))
     # zeta (auxiliarly variable)
-    @expression(model, zeta[j=1:graph.J], omegaj[j] * uj[j] * (1-rho) * alpha / cj[j])
+    zeta = @expression(model, [j=1:graph.J], omegaj[j] * uj[j] * (1-rho) * alpha / cj[j])
     # Calculate consumption c(j,n)
     @expression(model, cjn[j=1:graph.J, n=1:param.N], (Pjn[j, n] / zeta[j])^(-sigma) * cj[j])
 
@@ -61,7 +61,7 @@ function model_fixed_duality(optimizer, auxdata)
         ifelse(Qin_direct[i,n] > Qin_indirect[i,n], Qin_direct[i,n], -Qin_indirect[i,n])
     )
     # Calculate labor allocation Ljn
-    @expression(model, PZ, (Pjn .* Zjn) .^ (1/(1-a)))
+    PZ = @expression(model, (Pjn .* Zjn) .^ (1/(1-a)))
     @expression(model, Ljn[j=1:graph.J, n=1:param.N],
         ifelse(Zjn[j,n] == 0, 0, PZ[j, n] / sum(PZ[j, n] for n=1:param.N) * Lj[j])
     )
