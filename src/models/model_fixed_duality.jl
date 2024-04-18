@@ -21,7 +21,7 @@ function model_fixed_duality(optimizer, auxdata)
     beta = param.beta
     a = param.a
 
-    model = Model(optimizer; add_bridges = false)
+    model = Model(optimizer) # add_bridges = false
     set_string_names_on_creation(model, false)
 
     # Define price vector variable Pjn
