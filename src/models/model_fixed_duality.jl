@@ -78,7 +78,7 @@ function model_fixed_duality(optimizer, auxdata)
     )
     # Define the Lagrangian objective
     @expression(model, U, sum(omegaj .* Lj .* uj) - sum(Pjn .* cons))
-    @objective(model, Max, U)
+    @objective(model, Min, U)
     
     return model
 end
