@@ -82,6 +82,15 @@ function gsum(x, ng, g)
     return res
 end
 
+function rowmult(A, v)
+    r = similar(A)
+    @inbounds for j = 1:size(A,2) 
+        @simd for i = 1:size(A,1) 
+            r[i,j] = v[j] * A[i,j] 
+        end
+    end 
+    return r
+end 
 
 function represent_edges(graph)
     # Create matrix A
@@ -173,3 +182,4 @@ function rescale_network!(param, graph, I1, Il, Iu; max_iter = 100)
 
     return I1
 end
+
