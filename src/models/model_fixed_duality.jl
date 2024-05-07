@@ -29,7 +29,7 @@ function model_fixed_duality(optimizer, auxdata)
     # Generate starting values
     v1 = range(1, 2, length=graph.J)
     v2 = param.N == 1 ? 2.0 : range(1, 2, length=param.N)
-    x0 = vec(v1 * v2')
+    x0 = v1 * v2' # vec()
     set_start_value.(Pjn, x0)
 
     # Parameters: to be updated between solves
