@@ -51,7 +51,8 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
     Il = Il === nothing ? zeros(J, J) : max.(Il, 0.0)
     Iu = Iu === nothing ? fill(Inf, J, J) : max.(Iu, 0.0)
     I0 = I0 === nothing ? Float64.(graph.adjacency) : max.(I0, 0.0)
-    I0 = rescale_network!(param, graph, I0, Il, Iu)
+    I0 *= param.K / sum(graph.delta_i .* I0) # 
+    # I0 = rescale_network!(param, graph, I0, Il, Iu)
 
     if param.mobility != 0 || param.beta > 1 || param.cong
         Il = max.(1e-6 * graph.adjacency, Il)
