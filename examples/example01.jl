@@ -9,9 +9,9 @@ using OptimalTransportNetworks
 # nonconvex: gamma>beta, cross good congestion: true/false
 
 param = init_parameters(labor_mobility = true, K = 10, gamma = 1, beta = 1, verbose = true,
-                        N = 1, kappa_tol = 1e-5, cross_good_congestion = false, nu = 1)
+                        N = 1, tol = 1e-5, cross_good_congestion = false, nu = 1, duality = false)
 
-# kappa_tol is the tolerance in distance b/w iterations for road capacity
+# tol is the tolerance in distance b/w iterations for road capacity
 # kappa=I^gamma/delta_i, default is 1e-7 but we relax it a bit here
 
 # ------------
