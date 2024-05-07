@@ -92,7 +92,7 @@ function recover_allocation_fixed_duality(model, auxdata)
     results[:welfare] = value(model_dict[:U])
     results[:Yjn] = value.(model_dict[:Yjn])
     results[:Yj] = dropdims(sum(results[:Yjn], dims=2), dims = 2)
-    results[:Cjn] = value.(model_dict[:cjn]) .* param.Lj'
+    results[:Cjn] = value.(model_dict[:cjn]) .* repeat(param.Lj, 1, param.N)
     results[:cj] = value.(model_dict[:cj])
     results[:Cj] = results[:cj] .* param.Lj
     results[:Ljn] = value.(model_dict[:Ljn])
