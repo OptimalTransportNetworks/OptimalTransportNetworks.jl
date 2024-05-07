@@ -8,8 +8,8 @@ import Random
 
 # Init and Solve network
 
-param = init_parameters(kappa_tol = 1e-5, K = 100, labor_mobility = false, 
-                        N = 1, gamma = 1, beta = 1)
+param = init_parameters(tol = 1e-5, K = 100, labor_mobility = false, 
+                        N = 1, gamma = 1, beta = 1, duality = false)
 w = 13; h = 13
 param, graph = create_graph(param, w, h, type = "map")
 
@@ -47,7 +47,7 @@ mountain_size = 0.75  # radius of mountain -- i.e. stdev of gaussian distributio
 mountain_height = 1
 mount_x = 10  # peak of mountain in (mount_x, mount_y)
 mount_y = 10
-z = mountain_height * exp.(-((graph.x .- mount_x).^2 + (graph.y .- mount_y).^2) / (2 * mountain_size^2))  # create a gaussian mountain 
+z = mountain_height * exp.(-((graph[:x] .- mount_x).^2 + (graph[:y] .- mount_y).^2) / (2 * mountain_size^2))  # create a gaussian mountain 
 
 # now introduce 'obstacles', i.e. river or trees, that is a list of edges
 # which will have specific cost to cross or travel along....
@@ -87,3 +87,15 @@ plot_graph(graph, results[:Ijk],
            node_sizes = sizes, node_shades = shades, 
            edge_min_thickness = 1, edge_max_thickness = 4)
 
+
+# sizes = param[:Lj] .+ 1
+# shades = param[:Zjn]
+           
+# plot_graph(graph, # results[:Ijk], edges = false,
+#             geography = geography, obstacles = true,
+#             mesh = true, mesh_transparency = 0.2, 
+#             node_sizes = sizes, node_shades = shades, 
+#             node_color = :seismic,
+#             edge_min_thickness = 1, edge_max_thickness = 4)
+           
+                     

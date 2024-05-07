@@ -10,7 +10,7 @@ import Random
 # nonconvex: gamma>beta, cross_good_congestion: true/false
 
 param = init_parameters(labor_mobility = true, K = 100, gamma = 2, beta = 1, N = 6, 
-                        kappa_tol = 1e-4, cross_good_congestion = false)
+                        tol = 1e-4, cross_good_congestion = false)
 
 # ------------
 # Init network
