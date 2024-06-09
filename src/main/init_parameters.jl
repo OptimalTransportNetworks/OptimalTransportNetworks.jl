@@ -54,6 +54,9 @@ function init_parameters(; alpha = 0.5, beta = 1, gamma = 1, K = 1, sigma = 5, r
             param[key] = value
         end
     end
+    if haskey(param, :labour_mobility)
+        labor_mobility = param[:labour_mobility]
+    end
 
     param[:gamma] = gamma
     param[:alpha] = alpha
