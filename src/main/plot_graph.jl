@@ -232,9 +232,9 @@ function plot_graph(graph, edges = nothing; kwargs...)
             if length(sizes) != length(vec_x)
                 error("length(node_sizes) = $(length(sizes)) does not match number of nodes = $(length(vec_x))")
             end
-            diff_sizes = maximum(sizes) - minimum(sizes)
+            diff_sizes = maximum(sizes) - 0.0 # minimum(sizes)
             if diff_sizes > 0.0
-                sizes = (sizes .- minimum(sizes)) ./ diff_sizes
+                sizes = (sizes .- 0.0) ./ diff_sizes # minimum(sizes)
             end
             r = sizes .* (op.node_sizes_scale / graph_ext) # * 0.075 * (1 - 2 * margin) / graph_ext
         end
@@ -250,7 +250,7 @@ function plot_graph(graph, edges = nothing; kwargs...)
             end
             diff_shades = maximum(shades) - minimum(shades)
             if diff_shades > 0.0
-                shades = (shades .- minimum(shades)) ./ diff_shades
+                shades = 0.05 .+ 0.95 .* (shades .- minimum(shades)) ./ diff_shades
             end
             if !is_color(node_color)
                 node_color = cgrad(node_color, [0.0, 1.0])
