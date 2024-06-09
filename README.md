@@ -41,7 +41,7 @@ This plot shows the optimal network after 200 iterations, keeping population fix
 * It is recommended to use Coin-HSL linear solvers for Ipopt to speed up computations. In my opinion the simplest way to use them is do get a (free for academics) license and download the binaries [here](https://licences.stfc.ac.uk/product/coin-hsl), extract them somewhere, and then set the `hsllib` and `linear_solver` options in the `optimizer_attr` dictionary in `param` as follows:
 
     ```julia
-    param[:optimizer_attr] = Dict(:hsllib => "/usr/local/lib/libhsl.dylib", 
-                                  :linear_solver => "ma57") 
+    param[:optimizer_attr] = Dict(:hsllib => "/usr/local/lib/libhsl.dylib", # Adjust path
+                                  :linear_solver => "ma57") # Use ma57, ma86 or ma97
     ```
     The [Ipopt.jl README](https://github.com/jump-dev/Ipopt.jl?tab=readme-ov-file#linear-solvers) suggests to use the larger LibHSL package for which there exists a Julia module and proceed similarly. In addition, users may try an [optimized BLAS](https://github.com/jump-dev/Ipopt.jl?tab=readme-ov-file#blas-and-lapack) and see if it yields significant performance gains (and let me know if it does). 
