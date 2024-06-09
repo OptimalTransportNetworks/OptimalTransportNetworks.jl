@@ -29,7 +29,7 @@ Returns a `param` dict with the model parameters.
 - `kappa_min::Float64=1e-5`: Minimum value for road capacities κ
 - `min_iter::Int64=20`: Minimum number of iterations
 - `max_iter::Int64=200`: Maximum number of iterations
-- `tol::Float64=1e-7`: Tolerance for convergence of road capacities κ
+- `tol::Float64=1e-5`: Tolerance for convergence of road capacities κ
 
 # Optional Parameters
 - `optimizer = Ipopt.Optimizer`: Optimizer to be used
@@ -46,7 +46,7 @@ param = init_parameters(labor_mobility = true, K = 10)
 function init_parameters(; alpha = 0.5, beta = 1, gamma = 1, K = 1, sigma = 5, rho = 2, a = 0.8, N = 1, m = ones(N), nu = 1, 
                          labor_mobility = false, cross_good_congestion=false, annealing=true, 
                          verbose = true, duality = false, warm_start = true, 
-                         kappa_min = 1e-5, min_iter = 20, max_iter = 200, tol = 1e-7, kwargs...)
+                         kappa_min = 1e-5, min_iter = 20, max_iter = 200, tol = 1e-5, kwargs...)
     param = Dict()
 
     if !isempty(kwargs)

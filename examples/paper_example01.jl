@@ -9,7 +9,7 @@ using Plots
 # ==============
 
 K = [1, 100]
-param = init_parameters(tol = 1e-5)
+param = init_parameters()
 param, g = create_graph(param, 9, 9, type = "map")
 
 #  Define fundamentals

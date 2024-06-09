@@ -9,7 +9,7 @@ width = 9
 height = 9
 nb_cities = 20
 
-param = init_parameters(tol = 1e-5, K = 100, annealing = false)
+param = init_parameters(K = 100, annealing = false)
 param, g = create_graph(param, width, height, type = "triangle") # case with random cities, one good
 
 # set fundamentals

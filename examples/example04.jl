@@ -8,7 +8,7 @@ import Random
 
 # Init and Solve network
 
-param = init_parameters(tol = 1e-5, K = 100, labor_mobility = false, 
+param = init_parameters(K = 100, labor_mobility = false, 
                         N = 1, gamma = 1, beta = 1, duality = false)
 w = 13; h = 13
 param, graph = create_graph(param, w, h, type = "map")
