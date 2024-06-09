@@ -17,6 +17,7 @@ Solve for the optimal network by solving the inner problem and the outer problem
 - `Iu::Matrix{Float64}=nothing`: (Optional) J x J matrix providing exogenous upper bound on infrastructure levels
 - `verbose::Bool=false`: (Optional) tell IPOPT to display results
 - `return_model::Int=0`: (Optional) return the JuMP model and corresponding `recover_allocation()` function: 1 just returns these before solving the model, while 2 solves the model + optimal network and returns the two alongside the results. 
+- `solve_allocation::Bool=false`: (Optional) just solve the model with existing infrastructure I0 and return the results. 
 
 # Examples
 ```julia
@@ -27,7 +28,7 @@ result = optimal_network(param, graph)
 plot_graph(graph, result[:Ijk])
 ```
 """
-function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbose=false, return_model=0)
+function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbose=false, return_model=0, solve_allocation = false)
 
     # I0=nothing; Il=nothing; Iu=nothing; verbose=false; return_model = false; return_model = 0;
     graph = dict_to_namedtuple(graph)
@@ -157,6 +158,13 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
         t1 = time()
 
         results = recover_allocation(model, auxdata)
+
+        if solve_allocation
+            if !is_solved_and_feasible(model, allow_almost = true)
+                warning("Solver returned with error code $(termination_status(model)).")
+            end
+            return results
+        end
 
         if !is_solved_and_feasible(model, allow_almost = true)
             if used_warm_start # if error happens with warm start, then try again starting cold
