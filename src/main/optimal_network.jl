@@ -5,7 +5,7 @@
 
 """
     optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, 
-                    verbose=false, return_model=0) -> Dict
+                    verbose=false, return_model=0, solve_allocation = false) -> Dict
 
 Solve for the optimal network by solving the inner problem and the outer problem by iterating over the FOCs.
 
