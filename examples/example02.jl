@@ -28,7 +28,7 @@ Random.seed!(5) # reinit random number generator
 for i in 1:ncities
     newdraw = false
     while !newdraw
-        j = round(Int, 1 + rand() * (graph.J - 1))
+        j = round(Int, 1 + rand() * (graph[:J] - 1))
         if param[:Lj][j] != 1 / (ncities + 1) # make sure node j is unpopulated           
             newdraw = true
             param[:Lj][j] = 1

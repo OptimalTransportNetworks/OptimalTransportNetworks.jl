@@ -25,7 +25,7 @@ Random.seed!(5) # reinit random number generator
 for i in 1:param[:N]-1
     newdraw = false
     while newdraw == false
-        j = round(Int, 1 + rand() * (graph.J - 1))
+        j = round(Int, 1 + rand() * (graph[:J] - 1))
         if any(param[:Zjn][j, 1:param[:N]-1] .> 0) == false # make sure node j does not produce any differentiated good
             newdraw = true
             param[:Zjn][j, 1:param[:N]] .= 0
