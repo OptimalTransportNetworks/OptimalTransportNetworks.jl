@@ -44,4 +44,4 @@ This plot shows the optimal network after 200 iterations, keeping population fix
     param[:optimizer_attr] = Dict(:hsllib => "/usr/local/lib/libhsl.dylib", 
                                   :linear_solver => "ma57") 
     ```
-The [Ipopt.jl README](https://github.com/jump-dev/Ipopt.jl?tab=readme-ov-file#linear-solvers) suggests to use the larger LibHSL package for which there exists a Julia module and proceed similarly. In addition, users may try an [optimized BLAS](https://github.com/jump-dev/Ipopt.jl?tab=readme-ov-file#blas-and-lapack) and see if it yields significant performance gains (and let me know if it does). 
+    The [Ipopt.jl README](https://github.com/jump-dev/Ipopt.jl?tab=readme-ov-file#linear-solvers) suggests to use the larger LibHSL package for which there exists a Julia module and proceed similarly. In addition, users may try an [optimized BLAS](https://github.com/jump-dev/Ipopt.jl?tab=readme-ov-file#blas-and-lapack) and see if it yields significant performance gains (and let me know if it does). 
