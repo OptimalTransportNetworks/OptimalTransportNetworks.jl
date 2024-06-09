@@ -21,7 +21,7 @@ param[:Zjn][Ni, :] .= 1; # more productive node
 plot_graph(g, edges = false, mesh = true, node_sizes = param[:Lj], node_sizes_scale = 2500)
 
 # Plot the mesh with productivity
-plot_graph(g, edges = false, mesh = true, node_sizes = param[:Zjn], node_sizes_scale = 100)
+plot_graph(g, edges = false, mesh = true, node_sizes = param[:Zjn], node_sizes_scale = 200)
 
 # Compute networks
 results = [] 
@@ -35,16 +35,16 @@ end
 plots = [] # Initialize an empty array to hold the subplots
 for i in 1:length(K) 
     shades = sizes = results[i][:Cj] / maximum(results[i][:Cj])
-    p = plot_graph(g, results[i][:Ijk], node_sizes = sizes, node_shades = shades, node_sizes_scale = 50)
+    p = plot_graph(g, results[i][:Ijk], node_sizes = sizes, node_shades = shades, node_sizes_scale = 40)
     title!(p, "(a) Transport Network (I_{jk})")
     push!(plots, p) 
-    p = plot_graph(g, results[1][:Qjkn][:, :, 1], edge_color = :brown, arrows = true, node_sizes = sizes, node_shades = shades, node_sizes_scale = 50)
+    p = plot_graph(g, results[1][:Qjkn][:, :, 1], edge_color = :brown, arrows = true, node_sizes = sizes, node_shades = shades, node_sizes_scale = 40)
     title!(p, "(b) Shipping (Q_{jk})")
     push!(plots, p) 
-    p = plot_graph(g, results[i][:Ijk], map = results[i][:Pjn] / maximum(results[i][:Pjn]), node_sizes = sizes, node_shades = shades, node_sizes_scale = 50)
+    p = plot_graph(g, results[i][:Ijk], map = results[i][:Pjn] / maximum(results[i][:Pjn]), node_sizes = sizes, node_shades = shades, node_sizes_scale = 40)
     title!(p, "(c) Prices (P_{j})")
     push!(plots, p) 
-    p = plot_graph(g, results[i][:Ijk], map = results[i][:cj] / maximum(results[i][:cj]), node_sizes = sizes, node_shades = shades, node_sizes_scale = 50)
+    p = plot_graph(g, results[i][:Ijk], map = results[i][:cj] / maximum(results[i][:cj]), node_sizes = sizes, node_shades = shades, node_sizes_scale = 40)
     title!(p, "(d) Consumption (c_{j})")
     push!(plots, p) 
 end
