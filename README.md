@@ -23,7 +23,7 @@ This plot shows the optimal network after 200 iterations, keeping population fix
 
 ![](misc/figures/example04_solution.png)
 
-## Notes
+## Performance Notes
 
 * The Julia implementation does not provide hard-coded Gradients, Jacobians, and Hessians as the MATLAB implementation does for some model cases, but relies solely on JuMP's automatic differentiation. This has proven ineffective for dual solutions to the model where the objective is quite complex. Thus, at present, duality does not help to speed up computations in Julia, and accordingly the default is `duality = false`. I expect this to change in when [support for detecting nonlinear subexpressions](https://github.com/jump-dev/JuMP.jl/issues/3738) will be added to JuMP.  
 
