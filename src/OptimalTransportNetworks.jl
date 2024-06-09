@@ -76,7 +76,7 @@ module OptimalTransportNetworks
 using LinearAlgebra, JuMP, Plots
 using SparseArrays: sparse
 using Statistics: mean
-using MathOptInterface: Parameter
+# using MathOptInterface: Parameter
 using Dierckx: Spline2D, evaluate
 import Ipopt, Plots, Random #, MathOptSymbolicAD
 # import MathOptInterface as MOI
