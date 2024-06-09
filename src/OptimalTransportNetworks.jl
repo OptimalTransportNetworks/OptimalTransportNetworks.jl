@@ -34,7 +34,7 @@ a simplified interface and only exports key functions, while retaining full flex
 
 **Compute Optimal Network + Refine Solution in Non-Convex Cases**
 
-`optimal_network()`   - Compute optimal network given parameters and graph\n
+`optimal_network()`   - Compute optimal network given parameters and graph. Can also be used to just solve the model on a given network. \n
 `annealing()`         - Refine solution using simulated annealing in non-convex cases (automatically called in optimal_network() if param[:annealing] == true))\n
 
 **Plot Graph (Incl. Network Solution)**
@@ -50,25 +50,24 @@ a simplified interface and only exports key functions, while retaining full flex
 # Examples
 ```julia
 # Convex case
-param = init_parameters()
+param = init_parameters(K = 10)
 param, graph = create_graph(param)
 param[:Zjn][61] = 10.0
-result = optimal_network(param, graph)
-plot_graph(graph, result[:Ijk])
-
+results = optimal_network(param, graph)
+plot_graph(graph, results[:Ijk])
 
 # Nonconvex case, disabling automatic annealing
-param = init_parameters(annealing = false, gamma = 2)
+param = init_parameters(K = 10, annealing = false, gamma = 2)
 param, graph = create_graph(param)
 param[:Zjn][61] = 10.0
-result = optimal_network(param, graph)
+results = optimal_network(param, graph)
 
 # Run annealing
 results_annealing = annealing(param, graph, result[:Ijk])
 
 # Comparison
-plot_graph(graph, result[:Ijk])
-plot_graph(graph, result_annealing[:Ijk])
+plot_graph(graph, results[:Ijk])
+plot_graph(graph, results_annealing[:Ijk])
 ```
 """
 module OptimalTransportNetworks
