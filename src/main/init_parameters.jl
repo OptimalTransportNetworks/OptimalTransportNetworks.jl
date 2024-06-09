@@ -40,7 +40,7 @@ Returns a `param` dict with the model parameters.
 
 # Examples
 ```julia
-param = init_parameters(labor_mobility = true, K = 10)
+param = init_parameters(K = 10, labor_mobility = true)
 ```
 """
 function init_parameters(; alpha = 0.5, beta = 1, gamma = 1, K = 1, sigma = 5, rho = 2, a = 0.8, N = 1, m = ones(N), nu = 1, 

@@ -49,11 +49,11 @@ Plot a graph visualization with various styling options.
 
 # Examples
 ```julia
-param = init_parameters()
+param = init_parameters(K = 10)
 param, graph = create_graph(param)
 param[:Zjn][51] = 10.0
-result = optimal_network(param, graph)
-plot_graph(graph, result[:Ijk])
+results = optimal_network(param, graph)
+plot_graph(graph, results[:Ijk])
 ```
 """
 function plot_graph(graph, edges = nothing; kwargs...)

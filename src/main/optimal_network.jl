@@ -21,11 +21,11 @@ Solve for the optimal network by solving the inner problem and the outer problem
 
 # Examples
 ```julia
-param = init_parameters()
+param = init_parameters(K = 10)
 param, graph = create_graph(param)
 param[:Zjn][61] = 10.0
-result = optimal_network(param, graph)
-plot_graph(graph, result[:Ijk])
+results = optimal_network(param, graph)
+plot_graph(graph, results[:Ijk])
 ```
 """
 function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbose=false, return_model=0, solve_allocation = false)
