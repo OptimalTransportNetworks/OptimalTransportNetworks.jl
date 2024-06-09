@@ -13,7 +13,7 @@ Kreindler, G., Gaduh, A., Graff, T., Hanna, R., & Olken, B. A. (2023). Optimal P
 
 ## Example
 
-The code for this example is in [example04.jl](https://github.com/SebKrantz/OptimalTransportNetworks.jl/blob/main/examples/example04.jl). 
+The code for this example is in [example04.jl](https://github.com/SebKrantz/OptimalTransportNetworks.jl/blob/main/examples/example04.jl). See the [examples folder](https://github.com/SebKrantz/OptimalTransportNetworks.jl/blob/main/examples) for more examples.
 
 This plot shows the endowments on a map-graph: circle size is population, circle colour is productivity (the central node is more productive), the black lines indicate geographic barriers, and the background is shaded according to the cost of network building (elevation), indicating a mountain in the upper right corner. 
 
@@ -27,7 +27,7 @@ This plot shows the optimal network after 200 iterations, keeping population fix
 
 * The Julia implementation does not provide hard-coded Gradients, Jacobians, and Hessians as the MATLAB implementation does for some model cases, but relies solely on JuMP's automatic differentiation. This has proven ineffective for dual solutions to the model where the objective is quite complex. Thus, at present, duality does not help to speed up computations in Julia, and accordingly the default is `duality = false`. I expect this to change in when [support for detecting nonlinear subexpressions](https://github.com/jump-dev/JuMP.jl/issues/3738) will be added to JuMP.  
 
-* Related, I expect symbolic autodifferentiation via [MathOptSymbolicAD.jl](https://github.com/lanl-ansi/MathOptSymbolicAD.jl) to provide significant performance improvements. Presently this cannot be used on these models because logical or comparison operators are not supported. See [related issue](https://github.com/lanl-ansi/MathOptSymbolicAD.jl/issues/31). Once this support is added, the symbolic backend can be activated using.
+* Related, I expect symbolic autodifferentiation via [MathOptSymbolicAD.jl](https://github.com/lanl-ansi/MathOptSymbolicAD.jl) to provide significant performance improvements. Presently this cannot be used on these models because logical or comparison operators are not supported. See [this issue](https://github.com/lanl-ansi/MathOptSymbolicAD.jl/issues/31). Once support is added, the symbolic backend can be activated using:
 
     ```julia
     import MathOptInterface as MOI
@@ -38,7 +38,7 @@ This plot shows the optimal network after 200 iterations, keeping population fix
                                     # Or:  MathOptSymbolicAD.ThreadedBackend()
     ```
 
-* It is recommended to use Coin-HSL linear solvers for Ipopt to speed up computations. In my opinion the simplest way to use them is do get a (free for academics) license and download the binaries [here](https://licences.stfc.ac.uk/product/coin-hsl), extract them somewhere, and then set the `hsllib` and `linear_solver` options in the `optimizer_attr` dictionary in `param` as follows:
+* It is recommended to use Coin-HSL linear solvers for [Ipopt](https://github.com/jump-dev/Ipopt.jl) to speed up computations. In my opinion the simplest way to use them is do get a (free for academics) license and download the binaries [here](https://licences.stfc.ac.uk/product/coin-hsl), extract them somewhere, and then set the `hsllib` and `linear_solver` options in the `optimizer_attr` dictionary in `param` as follows:
 
     ```julia
     param[:optimizer_attr] = Dict(:hsllib => "/usr/local/lib/libhsl.dylib", # Adjust path
