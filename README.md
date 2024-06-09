@@ -38,7 +38,7 @@ This plot shows the optimal network after 200 iterations, keeping population fix
                                     # Or:  MathOptSymbolicAD.ThreadedBackend()
     ```
 
-* It is recommended to use Coin-HSL linear solvers for [Ipopt](https://github.com/jump-dev/Ipopt.jl) to speed up computations. In my opinion the simplest way to use them is do get a (free for academics) license and download the binaries [here](https://licences.stfc.ac.uk/product/coin-hsl), extract them somewhere, and then set the `hsllib` and `linear_solver` options in the `optimizer_attr` dictionary in `param` as follows:
+* It is recommended to use Coin-HSL linear solvers for [Ipopt](https://github.com/jump-dev/Ipopt.jl) to speed up computations. In my opinion the simplest way to use them is to get a (free for academics) license and download the binaries [here](https://licences.stfc.ac.uk/product/coin-hsl), extract them somewhere, and then set the `hsllib` (place here the path to where you extracted `libhsl.dylib`, it may also be called `libcoinhsl.dylib`, in which case you may have to rename it to `libhsl.dylib`) and `linear_solver` options as follows:
 
     ```julia
     param[:optimizer_attr] = Dict(:hsllib => "/usr/local/lib/libhsl.dylib", # Adjust path
