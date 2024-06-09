@@ -91,7 +91,7 @@ function plot_graph(graph, edges = nothing; kwargs...)
         if op.geography !== nothing
             vec_map = op.geography.z
         else
-            vec_map = op.map
+            vec_map = vec(op.map)
         end
         # Interpolate map onto grid
         # itp = interpolate((vec_x, vec_y), vec_map, Gridded(Linear()))
