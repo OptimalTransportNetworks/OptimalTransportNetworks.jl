@@ -1,10 +1,6 @@
 # OptimalTransportNetworks.jl
 **Optimal Transport Networks in Spatial Equilibrium - in Julia and MATLAB**
 
-***
-*Note*: Library is under development, no guarantees whatsoever. Contributions welcome!
-***
-
 Modern Julia ([JuMP](https://github.com/jump-dev/JuMP.jl)) translation of the MATLAB OptimalTransportNetworkToolbox (v1.0.4b) implementing the quantitative spatial economic model of:
 
 Fajgelbaum, P. D., & Schaal, E. (2020). Optimal transport networks in spatial equilibrium. *Econometrica, 88*(4), 1411-1452.
@@ -26,3 +22,26 @@ This plot shows the endowments on a map-graph: circle size is population, circle
 This plot shows the optimal network after 200 iterations, keeping population fixed and not allowing for cross-good congestion. The size of nodes indicates consumption in each node. 
 
 ![](misc/figures/example04_solution.png)
+
+## Notes
+
+* The Julia implementation does not provide hard-coded Gradients, Jacobians, and Hessians as the MATLAB implementation does for some model cases, but relies solely on JuMP's automatic differentiation. This has proven ineffective for dual solutions to the model where the objective is quite complex. Thus, at present, duality does not help to speed up computations in Julia, and accordingly the default is `duality = false`. I expect this to change in the future when [support for detecting nonlinear subexpressions](https://github.com/jump-dev/JuMP.jl/issues/3738) has been added to JuMP.  
+
+* Related, I expect symbolic autodifferentiation via [MathOptSymbolicAD.jl](https://github.com/lanl-ansi/MathOptSymbolicAD.jl) to provide significant performance improvements. Presently this cannot be used on these models because logical or comparison operators are not supported. See [related issue](https://github.com/lanl-ansi/MathOptSymbolicAD.jl/issues/31). Once this support has been added, the symbolic backend can be activated using.
+
+    ```julia
+    import MathOptInterface as MOI
+    import MathOptSymbolicAD
+
+    param[:model_attr] = Dict(:backend => (MOI.AutomaticDifferentiationBackend(), 
+                                           MathOptSymbolicAD.DefaultBackend())) 
+                                    # Or:  MathOptSymbolicAD.ThreadedBackend()
+    ```
+
+* It is recommended to use Coin-HSL linear solvers for Ipopt to speed up computations. In my opinion the simplest way to use them is do get a (free for academics) license and download the binaries [here](https://licences.stfc.ac.uk/product/coin-hsl), extract them somewhere, and then set the `hsllib` and `linear_solver` options in the `optimizer_attr` dictionary in `param` as follows:
+
+    ```julia
+    param[:optimizer_attr] = Dict(:hsllib => "/usr/local/lib/libhsl.dylib", 
+                                  :linear_solver => "ma57") 
+    ```
+The [Ipopt.jl README](https://github.com/jump-dev/Ipopt.jl?tab=readme-ov-file#linear-solvers) suggests to use the larger LibHSL package for which there exists a Julia module and proceed similarly. In addition, users may try an [optimized BLAS](https://github.com/jump-dev/Ipopt.jl?tab=readme-ov-file#blas-and-lapack) and see if it yields significant performance gains (and let me know if it does). 
