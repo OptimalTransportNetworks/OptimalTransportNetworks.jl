@@ -12,7 +12,7 @@ function model_fixed_armington(optimizer, auxdata)
     psigma = (param.sigma - 1) / param.sigma
     Lj = param.Lj
     # Production: Fixed because just one good is produced by each location
-    Yj = dropdims(sum(param.Zjn, dims = 2) .* Lj .^ param.a, dims = 2)
+    Yjn = param.Zjn .* Lj .^ param.a
 
     # Model
     model = Model(optimizer)
@@ -36,7 +36,7 @@ function model_fixed_armington(optimizer, auxdata)
     # Balanced flow constraints
     @constraint(model, Pjn[j in 1:param.J, n in 1:param.N],
         Cjn[j, n] + sum(A[j, i] * Qin[i, n] for i in 1:graph.ndeg) -
-        Yj[j] + sum(
+        Yjn[j, n] + sum(
             ifelse(Qin[i, n] > 0, Apos[j, i], Aneg[j, i]) *
             abs(Qin[i, n])^(1 + param.beta) / kappa_ex[i]
             for i in 1:graph.ndeg
