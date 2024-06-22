@@ -79,8 +79,13 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
         model = model_partial_mobility_cgc(optimizer, auxdata)
         recover_allocation = recover_allocation_partial_mobility_cgc
     elseif param.mobility == 0 && param.cong
-        model = model_fixed_cgc(optimizer, auxdata)
-        recover_allocation = recover_allocation_fixed_cgc
+        if all(sum(param.Zjn .> 0, dims = 2) .<= 1) # Armington case
+            model = model_fixed_cgc_armington(optimizer, auxdata)
+            recover_allocation = recover_allocation_fixed_cgc_armington
+        else
+            model = model_fixed_cgc(optimizer, auxdata)
+            recover_allocation = recover_allocation_fixed_cgc
+        end
     elseif param.mobility == 1 && !param.cong
         model = model_mobility(optimizer, auxdata)
         recover_allocation = recover_allocation_mobility
