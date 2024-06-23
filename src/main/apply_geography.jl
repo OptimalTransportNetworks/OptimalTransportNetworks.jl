@@ -11,7 +11,7 @@ and similarly for graph traversal costs `delta_tau`.
 
 # Arguments
 - `graph`: Dict or NamedTuple that contains the network graph to which the geographical features will be applied.
-- `geography::NamedTuple`: A named tuple representing the geographical features, with the following fields:\n
+- `geography`: Dict or NamedTuple representing the geographical features, with the following fields:\n
    - `z::Vector{Float64}`: A J x 1 vector containing the z-coordinate (elevation) for each node, or `nothing` if no elevation data.\n
    - `z_is_friction::Bool`: (Optional) logical value indicate that `z` represents friction rather than elevation. In that case, the measure of building cost is the average friction of the two nodes mean(Z1,Z2) rather than the difference Z2-Z1.\n
    - `obstacles::Matrix{Int64}`: An Nobs x 2 matrix specifying (i, j) pairs of nodes that are connected by obstacles, where Nobs is the number of obstacles, or `nothing` if no obstacles.
@@ -33,7 +33,7 @@ and similarly for graph traversal costs `delta_tau`.
 # Examples
 ```julia
 param, graph = create_graph(init_parameters())
-geography = (z = rand(graph.J), obstacles = [1 15; 70 72])
+geography = (z = 10*(rand(graph[:J]) .> 0.95), obstacles = [1 15; 70 72])
 updated_graph = apply_geography(graph, geography)
 ```
 """
