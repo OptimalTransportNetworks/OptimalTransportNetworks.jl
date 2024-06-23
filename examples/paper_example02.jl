@@ -17,7 +17,7 @@ param, g = create_graph(param, width, height, type = "triangle") # case with ran
 
 Random.seed!(5)
 minpop = minimum(param[:Lj])
-param[:Zjn] = minpop .* ones(g[:J])  # matrix of productivity
+param[:Zjn] = fill(minpop, g[:J], 1)  # matrix of productivity
 
 Ni = find_node(g, ceil(width/2), ceil(height/2)) # find center
 param[:Zjn][Ni] = 1 # more productive node
@@ -34,6 +34,8 @@ for i in 1:nb_cities-1
     end
 end
 
+param[:hj] = param[:Hj] ./ param[:Lj]
+param[:hj][param[:Lj] .== minpop] .= 1
 
 # Convex case
 results = Vector{Any}(undef, 3)
