@@ -1,5 +1,6 @@
 using OptimalTransportNetworks
 using Random
+using Plots
 
 # 4.1.2 RANDOM CITIES
 
