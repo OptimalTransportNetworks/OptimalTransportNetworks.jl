@@ -18,7 +18,7 @@ Initialize the underlying graph, population and productivity parameters.
 - `adjacency::BitMatrix`: J x J Adjacency matrix (only used for custom network)
 - `x::Vector{Float64}`: x coordinate (longitude) of each node (only used for custom network)
 - `y::Vector{Float64}`: y coordinate (latitude) of each node (only used for custom network)
-- `Lj::Vector{Float64}`: Vector of populations in each node (j = 1:J) (only for no mobility)
+- `Lj::Vector{Float64}`: Vector of populations in each node (j = 1:J) (only for fixed labour case)
 - `Hj::Vector{Float64}`: Vector of immobile good in each node (j = 1:J) (e.g. housing, default ones(J))
 - `Lr::Vector{Float64}`: Vector of populations in each region (r = 1:nregions) (only for partial mobility)
 - `region::Vector{Int64}`: Vector indicating region of each location (only for partial mobility)
