@@ -23,6 +23,9 @@ Initialize the underlying graph, population and productivity parameters.
 - `Lr::Vector{Float64}`: Vector of populations in each region (r = 1:nregions) (only for partial mobility)
 - `region::Vector{Int64}`: Vector indicating region of each location (only for partial mobility)
 
+# Notes
+- `create_graph()` will overwrite any parameters `Zjn`, `Lj`, `Hj`, `omega`, `Lr`, already set in the `param` Dict with the default values. So these values should be set inside `create_graph()`, or after `create_graph()` has been called.
+
 # Examples
 ```julia
 param, graph = create_graph(init_parameters())
