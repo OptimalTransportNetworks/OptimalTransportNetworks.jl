@@ -31,10 +31,14 @@ plot_graph(graph, results[:Ijk])
 function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbose=false, return_model=0, solve_allocation = false)
 
     # I0=nothing; Il=nothing; Iu=nothing; verbose=false; return_model = false; return_model = 0;
+    # Check param.Zjn and make matrix if vector:
+    if length(size(param[:Zjn])) == 1
+        param[:Zjn] = reshape(param[:Zjn], param[:J], 1)
+    end   
     graph = dict_to_namedtuple(graph)
     param = dict_to_namedtuple(param)
     edges = represent_edges(graph)
-
+ 
     J = graph.J
     error_status = false
 
