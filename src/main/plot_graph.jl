@@ -42,7 +42,7 @@ Plot a graph visualization with various styling options.
 - `node_color::Symbol=:purple`: Node color or color gradient 
 - `node_stroke_width::Real=0`: Stroke width for node outlines
 - `node_stroke_color::Symbol=nothing`: Stroke color for node outlines 
-- `geography::NamedTuple=nothing`: Named tuple with geography data, see also `apply_geography()`
+- `geography=nothing`: Dict or NamedTuple with geography data, see also `apply_geography()`
 - `obstacles::Bool=false`: Show obstacles from geography
 - `obstacle_color::Symbol=:black`: Color for obstacles
 - `obstacle_thickness::Symbol=3`: Thickness for obstacles
@@ -89,7 +89,7 @@ function plot_graph(graph, edges = nothing; kwargs...)
     # PLOT COLORMAP
     if op.map !== nothing || op.geography !== nothing
         if op.geography !== nothing
-            vec_map = op.geography.z
+            vec_map = op.geography[:z]
         else
             vec_map = vec(op.map)
         end
@@ -112,8 +112,8 @@ function plot_graph(graph, edges = nothing; kwargs...)
     end
 
     # PLOT OBSTACLES
-    if op.obstacles
-        obstacles = op.geography.obstacles
+    if op.obstacles && length(op.geography[:obstacles]) > 0
+        obstacles = op.geography[:obstacles]
         for i in 1:size(obstacles, 1)
             x1 = vec_x[obstacles[i, 1]]
             y1 = vec_y[obstacles[i, 1]]
