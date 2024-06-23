@@ -100,8 +100,13 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
             recover_allocation = recover_allocation_mobility
         end
     elseif param.mobility == 0.5 && !param.cong
-        model = model_partial_mobility(optimizer, auxdata)
-        recover_allocation = recover_allocation_partial_mobility    
+        if all(sum(param.Zjn .> 0, dims = 2) .<= 1) # Armington case
+            model = model_partial_mobility_armington(optimizer, auxdata)
+            recover_allocation = recover_allocation_partial_mobility_armington    
+        else
+            model = model_partial_mobility(optimizer, auxdata)
+            recover_allocation = recover_allocation_partial_mobility    
+        end
     elseif param.mobility == 0 && !param.cong
         if all(sum(param.Zjn .> 0, dims = 2) .<= 1) # Armington case
             model = model_fixed_armington(optimizer, auxdata)
