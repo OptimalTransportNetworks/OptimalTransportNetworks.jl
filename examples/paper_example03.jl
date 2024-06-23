@@ -13,7 +13,7 @@ height = 9
 
 # Init and Solve network
 
-param = init_parameters(K=10000, labor_mobility = true, annealing = false)
+param = init_parameters(K = 10000, labor_mobility = true, annealing = false)
 param, g = create_graph(param, width, height, type = "triangle")
 
 # set fundamentals
