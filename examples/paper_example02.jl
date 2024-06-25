@@ -54,20 +54,19 @@ welfare_increase = (results[3][:welfare] / results[2][:welfare]) ^ (1 / (param[:
 # Plot results
 
 plots = Vector{Any}(undef, 6) # Initialize an empty array to hold the subplots
-shades = sizes = results[i][:Cj] / maximum(results[i][:Cj])
 
-plots[1] = plot_graph(g, results[1][:Ijk], node_sizes = sizes, node_shades = shades, node_sizes_scale = 40)
+plots[1] = plot_graph(g, results[1][:Ijk], node_sizes = results[1][:Lj], node_shades = results[1][:Cj], node_sizes_scale = 40)
 title!(plots[1], "Convex Network (I_{jk})")
-plots[2] = plot_graph(g, results[1][:Qjkn][:, :, 1], edge_color = :brown, arrows = true, node_sizes = sizes, node_shades = shades, node_sizes_scale = 40)
+plots[2] = plot_graph(g, results[1][:Qjkn][:, :, 1], edge_color = :brown, arrows = true, node_sizes = results[1][:Lj], node_shades = results[1][:Cj], node_sizes_scale = 40)
 title!(plots[2], "Convex Shipping (Q_{jk})")
 
-plots[3] = plot_graph(g, results[2][:Ijk], node_sizes = sizes, node_shades = shades, node_sizes_scale = 40)
+plots[3] = plot_graph(g, results[2][:Ijk], node_sizes = results[2][:Lj], node_shades = results[2][:Cj], node_sizes_scale = 40)
 title!(plots[3], "Nonconvex Network (I_{jk})")
-plots[4] = plot_graph(g, results[2][:Qjkn][:, :, 1], edge_color = :brown, arrows = true, node_sizes = sizes, node_shades = shades, node_sizes_scale = 40)
+plots[4] = plot_graph(g, results[2][:Qjkn][:, :, 1], edge_color = :brown, arrows = true, node_sizes = results[2][:Lj], node_shades = results[2][:Cj], node_sizes_scale = 40)
 title!(plots[4], "Nonconvex Shipping (Q_{jk})")
 
 plots[5] = plots[3]
-plots[6] = plot_graph(g, results[3][:Ijk], node_sizes = sizes, node_shades = shades, node_sizes_scale = 40)
+plots[6] = plot_graph(g, results[3][:Ijk], node_sizes = results[3][:Lj], node_shades = results[3][:Cj], node_sizes_scale = 40)
 title!(plots[6], "Nonconvex Network (I_{jk})")
 annotate!(plots[6], [(0.5, 1.04, text("With Annealing. Welfare increase: $(round((welfare_increase-1)*100, digits = 2))%", :black, :center, 10))])
 
