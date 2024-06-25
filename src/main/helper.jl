@@ -157,6 +157,86 @@ function create_auxdata(param, graph, edges, I)
     return auxdata
 end
 
+"""
+    get_model(param, auxdata)
+
+Construct the appropriate model based on the parameters and auxiliary data.
+
+# Arguments
+- `param`: A named tuple containing the model parameters.
+- `auxdata`: Auxiliary data required for constructing the model.
+
+# Returns
+- `model`: The constructed model.
+- `recover_allocation`: A function to recover the allocation from the model solution.
+"""
+function get_model(param, auxdata)
+     optimizer = get(param, :optimizer, Ipopt.Optimizer)
+     param = dict_to_namedtuple(param)
+
+    if haskey(param, :model)
+        model = param.model(optimizer, auxdata)
+        if !haskey(param, :recover_allocation)
+            error("The custom model does not have the recover_allocation function.")
+        end
+        recover_allocation = param.recover_allocation 
+    elseif param.mobility == 1 && param.cong
+        if all(sum(param.Zjn .> 0, dims = 2) .<= 1) # Armington case
+            model = model_mobility_cgc_armington(optimizer, auxdata)
+            recover_allocation = recover_allocation_mobility_cgc_armington
+        else
+            model = model_mobility_cgc(optimizer, auxdata)
+            recover_allocation = recover_allocation_mobility_cgc
+        end
+    elseif param.mobility == 0.5 && param.cong
+        if all(sum(param.Zjn .> 0, dims = 2) .<= 1) # Armington case
+            model = model_partial_mobility_cgc_armington(optimizer, auxdata)
+            recover_allocation = recover_allocation_partial_mobility_cgc_armington
+        else
+            model = model_partial_mobility_cgc(optimizer, auxdata)
+            recover_allocation = recover_allocation_partial_mobility_cgc
+        end
+    elseif param.mobility == 0 && param.cong
+        if all(sum(param.Zjn .> 0, dims = 2) .<= 1) # Armington case
+            model = model_fixed_cgc_armington(optimizer, auxdata)
+            recover_allocation = recover_allocation_fixed_cgc_armington
+        else
+            model = model_fixed_cgc(optimizer, auxdata)
+            recover_allocation = recover_allocation_fixed_cgc
+        end
+    elseif param.mobility == 1 && !param.cong
+        if all(sum(param.Zjn .> 0, dims = 2) .<= 1) # Armington case
+            model = model_mobility_armington(optimizer, auxdata)
+            recover_allocation = recover_allocation_mobility_armington
+        else
+            model = model_mobility(optimizer, auxdata)
+            recover_allocation = recover_allocation_mobility
+        end
+    elseif param.mobility == 0.5 && !param.cong
+        if all(sum(param.Zjn .> 0, dims = 2) .<= 1) # Armington case
+            model = model_partial_mobility_armington(optimizer, auxdata)
+            recover_allocation = recover_allocation_partial_mobility_armington    
+        else
+            model = model_partial_mobility(optimizer, auxdata)
+            recover_allocation = recover_allocation_partial_mobility    
+        end
+    elseif param.mobility == 0 && !param.cong
+        if all(sum(param.Zjn .> 0, dims = 2) .<= 1) # Armington case
+            model = model_fixed_armington(optimizer, auxdata)
+            recover_allocation = recover_allocation_fixed_armington
+        elseif param.beta <= 1 && param.a < 1 && param.duality
+            model = model_fixed_duality(optimizer, auxdata)
+            recover_allocation = recover_allocation_fixed_duality
+        else
+            model = model_fixed(optimizer, auxdata)
+            recover_allocation = recover_allocation_fixed
+        end
+    else
+        error("Usupported model configuration with labor_mobility = $(param.mobility) and cross_good_congestion = $(param.cong)")
+    end
+    return model, recover_allocation
+end
+
 function all_variables_except_kappa_ex(model)
     all_vars = all_variables(model)
     return setdiff(all_vars, model[:kappa_ex])

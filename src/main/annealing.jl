@@ -102,35 +102,7 @@ function annealing(param, graph, I0; kwargs...)
         # TODO: set IO (kappa_ex)?
     else
         auxdata = create_auxdata(param, graph, edges, I0)
-        optimizer = get(param, :optimizer, Ipopt.Optimizer)
-
-        if haskey(param, :model)
-            model = param.model(optimizer, auxdata)
-            if !haskey(param, :recover_allocation)
-                error("The custom model does not have the recover_allocation function.")
-            end
-            recover_allocation = param.recover_allocation 
-        elseif param.mobility == 1 && param.cong
-            model = model_mobility_cgc(optimizer, auxdata)
-            recover_allocation = recover_allocation_mobility_cgc
-        elseif param.mobility == 0.5 && param.cong
-            model = model_partial_mobility_cgc(optimizer, auxdata)
-            recover_allocation = recover_allocation_partial_mobility_cgc
-        elseif param.mobility == 0 && param.cong
-            model = model_fixed_cgc(optimizer, auxdata)
-            recover_allocation = recover_allocation_fixed_cgc
-        elseif param.mobility == 1 && !param.cong
-            model = model_mobility(optimizer, auxdata)
-            recover_allocation = recover_allocation_mobility
-        elseif param.mobility == 0.5 && !param.cong
-            model = model_partial_mobility(optimizer, auxdata)
-            recover_allocation = recover_allocation_partial_mobility    
-        elseif param.mobility == 0 && !param.cong
-            model = model_fixed(optimizer, auxdata)
-            recover_allocation = recover_allocation_fixed
-        else
-            error("Usupported model configuration with labor_mobility = $(param.mobility) and cross_good_congestion = $(param.cong)")
-        end
+        model, recover_allocation = get_model(param, auxdata)
 
         # --------------
         # CUSTOMIZATIONS
