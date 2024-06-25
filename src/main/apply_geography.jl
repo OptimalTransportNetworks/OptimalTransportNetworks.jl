@@ -12,9 +12,9 @@ and similarly for graph traversal costs `delta_tau`.
 # Arguments
 - `graph`: Dict or NamedTuple that contains the network graph to which the geographical features will be applied.
 - `geography`: Dict or NamedTuple representing the geographical features, with the following fields:\n
-   - `z::Vector{Float64}`: A J x 1 vector containing the z-coordinate (elevation) for each node, or `nothing` if no elevation data.\n
+   - `z::Vector{Float64}`: (Optional) J x 1 vector containing the z-coordinate (elevation) for each node, or `nothing` if no elevation data.\n
    - `z_is_friction::Bool`: (Optional) logical value indicate that `z` represents friction rather than elevation. In that case, the measure of building cost is the average friction of the two nodes mean(Z1,Z2) rather than the difference Z2-Z1.\n
-   - `obstacles::Matrix{Int64}`: An Nobs x 2 matrix specifying (i, j) pairs of nodes that are connected by obstacles, where Nobs is the number of obstacles, or `nothing` if no obstacles.
+   - `obstacles::Matrix{Int64}`: (Optional) Nobs x 2 matrix specifying (i, j) pairs of nodes that are connected by obstacles, where Nobs is the number of obstacles, or `nothing` if no obstacles.
 
 # Keyword Arguments
 - `across_obstacle_delta_i::Float64=Inf`: Rescaling parameter for building cost that crosses an obstacle.
@@ -61,8 +61,16 @@ function apply_geography(graph, geography; kwargs...)
     end
 
     op = dict_to_namedtuple(options)
-    geography = dict_to_namedtuple(geography)
-    z, obstacles = geography.z, geography.obstacles
+    if haskey(geography, :z)
+        z = geography[:z]
+    else 
+        z = nothing
+    end
+    if haskey(geography, :obstacles)
+        obstacles = geography[:obstacles]
+    else 
+        obstacles = nothing
+    end
     z_is_friction = haskey(geography, :z_is_friction) && geography.z_is_friction === true 
 
     # New graph object components
@@ -172,9 +180,9 @@ function apply_geography(graph, geography; kwargs...)
                 delta_tau_new[jo, io] *= op.along_obstacle_delta_tau
                 along_obstacle[io, jo] = true
                 along_obstacle[jo, io] = true
-                # This should be redundant if the above block works as intended
-                # across_obstacle[io, jo] = false
-                # across_obstacle[jo, io] = false
+                # This should be redundant if the above block works as intended:
+                across_obstacle[io, jo] = false
+                across_obstacle[jo, io] = false
             end
         end
     end
