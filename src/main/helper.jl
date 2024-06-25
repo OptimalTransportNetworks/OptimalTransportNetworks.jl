@@ -234,6 +234,29 @@ function get_model(param, auxdata)
     else
         error("Usupported model configuration with labor_mobility = $(param.mobility) and cross_good_congestion = $(param.cong)")
     end
+
+    # --------------
+    # CUSTOMIZATIONS
+
+    if haskey(param, :optimizer_attr)
+        for (key, value) in param.optimizer_attr
+            set_optimizer_attribute(model, String(key), value)
+        end
+    end
+
+    if haskey(param, :model_attr) 
+        for value in values(param.model_attr)
+            if !(value isa Tuple)  
+                error("model_attr must be a dict of tuples.")
+            end
+            set_optimizer_attribute(model, value[1], value[2])
+        end
+    end
+    # E.g.:
+    # set_attribute(model,
+    #    MOI.AutomaticDifferentiationBackend(),
+    #    MathOptSymbolicAD.DefaultBackend(),
+    # )
     return model, recover_allocation
 end
 
@@ -262,4 +285,3 @@ function rescale_network!(param, graph, I1, Il, Iu; max_iter = 100)
 
     return I1
 end
-

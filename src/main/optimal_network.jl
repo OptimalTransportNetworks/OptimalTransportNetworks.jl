@@ -67,35 +67,11 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
     # INITIALIZATION
 
     auxdata = create_auxdata(param, graph, edges, I0)
-
     model, recover_allocation = get_model(param, auxdata)
-
-    # --------------
-    # CUSTOMIZATIONS
 
     if !verbose
         set_silent(model)
     end
-
-    if haskey(param, :optimizer_attr)
-        for (key, value) in param.optimizer_attr
-            set_optimizer_attribute(model, String(key), value)
-        end
-    end
-
-    if haskey(param, :model_attr) 
-        for value in values(param.model_attr)
-            if !(value isa Tuple)  
-                error("model_attr must be a dict of tuples.")
-            end
-            set_optimizer_attribute(model, value[1], value[2])
-        end
-    end
-    # E.g.:
-    # set_attribute(model,
-    #    MOI.AutomaticDifferentiationBackend(),
-    #    MathOptSymbolicAD.DefaultBackend(),
-    # )
 
     if return_model == 1
         return model, recover_allocation
