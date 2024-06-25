@@ -8,7 +8,7 @@ import Random
 
 # Init and Solve network
 
-param = init_parameters(K = 100, labor_mobility = false, 
+param = init_parameters(K = 100, labor_mobility = false,
                         N = 1, gamma = 1, beta = 1, duality = false)
 w = 13; h = 13
 param, graph = create_graph(param, w, h, type = "map")
@@ -16,7 +16,6 @@ param, graph = create_graph(param, w, h, type = "map")
 # ----------------
 # Draw populations
 
-Random.seed!(5)
 param[:Zjn] = ones(param[:J], 1) .* 1e-3  # matrix of productivity (not 0 to avoid numerical glitches)
 param[:Lj] = ones(param[:J]) .* 1e-3  # matrix of population
 
@@ -24,6 +23,7 @@ Ni = find_node(graph, ceil(w/2), ceil(h/2))  # center
 param[:Zjn][Ni] = 1  # more productive node
 param[:Lj][Ni] = 1  # more productive node
 
+Random.seed!(5)
 ncities = 20  # draw a number of random cities in space
 for i in 1:ncities-1
     newdraw = false
