@@ -18,10 +18,10 @@ Ni = find_node(g, 5, 5); # center
 param[:Zjn][Ni, :] .= 1; # more productive node
 
 # Plot the mesh with population 
-plot_graph(g, edges = false, mesh = true, node_sizes = param[:Lj], node_sizes_scale = 2500)
+plot_graph(g, edges = false, mesh = true, node_sizes = param[:Lj])
 
 # Plot the mesh with productivity
-plot_graph(g, edges = false, mesh = true, node_sizes = param[:Zjn], node_sizes_scale = 200)
+plot_graph(g, edges = false, mesh = true, node_sizes = param[:Zjn])
 
 # Compute networks
 results = [] 
