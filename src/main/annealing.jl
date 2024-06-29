@@ -143,7 +143,7 @@ function annealing(param, graph, I0; kwargs...)
         end
 
         if options.display
-            plot_graph(graph, I1)
+            display(plot_graph(graph, I1))
         end
 
         if param.verbose
@@ -214,7 +214,7 @@ function annealing(param, graph, I0; kwargs...)
         # DISPLAY STATUS
 
         if options.display
-            plot_graph(graph, I1, node_sizes = results[:Lj])
+            display(plot_graph(graph, I1, node_sizes = results[:Lj]))
         end
 
         if param.verbose
@@ -248,7 +248,7 @@ function annealing(param, graph, I0; kwargs...)
         end
 
         if options.display
-            plot_graph(graph, I0, node_sizes = results[:Lj])
+            display(plot_graph(graph, I0, node_sizes = results[:Lj]))
         end
 
         if score > best_score
