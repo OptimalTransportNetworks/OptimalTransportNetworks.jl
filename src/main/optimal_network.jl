@@ -69,14 +69,14 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
     auxdata = create_auxdata(param, graph, edges, I0)
     model, recover_allocation = get_model(param, auxdata)
 
-    if !verbose
-        set_silent(model)
-    end
-
     if return_model == 1
         return model, recover_allocation
     end
 
+    if !verbose
+        set_silent(model)
+    end
+    
     # --------------------
     # NETWORK OPTIMIZATION
 
@@ -184,6 +184,9 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
     end
 
     if return_model == 2
+        if !verbose
+            unset_silent(model)
+        end
         return results, model, recover_allocation
     end
     return results
