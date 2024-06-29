@@ -32,6 +32,7 @@ Runs the simulated annealing method starting from network `I0`. Only sensible if
 - `model::Function`: For custom models => a function that taks an optimizer and an 'auxdata' structure as created by create_auxdata() as input and returns a fully parameterized JuMP model
 - `final_model::JuMPModel`: Alternatively: a readily parameterized JuMP model to be used (from `optimal_network()`)
 - `recover_allocation::Function`: The `recover_allocation()` function corresponding to either `model` or `final_model`
+- `allocation::Dict`: The result from `recover_allocation()` from a previous solution of the model: to skip an initial resolve without perturbations. 
 
 # Examples
 ```julia
@@ -126,7 +127,15 @@ function annealing(param, graph, I0; kwargs...)
     weight_old = 0.5
     counter = 0
     I1 = I0
-    results = nothing
+    if (haskey(kwargs, :allocation) && !isempty(kwargs[:allocation]))
+        results = kwargs[:allocation]
+        counter += 1
+        if options.display
+            display(plot_graph(graph, I1))
+        end
+    else
+        results = nothing
+    end
 
     # rng(0) # set the seed of random number generator for replicability
     acceptance_str = ["rejected", "accepted"]
@@ -326,7 +335,7 @@ function retrieve_options_annealing(graph; kwargs...)
         if haskey(options, sym_key)
             options[sym_key] = v
         else 
-            if !(sym_key in [:model, :final_model, :recover_allocation])
+            if !(sym_key in [:model, :final_model, :recover_allocation, :allocation])
                 error("Unknown parameter: $sym_key")
             end
         end
