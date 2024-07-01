@@ -139,7 +139,8 @@ function annealing(param, graph, I0; kwargs...)
 
     # rng(0) # set the seed of random number generator for replicability
     acceptance_str = ["rejected", "accepted"]
-
+    all_vars = all_variables_except_kappa_ex(model)
+    start_values = start_value.(all_vars)
     while T > T_min
         accepted = false
 
@@ -160,6 +161,7 @@ function annealing(param, graph, I0; kwargs...)
         end
 
         k = 0
+        set_start_value.(all_vars, start_values) # reset start values
         while k <= num_deepening - 1
 
             auxdata = create_auxdata(param, graph, edges, I1)
@@ -167,19 +169,18 @@ function annealing(param, graph, I0; kwargs...)
 
             optimize!(model)
 
-            if !is_solved_and_feasible(model, allow_almost = true) && param.verbose # optimization failed
+            results = recover_allocation(model, auxdata)
+            score = results[:welfare]
+
+            if (!is_solved_and_feasible(model, allow_almost = true) || isnan(score)) && param.verbose # optimization failed
                 println("optimization failed! k=$(k), return flag=$(termination_status(model))")
                 k = num_deepening - 1
                 score = -Inf
             end
 
-            results = recover_allocation(model, auxdata)
-            score = results[:welfare]
-
             if param.warm_start
-                vars = all_variables(model)
-                vars_solution = value.(vars)
-                set_start_value.(vars, vars_solution)
+                vars_solution = value.(all_vars)
+                set_start_value.(all_vars, vars_solution)
             end
 
             if score > best_score
@@ -237,6 +238,7 @@ function annealing(param, graph, I0; kwargs...)
     # Last deepening before returning found optimum
     has_converged = false
     I0 = best_I
+    set_start_value.(all_vars, start_values) # reset start values
     while !has_converged && counter < 100
         # Update auxdata
         auxdata = create_auxdata(param, graph, edges, I0)
@@ -245,16 +247,16 @@ function annealing(param, graph, I0; kwargs...)
         # Solve allocation
         optimize!(model)
         if !is_solved_and_feasible(model, allow_almost = true)
-            error("Solver returned with error code $(termination_status(model)).")
+            println("Solver returned with error code $(termination_status(model)).")
         end
         results = recover_allocation(model, auxdata)
         score = results[:welfare]
 
-        if param.warm_start
-            vars = all_variables(model)
-            vars_solution = value.(vars)
-            set_start_value.(vars, vars_solution)
-        end
+        # # Fajgelbaum & Schaal always use initial values here. 
+        # if param.warm_start
+        #     vars_solution = value.(all_vars)
+        #     set_start_value.(all_vars, vars_solution)
+        # end
 
         if options.display
             display(plot_graph(graph, I0, node_sizes = results[:Lj]))
@@ -293,7 +295,7 @@ function annealing(param, graph, I0; kwargs...)
         counter += 1
 
         if param.verbose
-            println("Iteration No.$counter - final iterations - distance=$distance - welfare=$(score)")
+            println("Iteration No.$(counter) - final iterations - distance=$(distance) - welfare=$(score)")
         end
     end
 

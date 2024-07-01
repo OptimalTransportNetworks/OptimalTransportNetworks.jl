@@ -178,6 +178,7 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
     # SIMULATED ANNEALING
 
     if param.gamma > param.beta && param.annealing
+        set_start_value.(all_vars, start_values) # MATLAB code does this in the annealing function
         results = annealing(param, graph, I0, final_model = model, 
                             recover_allocation = recover_allocation, 
                             allocation = results, verbose = verbose)
@@ -187,6 +188,7 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
         if !verbose
             unset_silent(model)
         end
+        set_start_value.(all_vars, start_values) # Better do this for use in annealing
         return results, model, recover_allocation
     end
     return results
