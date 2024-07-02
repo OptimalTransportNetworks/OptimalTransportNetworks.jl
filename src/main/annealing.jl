@@ -208,6 +208,10 @@ function annealing(param, graph, I0; kwargs...)
                 # I1[graph.delta_i .== 0] .= 0
                 I1 *= param.K / sum(graph.delta_i .* I1)
                 I1 = rescale_network!(param, graph, I1, Il, Iu)
+                # Print a message if I1 has any missing, negative or infinite values
+                if any(isnan.(I1)) || any(isinf.(I1)) || any(I1 .< 0)
+                    println("I1 has $(sum(isnan.(I1))) missing, $(sum(I1 .< 0)) negative and $(sum(isinf.(I1))) infinite values")
+                end
             end
             k += 1
         end
@@ -286,6 +290,10 @@ function annealing(param, graph, I0; kwargs...)
         # I1[graph.delta_i .== 0] .= 0
         I1 *= param.K / sum(graph.delta_i .* I1)
         I1 = rescale_network!(param, graph, I1, Il, Iu)
+        # Print a message if I1 has any missing, negative or infinite values
+        if any(isnan.(I1)) || any(isinf.(I1)) || any(I1 .< 0)
+            println("I1 has $(sum(isnan.(I1))) missing, $(sum(I1 .< 0)) negative and $(sum(isinf.(I1))) infinite values")
+        end
 
         # UPDATE AND DISPLAY RESULTS
         distance = sum(abs.(I1 .- I0)) / (J^2)
