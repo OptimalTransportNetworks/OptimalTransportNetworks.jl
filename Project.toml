@@ -1,7 +1,7 @@
 name = "OptimalTransportNetworks"
 uuid = "e2b46e68-897f-4e4e-ba36-a93c9789fd96"
 authors = ["Sebastian Krantz <sebastian.krantz@graduateinstitute.ch>"]
-version = "0.1.1"
+version = "0.1.2"
 
 [deps]
 Dierckx = "39dd38d3-220a-591b-8e3c-4c3a8c710a94"
