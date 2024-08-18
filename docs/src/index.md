@@ -1,5 +1,4 @@
 # OptimalTransportNetworks.jl
-**Optimal Transport Networks in Spatial Equilibrium - in Julia and MATLAB**
 
 **Optimal Transport Networks in Spatial Equilibrium - in Julia**
 
