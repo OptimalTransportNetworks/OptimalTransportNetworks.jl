@@ -63,7 +63,7 @@ param[:Zjn][61] = 10.0
 results = optimal_network(param, graph)
 
 # Run annealing
-results_annealing = annealing(param, graph, result[:Ijk])
+results_annealing = annealing(param, graph, results[:Ijk])
 
 # Comparison
 plot_graph(graph, results[:Ijk])
