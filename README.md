@@ -1,4 +1,7 @@
 # OptimalTransportNetworks.jl
+
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://sebkrantz.github.io/OptimalTransportNetworks.jl/stable)
+[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://sebkrantz.github.io/OptimalTransportNetworks.jl/dev)
 [![Julia version](https://juliahub.com/docs/General/OptimalTransportNetworks/stable/version.svg)](https://juliahub.com/ui/Packages/General/OptimalTransportNetworks)
 
 **Optimal Transport Networks in Spatial Equilibrium - in Julia**
