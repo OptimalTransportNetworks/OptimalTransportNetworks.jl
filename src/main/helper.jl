@@ -285,3 +285,48 @@ function rescale_network!(param, graph, I1, Il, Iu; max_iter = 100)
 
     return I1
 end
+
+# KNN Version: More robust
+function linear_interpolation_2d(vec_x, vec_y, vec_map, xmap, ymap)
+
+    # Ensure input vectors are of the same length
+    @assert length(vec_x) == length(vec_y) == length(vec_map) "Input vectors must have the same length"
+    
+    # Ensure input vectors are Float64
+    vec_x = convert(Vector{Float64}, vec_x)
+    vec_y = convert(Vector{Float64}, vec_y)
+    vec_map = convert(Vector{Float64}, vec_map)
+    xmap = convert(Vector{Float64}, xmap)
+    ymap = convert(Vector{Float64}, ymap)
+
+    # Initialize the output array
+    fmap = zeros(length(xmap), length(ymap))
+
+    # Create a KDTree for efficient nearest neighbor search
+    points = hcat(vec_x, vec_y)
+    tree = KDTree(points'; leafsize = 5)
+
+    # Determine the number of neighbors to use (k)
+    k = min(15, size(points, 1))  # Use 15 or the total number of points, whichever is smaller
+
+    for (ix, x) in enumerate(xmap), (iy, y) in enumerate(ymap)
+
+        # Find the 15 nearest neighbors
+        idxs, dists = knn(tree, [x, y], k, true)
+
+        # If the point is exactly on a known point, use that value
+        if dists[1] ≈ 0
+            fmap[ix, iy] = vec_map[idxs[1]]
+            continue
+        end
+
+        # Weights
+        weights = 1 ./ dists.^2
+        weights ./= sum(weights)
+
+        # Interpolate
+        fmap[ix, iy] = sum(weights .* vec_map[idxs])
+    end
+
+    return fmap
+end

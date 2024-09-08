@@ -73,10 +73,11 @@ plot_graph(graph, results_annealing[:Ijk])
 module OptimalTransportNetworks
 
 using LinearAlgebra, JuMP, Plots
-using SparseArrays: sparse
 using Statistics: mean
 # using MathOptInterface: Parameter
 using Dierckx: Spline2D, evaluate
+using NearestNeighbors: KDTree, knn
+# using Interpolations: cubic_spline_interpolation
 import Ipopt, Plots, Random #, MathOptSymbolicAD
 # import MathOptInterface as MOI
 
