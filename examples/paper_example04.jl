@@ -22,7 +22,7 @@ nb_cities = 20 # draw a number of random cities in space
 for i in 1:nb_cities-1
     newdraw = false
     while newdraw == false
-        j = round(Int, 1 + rand() * (g[:J] - 1))
+        j = round(Int, 1 + rand() * (g0[:J] - 1))
         if param[:Lj][j] <= 1e-3
             newdraw = true
             param[:Lj][j] = 1
@@ -34,7 +34,7 @@ param[:hj] = param[:Hj] ./ param[:Lj]
 param[:hj][param[:Lj] .== 1e-3] .= 1
 
 # Draw geography
-z = zeros(g[:J]) # altitude of each node
+z = zeros(g0[:J]) # altitude of each node
 geographies = Dict()
 geographies[:blank] = (z = z, obstacles = nothing)
 
