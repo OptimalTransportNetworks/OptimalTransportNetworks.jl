@@ -45,7 +45,7 @@ Plot a graph visualization with various styling options.
 - `geography=nothing`: Dict or NamedTuple with geography data, see also `apply_geography()`
 - `obstacles::Bool=false`: Show obstacles from geography
 - `obstacle_color::Symbol=:black`: Color for obstacles
-- `obstacle_thickness::Symbol=3`: Thickness for obstacles
+- `obstacle_thickness::Real=3`: Thickness for obstacles
 
 # Examples
 ```julia

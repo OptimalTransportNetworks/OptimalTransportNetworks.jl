@@ -122,13 +122,14 @@ function represent_edges(graph)
 end
 
 """
-    create_auxdata(param, graph, I)
+    create_auxdata(param, graph, edges, I)
 
 Creates the auxdata structure that contains all the auxiliary parameters for estimation
 
 # Arguments
 - `param`: structure that contains the model's parameters
 - `graph`: structure that contains the underlying graph (created by create_graph function)
+- `edges`: structure that contains the edges of the graph (created by represent_edges function)
 - `I`: provides the current JxJ symmetric matrix of infrastructure investment
 
 # Output
