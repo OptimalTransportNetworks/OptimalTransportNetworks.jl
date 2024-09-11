@@ -15,10 +15,10 @@ param = init_parameters(labor_mobility = true, K = 100, gamma = 2, beta = 1, N =
 # ------------
 # Init network
 
-param, graph = create_graph(param, 7, 7, type = "triangle") # create a triangular network of 21x21
+graph = create_graph(param, 7, 7, type = "triangle") # create a triangular network of 21x21
 
-param[:Zjn][:, 1:param[:N]-1] .= 0 # default locations cannot produce goods 1-10
-param[:Zjn][:, param[:N]] .= 1 # but they can all produce good 11 (agricultural)
+graph[:Zjn][:, 1:param[:N]-1] .= 0 # default locations cannot produce goods 1-10
+graph[:Zjn][:, param[:N]] .= 1 # but they can all produce good 11 (agricultural)
 
 # Draw the cities randomly
 Random.seed!(5) # reinit random number generator
@@ -26,10 +26,10 @@ for i in 1:param[:N]-1
     newdraw = false
     while newdraw == false
         j = round(Int, 1 + rand() * (graph[:J] - 1))
-        if any(param[:Zjn][j, 1:param[:N]-1] .> 0) == false # make sure node j does not produce any differentiated good
+        if any(graph[:Zjn][j, 1:param[:N]-1] .> 0) == false # make sure node j does not produce any differentiated good
             newdraw = true
-            param[:Zjn][j, 1:param[:N]] .= 0
-            param[:Zjn][j, i] = 1
+            graph[:Zjn][j, 1:param[:N]] .= 0
+            graph[:Zjn][j, i] = 1
         end
     end
 end
