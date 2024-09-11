@@ -107,8 +107,8 @@ end
 # Check if the parameters are consistent with the graph structure
 function check_graph_param(graph, param)
 
-    if haskey(param, :m) && length(param[:m]) != graph[:N]
-        @warn "m does not have the right length N = $(graph[:N])."
+    if haskey(param, :m) && length(param[:m]) != param[:N]
+        @warn "m does not have the right length N = $(param[:N])."
     end
 
     if haskey(param, :omegaj) && !haskey(graph, :omegaj)
@@ -142,8 +142,8 @@ function check_graph_param(graph, param)
     if haskey(param, :Zjn) && !haskey(graph, :Zjn)
         graph[:Zjn] = param[:Zjn]
     end
-    if haskey(graph, :Zjn) && size(graph[:Zjn]) != (graph[:J], graph[:N])
-        @warn "Zjn does not have the right size J ($(graph[:J])) x N ($(graph[:N]))."
+    if haskey(graph, :Zjn) && size(graph[:Zjn]) != (graph[:J], param[:N])
+        @warn "Zjn does not have the right size J ($(graph[:J])) x N ($(param[:N]))."
     end
 
     if haskey(param, :Hj) && !haskey(graph, :Hj)

@@ -42,8 +42,7 @@ function create_graph(param, w = 11, h = 11; type = "map", kwargs...)
         graph = create_custom(options[:adjacency], options[:x], options[:y])
     end
 
-    graph[:N] = param[:N] # Ensure graph has all information
-    graph[:Zjn] = haskey(options, :Zjn) ? options[:Zjn] : ones(graph[:J], graph[:N])
+    graph[:Zjn] = haskey(options, :Zjn) ? options[:Zjn] : ones(graph[:J], param[:N])
     graph[:Hj] = haskey(options, :Hj) ? options[:Hj] : ones(graph[:J])
 
     if param[:mobility] == false

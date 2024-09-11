@@ -31,7 +31,7 @@ plot_graph(graph, results[:Ijk])
 function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbose=false, return_model=0, solve_allocation = false)
 
     # I0=nothing; Il=nothing; Iu=nothing; verbose=false; return_model = false; return_model = 0;
-    # Check param.Zjn and make matrix if vector:
+    # Check graph.Zjn and make matrix if vector:
     if length(size(graph[:Zjn])) == 1
         graph[:Zjn] = reshape(graph[:Zjn], graph[:J], 1)
     end   
