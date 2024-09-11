@@ -10,20 +10,20 @@ width, height = 13, 13
 param, g0 = create_graph(param, width, height, type = "map")
 
 # Set fundamentals
-param[:Zjn] = ones(param[:J], 1) .* 1e-3  # matrix of productivity (not 0 to avoid numerical glitches)
-param[:Lj] = ones(param[:J]) .* 1e-3  # matrix of population
+param[:Zjn] = ones(param[:J], 1) .* 1e-7  # matrix of productivity (not 0 to avoid numerical glitches)
+param[:Lj] = ones(param[:J]) .* 1e-7  # matrix of population
 
 Ni = find_node(g0, ceil(width/2), ceil(height/2)) # center
 param[:Zjn][Ni] = 1 # more productive node
 param[:Lj][Ni] = 1 # more productive node
 
-Random.seed!(5)
+Random.seed!(10) # use 5, 8, 10 or 11
 nb_cities = 20 # draw a number of random cities in space
 for i in 1:nb_cities-1
     newdraw = false
     while newdraw == false
-        j = round(Int, 1 + rand() * (g0[:J] - 1))
-        if param[:Lj][j] <= 1e-3
+        j = round(Int, 1 + rand() * (param[:J] - 1))
+        if param[:Lj][j] <= 1e-7
             newdraw = true
             param[:Lj][j] = 1
         end
@@ -31,10 +31,10 @@ for i in 1:nb_cities-1
 end
 
 param[:hj] = param[:Hj] ./ param[:Lj]
-param[:hj][param[:Lj] .== 1e-3] .= 1
+param[:hj][param[:Lj] .== 1e-7] .= 1  # catch errors in places with infinite housing per capita
 
 # Draw geography
-z = zeros(g0[:J]) # altitude of each node
+z = zeros(param[:J]) # altitude of each node
 geographies = Dict()
 geographies[:blank] = (z = z, obstacles = nothing)
 
@@ -63,10 +63,7 @@ geographies[:river] = (z = geographies[:mountain].z,
                           11 + (5-1)*width 12 + (5-1)*width;
                           12 + (5-1)*width 13 + (5-1)*width])
 
-g = apply_geography(g0, geographies[:river], 
-                    along_abstacle_delta_i = 1, 
-                    along_abstacle_delta_tau = 1, 
-                    alpha_up_i = 10, alpha_down_i = 10)
+g = apply_geography(g0, geographies[:river], alpha_up_i = 10, alpha_down_i = 10)
 results[:river] = optimal_network(param, g)
 
 # Reinit and put another river and bridges
@@ -82,8 +79,7 @@ geographies[:bridges] = (z = mountain_height * exp.(-((g0[:x] .- mount_x).^2 .+ 
                              12 + (5-1)*width 13 + (5-1)*width])
 
 g = apply_geography(g0, geographies[:bridges], alpha_up_i = 10, alpha_down_i = 10, 
-                    across_abstacle_delta_i = 2, 
-                    along_abstacle_delta_tau = 1)
+                    across_obstacle_delta_i = 2)
 results[:bridges] = optimal_network(param, g)
 
 # Allowing for water transport
@@ -117,12 +113,12 @@ plots = Vector{Any}(undef, length(simulation))
 i = 0
 for s in simulation
     i += 1
-    plots[i] = plot_graph(g, results[Symbol(s)][:Ijk], 
+    plots[i] = plot_graph(g0, results[Symbol(s)][:Ijk], 
                           geography = geographies[Symbol(s)], obstacles = obstacles[i] == "on",
                           mesh = true, mesh_transparency = 0.2,
-                          node_sizes = results[Symbol(s)][:cj] .* (param[:Lj] .> 1e-3), 
-                          node_shades = param[:Zjn], 
-                          edge_min_thickness = 1.5)
+                          node_sizes = results[Symbol(s)][:cj] .* (param[:Lj] .> 1e-7), 
+                          node_shades = param[:Zjn], node_color = :seismic,
+                          edge_min_thickness = 1, edge_max_thickness = 4)
     title!(plots[i], "Geography $(s)")
 end
 
