@@ -35,7 +35,7 @@ function model_fixed(optimizer, auxdata)
     # Define Yjn (production) as expression
     @expression(model, Yjn[j=1:graph.J, n=1:param.N], graph.Zjn[j, n] * Ljn[j, n]^param.a)
     # Balanced flow constraints
-    @constraint(model, Pjn[j in 1:param.J, n in 1:param.N],
+    @constraint(model, Pjn[j in 1:graph.J, n in 1:param.N],
         Cjn[j, n] + sum(A[j, i] * Qin[i, n] for i in 1:graph.ndeg) -
         Yjn[j, n] + sum(
             ifelse(Qin[i, n] > 0, Apos[j, i], Aneg[j, i]) *
