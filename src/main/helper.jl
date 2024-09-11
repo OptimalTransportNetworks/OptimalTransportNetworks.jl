@@ -159,7 +159,7 @@ function create_auxdata(param, graph, edges, I)
 end
 
 """
-    get_model(param, auxdata)
+    get_model(auxdata)
 
 Construct the appropriate model based on the parameters and auxiliary data.
 
