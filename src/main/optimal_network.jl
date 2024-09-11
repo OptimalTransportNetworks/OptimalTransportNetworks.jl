@@ -22,8 +22,8 @@ Solve for the optimal network by solving the inner problem and the outer problem
 # Examples
 ```julia
 param = init_parameters(K = 10)
-param, graph = create_graph(param)
-param[:Zjn][61] = 10.0
+graph = create_graph(param)
+graph[:Zjn][61] = 10.0
 results = optimal_network(param, graph)
 plot_graph(graph, results[:Ijk])
 ```
@@ -32,8 +32,8 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
 
     # I0=nothing; Il=nothing; Iu=nothing; verbose=false; return_model = false; return_model = 0;
     # Check param.Zjn and make matrix if vector:
-    if length(size(param[:Zjn])) == 1
-        param[:Zjn] = reshape(param[:Zjn], param[:J], 1)
+    if length(size(graph[:Zjn])) == 1
+        graph[:Zjn] = reshape(graph[:Zjn], graph[:J], 1)
     end   
     graph = dict_to_namedtuple(graph)
     param = dict_to_namedtuple(param)
@@ -67,7 +67,7 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
     # INITIALIZATION
 
     auxdata = create_auxdata(param, graph, edges, I0)
-    model, recover_allocation = get_model(param, auxdata)
+    model, recover_allocation = get_model(auxdata)
 
     if return_model == 1
         return model, recover_allocation
@@ -85,7 +85,7 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
     weight_old = 0.5
     I1 = zeros(J, J)
     # K in average infrastructure units
-    K_infra = (param.K / mean(graph.delta_i[graph.adjacency.==1]))
+    K_infra = (param.K / mean(graph.delta_i[graph.adjacency .== 1]))
     distance = 0.0
     all_vars = all_variables_except_kappa_ex(model)
     start_values = start_value.(all_vars)
@@ -121,7 +121,7 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
             else
                 error("Solver returned with error code $(termination_status(model)).")
             end
-        elseif param[:warm_start] # Set next run starting values to previous run solution.
+        elseif param.warm_start # Set next run starting values to previous run solution.
             vars_solution = value.(all_vars)
             set_start_value.(all_vars, vars_solution)
             used_warm_start = true
@@ -133,7 +133,7 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
             PQ = dropdims(sum(PQ + permutedims(PQ, [2, 1, 3]), dims=3), dims = 3)
         else
             PQ = repeat(results[:PCj], 1, J)
-            matm = permutedims(repeat(param[:m], 1, J, J), [3, 2, 1])
+            matm = permutedims(repeat(graph.m, 1, J, J), [3, 2, 1])
             cost = dropdims(sum(matm .* results[:Qjkn] .^ param.nu, dims=3), dims = 3) .^ ((param.beta + 1) / param.nu)
             PQ .*= cost
             PQ += PQ'
