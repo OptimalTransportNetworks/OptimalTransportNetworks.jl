@@ -10,9 +10,9 @@ function model_fixed_armington(optimizer, auxdata)
     Apos = auxdata.edges.Apos
     Aneg = auxdata.edges.Aneg
     psigma = (param.sigma - 1) / param.sigma
-    Lj = param.Lj
+    Lj = graph.Lj
     # Production: Fixed because just one good is produced by each location
-    Yjn = param.Zjn .* Lj .^ param.a
+    Yjn = graph.Zjn .* Lj .^ param.a
 
     # Model
     model = Model(optimizer)
@@ -29,8 +29,8 @@ function model_fixed_armington(optimizer, auxdata)
     # Defining Utility Funcion: from Cjn + parameters (by operator overloading)
     @expression(model, Cj, sum(Cjn .^ psigma, dims=2) .^ (1 / psigma))
     @expression(model, cj, ifelse.(Lj .== 0, 0.0, Cj ./ Lj))
-    @expression(model, uj, ((cj / param.alpha) .^ param.alpha .* (param.hj / (1-param.alpha)) .^ (1-param.alpha)) .^ (1-param.rho) / (1-param.rho))
-    @expression(model, U, sum(param.omegaj .* Lj .* uj))
+    @expression(model, uj, ((cj / param.alpha) .^ param.alpha .* (graph.hj / (1-param.alpha)) .^ (1-param.alpha)) .^ (1-param.rho) / (1-param.rho))
+    @expression(model, U, sum(graph.omegaj .* Lj .* uj))
     @objective(model, Max, U)
 
     # Balanced flow constraints
@@ -51,18 +51,18 @@ function recover_allocation_fixed_armington(model, auxdata)
     model_dict = model.obj_dict
     results = Dict()
     # Production: Fixed because just one good is produced by each location
-    Yj = dropdims(sum(param.Zjn, dims = 2) .* param.Lj .^ param.a, dims = 2)
-    WY = param.Zjn .> 0
+    Yj = dropdims(sum(graph.Zjn, dims = 2) .* graph.Lj .^ param.a, dims = 2)
+    WY = graph.Zjn .> 0
 
     results[:welfare] = value(model_dict[:U])
     results[:Yjn] = WY .* Yj
     results[:Yj] = Yj
     results[:Cjn] = value.(model_dict[:Cjn])
     results[:Cj] = dropdims(value.(model_dict[:Cj]), dims = 2)
-    results[:Ljn] = WY .* param.Lj
-    results[:Lj] = param.Lj
+    results[:Ljn] = WY .* graph.Lj
+    results[:Lj] = graph.Lj
     results[:cj] = dropdims(value.(model_dict[:cj]), dims = 2)
-    results[:hj] = ifelse.(results[:Lj] .== 0, 0.0, param.Hj ./ results[:Lj])
+    results[:hj] = ifelse.(results[:Lj] .== 0, 0.0, graph.Hj ./ results[:Lj])
     results[:uj] = dropdims(value.(model_dict[:uj]), dims = 2)
     # Prices
     results[:Pjn] = shadow_price.(model_dict[:Pjn])

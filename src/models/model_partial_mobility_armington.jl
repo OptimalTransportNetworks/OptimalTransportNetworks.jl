@@ -14,13 +14,13 @@ function model_partial_mobility_armington(optimizer, auxdata)
     Apos = auxdata.edges.Apos
     Aneg = auxdata.edges.Aneg
     psigma = (param.sigma - 1) / param.sigma
-    Hj = param.Hj
-    Lr = param.Lr
-    if length(param.omegar) != param.nregions
-        error("length(param.omegar) = $(length(param.omegar)) does not match number of regions = $(param.nregions)")
+    Hj = graph.Hj
+    Lr = graph.Lr
+    if length(graph.omegar) != graph.nregions
+        error("length(graph.omegar) = $(length(graph.omegar)) does not match number of regions = $(graph.nregions)")
     end
-    if length(Lr) != param.nregions
-        error("Populations Lr = $(length(Lr)) does not match number of regions = $(param.nregions)")
+    if length(Lr) != graph.nregions
+        error("Populations Lr = $(length(Lr)) does not match number of regions = $(graph.nregions)")
     end
 
     # Model
@@ -28,13 +28,13 @@ function model_partial_mobility_armington(optimizer, auxdata)
     set_string_names_on_creation(model, false)
 
     # Variables + bounds
-    @variable(model, ur[1:param.nregions], container=Array, start = 0.0)               # Utility per capita in each region
+    @variable(model, ur[1:graph.nregions], container=Array, start = 0.0)               # Utility per capita in each region
     @variable(model, Cjn[1:graph.J, 1:param.N] >= 1e-8, container=Array, start = 1e-6) # Good specific consumption
     @variable(model, Qin[1:graph.ndeg, 1:param.N], container=Array, start = 0.0)       # Good specific flow
     # NOTE: Fajgelbaum et al (2019) only optimize Lj and distribute it equally for goods with positive productivity
     @variable(model, Lj[1:graph.J] >= 1e-8, container=Array)                           # Total labour
     # Calculate start values for Lj
-    pop_start = (Lr ./ gsum(ones(graph.J), param.nregions, region))[region]
+    pop_start = (Lr ./ gsum(ones(graph.J), graph.nregions, region))[region]
     set_start_value.(Lj, pop_start)
 
     # Parameters: to be updated between solves
@@ -42,7 +42,7 @@ function model_partial_mobility_armington(optimizer, auxdata)
     set_parameter_value.(kappa_ex, kappa_ex_init)
 
     # Objective
-    @expression(model, U, sum(param.omegar .* Lr .* ur))   # Overall utility
+    @expression(model, U, sum(graph.omegar .* Lr .* ur))   # Overall utility
     @objective(model, Max, U)
 
     # Utility constraint (Lj * ur <= ... )
@@ -52,7 +52,7 @@ function model_partial_mobility_armington(optimizer, auxdata)
     end
 
     # Balanced flow constraints: same as with unrestricted mobility (no restrictions on goods)
-    @expression(model, Yjn[j=1:graph.J, n=1:param.N], param.Zjn[j, n] * Lj[j]^param.a)
+    @expression(model, Yjn[j=1:graph.J, n=1:param.N], graph.Zjn[j, n] * Lj[j]^param.a)
     @constraint(model, Pjn[j in 1:param.J, n in 1:param.N],
         Cjn[j, n] + sum(A[j, i] * Qin[i, n] for i in 1:graph.ndeg) -
         Yjn[j, n] + sum(
@@ -63,7 +63,7 @@ function model_partial_mobility_armington(optimizer, auxdata)
     )
 
     # Labor resource constraints (within each region)
-    @constraint(model, -1e-8 .<= gsum(Lj, param.nregions, region) .- Lr .<= 1e-8)
+    @constraint(model, -1e-8 .<= gsum(Lj, graph.nregions, region) .- Lr .<= 1e-8)
 
     return model
 end
@@ -81,9 +81,9 @@ function recover_allocation_partial_mobility_armington(model, auxdata)
     results[:Cjn] = value.(model_dict[:Cjn])
     results[:Cj] = dropdims(sum(results[:Cjn] .^ ((param.sigma-1)/param.sigma), dims=2), dims = 2) .^ (param.sigma/(param.sigma-1))
     results[:Lj] = value.(model_dict[:Lj])
-    results[:Ljn] = (param.Zjn .> 0).* results[:Lj]
+    results[:Ljn] = (graph.Zjn .> 0).* results[:Lj]
     results[:cj] = ifelse.(results[:Lj] .== 0, 0.0, results[:Cj] ./ results[:Lj])
-    results[:hj] = ifelse.(results[:Lj] .== 0, 0.0, param.Hj ./ results[:Lj])
+    results[:hj] = ifelse.(results[:Lj] .== 0, 0.0, graph.Hj ./ results[:Lj])
     results[:uj] = param.u.(results[:cj], results[:hj])
     # Prices
     results[:Pjn] = shadow_price.(model_dict[:Pjn])

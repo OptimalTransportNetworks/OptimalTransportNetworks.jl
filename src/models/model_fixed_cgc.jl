@@ -9,7 +9,7 @@ function model_fixed_cgc(optimizer, auxdata)
     A = auxdata.edges.A
     Apos = auxdata.edges.Apos
     Aneg = auxdata.edges.Aneg
-    Lj = param.Lj
+    Lj = graph.Lj
     m = param.m # 1:param.N: Vector of weights on each goods flow for aggregate congestion term
     psigma = (param.sigma - 1) / param.sigma
     beta_nu = (param.beta + 1) / param.nu
@@ -30,8 +30,8 @@ function model_fixed_cgc(optimizer, auxdata)
     set_parameter_value.(kappa_ex, kappa_ex_init)
 
     # Defining Utility Funcion: from cj + parameters (by operator overloading)
-    @expression(model, uj, ((cj / param.alpha) .^ param.alpha .* (param.hj / (1-param.alpha)) .^ (1-param.alpha)) .^ (1-param.rho) / (1-param.rho))
-    @expression(model, U, sum(param.omegaj .* param.Lj .* uj))      # Overall Utility
+    @expression(model, uj, ((cj / param.alpha) .^ param.alpha .* (graph.hj / (1-param.alpha)) .^ (1-param.alpha)) .^ (1-param.rho) / (1-param.rho))
+    @expression(model, U, sum(graph.omegaj .* graph.Lj .* uj))      # Overall Utility
     @objective(model, Max, U)
 
     # Create the matrix B_direct (resp. B_indirect) of transport cost along the direction of the edge (resp. in edge opposite direction)
@@ -39,10 +39,10 @@ function model_fixed_cgc(optimizer, auxdata)
     B_indirect = @expression(model, ((Qin_indirect .^ param.nu) * m) .^ beta_nu ./ kappa_ex)
     # Final good constraints
     @expression(model, Dj, sum(Djn .^ psigma, dims=2) .^ (1 / psigma))
-    @constraint(model, cj .* param.Lj + Apos * B_direct + Aneg * B_indirect - Dj .<= -1e-8)
+    @constraint(model, cj .* graph.Lj + Apos * B_direct + Aneg * B_indirect - Dj .<= -1e-8)
 
     # Balanced flow constraints
-    @expression(model, Yjn, param.Zjn .* (Ljn .^ param.a))
+    @expression(model, Yjn, graph.Zjn .* (Ljn .^ param.a))
     @constraint(model, Pjn, Djn + A * Qin_direct - A * Qin_indirect - Yjn .<= -1e-8)
 
     # Local labor availability constraints ( sum Ljn <= Lj )
@@ -61,12 +61,12 @@ function recover_allocation_fixed_cgc(model, auxdata)
     results[:Yjn] = value.(model_dict[:Yjn])
     results[:Yj] = dropdims(sum(results[:Yjn], dims=2), dims = 2) 
     results[:Ljn] = value.(model_dict[:Ljn])
-    results[:Lj] = param.Lj
+    results[:Lj] = graph.Lj
     results[:Djn] = value.(model_dict[:Djn]) # Consumption per good pre-transport cost
     results[:Dj] = dropdims(value.(model_dict[:Dj]), dims = 2)
     results[:cj] = value.(model_dict[:cj])
-    results[:Cj] = results[:cj] .* param.Lj
-    results[:hj] = ifelse.(results[:Lj] .== 0, 0.0, param.Hj ./ results[:Lj])
+    results[:Cj] = results[:cj] .* graph.Lj
+    results[:hj] = ifelse.(results[:Lj] .== 0, 0.0, graph.Hj ./ results[:Lj])
     results[:uj] = value.(model_dict[:uj])
     # Prices
     results[:Pjn] = shadow_price.(model_dict[:Pjn])

@@ -10,14 +10,14 @@ function model_fixed_duality(optimizer, auxdata)
     Aneg = auxdata.edges.Aneg
     es = auxdata.edges.edge_start
     ee = auxdata.edges.edge_end
-    omegaj = param.omegaj
-    Lj = param.Lj
+    omegaj = graph.omegaj
+    Lj = graph.Lj
     alpha = param.alpha
     sigma = param.sigma
     rho = param.rho
-    hj = param.hj
+    hj = graph.hj
     hj1malpha = (hj / (1-alpha)) .^ (1-alpha)
-    Zjn = param.Zjn
+    Zjn = graph.Zjn
     beta = param.beta
     a = param.a
 
@@ -92,12 +92,12 @@ function recover_allocation_fixed_duality(model, auxdata)
     results[:welfare] = value(model_dict[:U])
     results[:Yjn] = value.(model_dict[:Yjn])
     results[:Yj] = dropdims(sum(results[:Yjn], dims=2), dims = 2)
-    results[:Cjn] = value.(model_dict[:cjn]) .* repeat(param.Lj, 1, param.N)
+    results[:Cjn] = value.(model_dict[:cjn]) .* repeat(graph.Lj, 1, param.N)
     results[:cj] = value.(model_dict[:cj])
-    results[:Cj] = results[:cj] .* param.Lj
+    results[:Cj] = results[:cj] .* graph.Lj
     results[:Ljn] = value.(model_dict[:Ljn])
-    results[:Lj] = param.Lj
-    results[:hj] = param.hj
+    results[:Lj] = graph.Lj
+    results[:hj] = graph.hj
     results[:uj] = value.(model_dict[:uj]) # param.u.(results[:cj], results[:hj])
     # Prices
     results[:Pjn] = value.(model_dict[:Pjn])

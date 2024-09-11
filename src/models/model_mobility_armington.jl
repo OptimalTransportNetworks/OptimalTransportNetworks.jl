@@ -10,7 +10,7 @@ function model_mobility_armington(optimizer, auxdata)
     Apos = auxdata.edges.Apos
     Aneg = auxdata.edges.Aneg
     psigma = (param.sigma - 1) / param.sigma
-    Hj = param.Hj
+    Hj = graph.Hj
 
     # Model
     model = Model(optimizer)
@@ -36,7 +36,7 @@ function model_mobility_armington(optimizer, auxdata)
     end
 
     # balanced flow constraints
-     @expression(model, Yjn[j=1:graph.J, n=1:param.N], param.Zjn[j, n] * Lj[j]^param.a)
+     @expression(model, Yjn[j=1:graph.J, n=1:param.N], graph.Zjn[j, n] * Lj[j]^param.a)
     @constraint(model, Pjn[j in 1:param.J, n in 1:param.N],
         Cjn[j, n] + sum(A[j, i] * Qin[i, n] for i in 1:graph.ndeg) -
         Yjn[j, n] + sum(
@@ -64,9 +64,9 @@ function recover_allocation_mobility_armington(model, auxdata)
     results[:Cjn] = value.(model_dict[:Cjn])
     results[:Cj] = dropdims(sum(results[:Cjn] .^ ((param.sigma-1)/param.sigma), dims=2), dims = 2) .^ (param.sigma/(param.sigma-1))
     results[:Lj] = value.(model_dict[:Lj])
-    results[:Ljn] = (param.Zjn .> 0) .* results[:Lj]
+    results[:Ljn] = (graph.Zjn .> 0) .* results[:Lj]
     results[:cj] = ifelse.(results[:Lj] .== 0, 0.0, results[:Cj] ./ results[:Lj])
-    results[:hj] = ifelse.(results[:Lj] .== 0, 0.0, param.Hj ./ results[:Lj])
+    results[:hj] = ifelse.(results[:Lj] .== 0, 0.0, graph.Hj ./ results[:Lj])
     results[:uj] = param.u.(results[:cj], results[:hj])
     # Prices
     results[:Pjn] = shadow_price.(model_dict[:Pjn])
