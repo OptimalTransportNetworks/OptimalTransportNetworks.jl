@@ -35,6 +35,8 @@ and similarly for graph traversal costs `delta_tau`.
 param, graph = create_graph(init_parameters())
 geography = (z = 10*(rand(graph[:J]) .> 0.95), obstacles = [1 15; 70 72])
 updated_graph = apply_geography(graph, geography)
+
+plot_graph(updated_graph, geography = geography, obstacles = true)
 ```
 """
 function apply_geography(graph, geography; kwargs...)
@@ -61,23 +63,17 @@ function apply_geography(graph, geography; kwargs...)
     end
 
     op = dict_to_namedtuple(options)
-    if haskey(geography, :z)
-        z = geography[:z]
-    else 
-        z = nothing
-    end
-    if haskey(geography, :obstacles)
-        obstacles = geography[:obstacles]
-    else 
-        obstacles = nothing
-    end
-    z_is_friction = haskey(geography, :z_is_friction) && geography.z_is_friction === true 
+    
+    z = haskey(geography, :z) ? geography[:z] : nothing
+    obstacles = haskey(geography, :obstacles) ? geography[:obstacles] : nothing
+    z_is_friction = haskey(geography, :z_is_friction) && geography[:z_is_friction] === true 
 
     # New graph object components
-    delta_i_new = copy(graph.delta_i)
-    delta_tau_new = copy(graph.delta_tau)
+    delta_i_new = deepcopy(graph.delta_i)
+    delta_tau_new = deepcopy(graph.delta_tau)
+
     if obstacles !== nothing
-        adjacency_new = copy(graph.adjacency)
+        adjacency_new = deepcopy(graph.adjacency)
         nodes_new = deepcopy(graph.nodes)
     end
 
@@ -95,6 +91,12 @@ function apply_geography(graph, geography; kwargs...)
 
     # Remove edges where geographical barriers are (rivers)
     if obstacles !== nothing
+
+        # Store initial delta matrics (avoid double counting)
+        delta_i_new_tmp = deepcopy(delta_i_new)
+        delta_tau_new_tmp = deepcopy(delta_tau_new)
+
+        # Initialize flags for across and along obstacles
         sz = size(obstacles)[1]
         across_obstacle = falses(graph.J, graph.J)
         along_obstacle = falses(graph.J, graph.J)
@@ -129,26 +131,29 @@ function apply_geography(graph, geography; kwargs...)
                                 rmi = findfirst(==(i), nodes_new[j])
                                 if rmi !== nothing
                                     deleteat!(nodes_new[j], rmi)
+                                    # if isempty(nodes_new[j])
+                                    #     deleteat!(nodes_new, j)
+                                    # end
                                 end
                                 rmj = findfirst(==(j), nodes_new[i])
                                 if rmj !== nothing
                                     deleteat!(nodes_new[i], rmj)
+                                    # if isempty(nodes_new[i])
+                                    #     deleteat!(nodes_new, i)
+                                    # end
                                 end
-                                adjacency_new[i, j] = 0
-                                adjacency_new[j, i] = 0
+                                
+                                adjacency_new[i, j] = false
+                                adjacency_new[j, i] = false
                                 has_been_destroyed = true
                             else
-                                # Or make it costly to cross: link could cross multiple obstacles, but we only allow one obstacle crossing to take effect
-                                if !across_obstacle[i, j]
-                                    across_obstacle[i, j] = true
-                                    delta_i_new[i, j] *= op.across_obstacle_delta_i
-                                    delta_tau_new[i, j] *= op.across_obstacle_delta_tau
-                                end
-                                if !across_obstacle[j, i]
-                                    across_obstacle[j, i] = true
-                                    delta_i_new[j, i] *= op.across_obstacle_delta_i
-                                    delta_tau_new[j, i] *= op.across_obstacle_delta_tau
-                                end
+                                # Or make it costly to cross
+                                across_obstacle[i, j] = true
+                                delta_i_new[i, j] = delta_i_new_tmp[i, j] * op.across_obstacle_delta_i
+                                delta_tau_new[i, j] = delta_tau_new_tmp[i, j] * op.across_obstacle_delta_tau
+                                across_obstacle[j, i] = true
+                                delta_i_new[j, i] = delta_i_new_tmp[j, i] * op.across_obstacle_delta_i
+                                delta_tau_new[j, i] = delta_tau_new_tmp[j, i] * op.across_obstacle_delta_tau
                             end
                         end
                     end
@@ -164,13 +169,19 @@ function apply_geography(graph, geography; kwargs...)
                 rmio = findfirst(==(io), nodes_new[jo])
                 if rmio !== nothing
                     deleteat!(nodes_new[jo], rmio)
+                    # if isempty(nodes_new[jo])
+                    #     deleteat!(nodes_new, jo)
+                    # end
                 end
                 rmjo = findfirst(==(jo), nodes_new[io])
                 if rmjo !== nothing
                     deleteat!(nodes_new[io], rmjo)
+                    # if isempty(nodes_new[io])
+                    #     deleteat!(nodes_new, io)
+                    # end
                 end
-                adjacency_new[io, jo] = 0
-                adjacency_new[jo, io] = 0
+                adjacency_new[io, jo] = false
+                adjacency_new[jo, io] = false
             end
         else 
             for (io, jo) in zip(obstacles[:, 1], obstacles[:, 2])

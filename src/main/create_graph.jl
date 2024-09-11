@@ -239,7 +239,7 @@ function create_map(w, h)
     adjacency = falses(J, J)
     for i in 1:J
         for j in nodes[i]
-            adjacency[i, j] = 1
+            adjacency[i, j] = true
         end
     end
 

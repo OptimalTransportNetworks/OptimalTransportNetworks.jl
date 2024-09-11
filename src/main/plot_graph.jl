@@ -45,7 +45,7 @@ Plot a graph visualization with various styling options.
 - `geography=nothing`: Dict or NamedTuple with geography data, see also `apply_geography()`
 - `obstacles::Bool=false`: Show obstacles from geography
 - `obstacle_color::Symbol=:black`: Color for obstacles
-- `obstacle_thickness::Symbol=3`: Thickness for obstacles
+- `obstacle_thickness::Real=3`: Thickness for obstacles
 
 # Examples
 ```julia
@@ -94,15 +94,21 @@ function plot_graph(graph, edges = nothing; kwargs...)
             vec_map = vec(op.map)
         end
         # Interpolate map onto grid
-        # itp = interpolate((vec_x, vec_y), vec_map, Gridded(Linear()))
-        spl = Spline2D(vec_x, vec_y, vec_map, s = 0.1)
         xmap = range(minimum(vec_x), stop=maximum(vec_x), length=2*length(vec_x))
         ymap = range(minimum(vec_y), stop=maximum(vec_y), length=2*length(vec_y))
-        Xmap, Ymap = xmap' .* ones(length(ymap)), ymap .* ones(length(xmap))'
-        Xmap, Ymap = Xmap[:], Ymap[:]
-        fmap = evaluate(spl, Xmap, Ymap)
-        # make fmap a matrix with same size as xmap and ymap
-        fmap = reshape(fmap, length(xmap), length(ymap))
+        # itp = interpolate((vec_x, vec_y), vec_map, Gridded(Linear()))
+        fmap = zeros(length(xmap), length(ymap))
+        try
+            spl = Spline2D(vec_x, vec_y, vec_map, s = 0.1)
+            Xmap, Ymap = xmap' .* ones(length(ymap)), ymap .* ones(length(xmap))'
+            Xmap, Ymap = Xmap[:], Ymap[:]
+            fmap_values = evaluate(spl, Xmap, Ymap)
+            fmap = reshape(fmap_values, length(xmap), length(ymap))
+        catch
+            # println("Spline2D interpolation failed, falling back to linear interpolation")
+            # If Spline2D interpolation fails, fall back to linear interpolation
+            fmap = linear_interpolation_2d(vec_x, vec_y, vec_map, xmap, ymap)
+        end
 
         # Plot heatmap 
         heatmap!(pl, xmap, ymap, fmap,

@@ -15,23 +15,23 @@ Runs the simulated annealing method starting from network `I0`. Only sensible if
     ("random" is purely random, works horribly; "shake" applies a gaussian blur
      along a random direction, works alright; "rebranching" (deterministic) and "random rebranching" (default) is the algorithm
      described in Appendix A.4 in the paper, works nicely)
-- `preserve_central_symmetry::Bool=false`: Only applies to shake method
-- `preserve_vertical_symmetry::Bool=false`: Only applies to shake method
-- `preserve_horizontal_symmetry::Bool=false`: Only applies to shake method
-- `smoothing_radius::Float64=0.25`: Parameters of the Gaussian blur
-- `mu_perturbation::Float64=log(0.3)`: Parameters of the Gaussian blur
-- `sigma_perturbation::Float64=0.05`: Parameters of the Gaussian blur
+- `preserve_central_symmetry::Bool=false`: Only applies to "shake" method
+- `preserve_vertical_symmetry::Bool=false`: Only applies to "shake" method
+- `preserve_horizontal_symmetry::Bool=false`: Only applies to "shake" method
+- `smooth_network::Bool=true`: Whether to smooth the network after each perturbation if `perturbation_method` is "random"
+- `smoothing_radius::Float64=0.25`: Parameters of the Gaussian blur if `perturbation_method` is "random" or "shake"
+- `mu_perturbation::Float64=log(0.3)`: Parameters of the Gaussian blur if `perturbation_method` is "shake"
+- `sigma_perturbation::Float64=0.05`: Parameters of the Gaussian blur if `perturbation_method` is "shake"
+- `num_random_perturbations::Int64=1`: Number of links to be randomly affected ("random" and "random rebranching" only)
 - `display::Bool`: Display the graph in each iteration as we go
 - `t_start::Float64=100`: Initial temperature
 - `t_end::Float64=1`: Final temperature
 - `t_step::Float64=0.9`: Speed of cooling
 - `num_deepening::Int64=4`: Number of FOC iterations between candidate draws
-- `num_random_perturbations::Int64=1`: Number of links to be randomly affected ('random' and 'random rebranching' only)
 - `Iu::Matrix{Float64}=Inf * ones(J, J)`: J x J matrix of upper bounds on network infrastructure Ijk
 - `Il::Matrix{Float64}=zeros(J, J)`: J x J matrix of lower bounds on network infrastructure Ijk
-- `model::Function`: For custom models => a function that taks an optimizer and an 'auxdata' structure as created by create_auxdata() as input and returns a fully parameterized JuMP model
-- `final_model::JuMPModel`: Alternatively: a readily parameterized JuMP model to be used (from `optimal_network()`)
-- `recover_allocation::Function`: The `recover_allocation()` function corresponding to either `model` or `final_model`
+- `final_model::JuMPModel`: (Optionally) a readily parameterized JuMP model to be used (from `optimal_network()`)
+- `recover_allocation::Function`: The `recover_allocation()` function corresponding to `final_model`
 - `allocation::Dict`: The result from `recover_allocation()` from a previous solution of the model: to skip an initial resolve without perturbations. 
 
 # Examples
@@ -85,7 +85,7 @@ function annealing(param, graph, I0; kwargs...)
         perturbate = rebranch_network
     elseif options.perturbation_method == "random rebranching"
         perturbate = random_rebranch_network
-    # elseif options.perturbation_method == "hybrid alder"
+    # elseif options.perturbation_method == "hybrid alder" # Not provided because need model as input (and takes long)
     #     perturbate = hybrid
     else 
         error("unknown perturbation method %s\n", options.perturbation_method)
@@ -326,6 +326,7 @@ function retrieve_options_annealing(graph; kwargs...)
         :preserve_central_symmetry => false,
         :preserve_vertical_symmetry => false,
         :preserve_horizontal_symmetry => false,
+        :smooth_network => true,
         :smoothing_radius => 0.25,
         :mu_perturbation => log(0.3),
         :sigma_perturbation => 0.05,
@@ -391,11 +392,13 @@ function random_perturbation(param, graph, I0, results, options)
 
     # Make sure graph satisfies symmetry and capacity constraint
     I1 += I1'  # make sure kappa is symmetric
-    I1 ./= 2
+    I1 /= 2
     I1 *= param.K / sum(graph.delta_i .* I1)  # rescale
 
     # Smooth network (optional)
-    I1 = smooth_network(param, graph, I1)
+    if options.smooth_network
+        I1 = smooth_network(param, graph, I1, options)
+    end
 
     return I1
 end
@@ -405,9 +408,9 @@ end
 # This function produces a smoothed version of the network by applying a
 # Gaussian smoother (i.e., a Gaussian kernel estimator). The main benefit is
 # that it makes the network less sparse and the variance of investments gets reduced.
-function smooth_network(param, graph, I0)
+function smooth_network(param, graph, I0, options)
     J = graph.J
-    smoothing_radius = 0.3  # This could also be an option in `param` if variable
+    smoothing_radius = options.smoothing_radius # 0.3  # This could also be an option in `param` if variable
 
     I1 = zeros(J, J)
     feasible_edge = zeros(Bool, J, J)
@@ -441,7 +444,7 @@ function smooth_network(param, graph, I0)
 
     # Make sure graph satisfies symmetry and capacity constraint
     I1 += I1'  # make sure kappa is symmetric
-    I1 ./= 2
+    I1 /= 2
     I1 *= param.K / sum(graph.delta_i .* I1)  # rescale
 
     return I1
@@ -504,7 +507,7 @@ function shake_network(param, graph, I0, results, options)
 
     # Make sure graph satisfies symmetry and capacity constraint
     I1 += I1'  # make sure kappa is symmetric
-    I1 ./= 2
+    I1 /= 2
     I1 *= param.K / sum(graph.delta_i .* I1)  # rescale
 
     return I1
@@ -541,14 +544,14 @@ function rebranch_network(param, graph, I0, results, options)
             # swap roads
             I1[i, lowest_price_parent] = I0[i, best_connected_parent]
             I1[i, best_connected_parent] = I0[i, lowest_price_parent]
-            I1[lowest_price_parent, i] = I0[best_connected_parent, i]
-            I1[best_connected_parent, i] = I0[lowest_price_parent, i]
+            I1[lowest_price_parent, i] = I0[i, best_connected_parent]
+            I1[best_connected_parent, i] = I0[i, lowest_price_parent]
         end
     end
 
     # Make sure graph satisfies symmetry and capacity constraint
     I1 += I1'  # make sure kappa is symmetric
-    I1 ./= 2
+    I1 /= 2
     I1 *= param.K / sum(graph.delta_i .* I1)  # rescale
 
     return I1
@@ -587,116 +590,116 @@ function random_rebranch_network(param, graph, I0, results, options)
             # Swap roads
             I1[i, lowest_price_parent] = I0[i, best_connected_parent]
             I1[i, best_connected_parent] = I0[i, lowest_price_parent]
-            I1[lowest_price_parent, i] = I0[best_connected_parent, i]
-            I1[best_connected_parent, i] = I0[lowest_price_parent, i]
+            I1[lowest_price_parent, i] = I0[i, best_connected_parent]
+            I1[best_connected_parent, i] = I0[i, lowest_price_parent]
         end
     end
 
     # Make sure graph satisfies symmetry and capacity constraint
     I1 += I1'  # make sure kappa is symmetric
-    I1 ./= 2
+    I1 /= 2
     I1 *= param.K / sum(graph.delta_i .* I1)  # rescale
 
     return I1
 end
 
 
-"""
-    hybrid(param, graph, I0, results, options)
+# """
+#     hybrid(param, graph, I0, results, options)
 
-This function attempts to adapt the spirit of Alder (2018)'s algorithm to
-delete/add links to the network in a way that blends with our model.
-"""
-function hybrid(param, graph, I0, results, options)
-    # ========================
-    # COMPUTE GRADIENT WRT Ijk
-    # ========================
-    J = graph.J
+# This function attempts to adapt the spirit of Alder (2018)'s algorithm to
+# delete/add links to the network in a way that blends with our model.
+# """
+# function hybrid(param, graph, I0, results, options)
+#     # ========================
+#     # COMPUTE GRADIENT WRT Ijk
+#     # ========================
+#     J = graph.J
 
-    if !param.cong # no cross-good congestion
-        PQ = permutedims(repeat(results[:Pjn], 1, 1, J), [1, 3, 2]) .* results[:Qjkn] .^ (1 + param.beta)
-        PQ = dropdims(sum(PQ + permutedims(PQ, [2, 1, 3]), dims=3), dims = 3)
-    else # cross-good congestion
-        PQ = repeat(results[:PCj], 1, J)
-        matm = permutedims(repeat(param.m, 1, J, J), [3, 2, 1])
-        cost = dropdims(sum(matm .* results[:Qjkn] .^ param.nu, dims=3), dims = 3) .^ ((param.beta + 1) / param.nu)
-        PQ .*= cost
-        PQ += PQ'
-    end
+#     if !param.cong # no cross-good congestion
+#         PQ = permutedims(repeat(results[:Pjn], 1, 1, J), [1, 3, 2]) .* results[:Qjkn] .^ (1 + param.beta)
+#         PQ = dropdims(sum(PQ + permutedims(PQ, [2, 1, 3]), dims=3), dims = 3)
+#     else # cross-good congestion
+#         PQ = repeat(results[:PCj], 1, J)
+#         matm = permutedims(repeat(param.m, 1, J, J), [3, 2, 1])
+#         cost = dropdims(sum(matm .* results[:Qjkn] .^ param.nu, dims=3), dims = 3) .^ ((param.beta + 1) / param.nu)
+#         PQ .*= cost
+#         PQ += PQ'
+#     end
     
-    grad = param.gamma * graph.delta_tau ./ graph.delta_i .* PQ .* I0.^-(1 + param.gamma)
-    grad[graph.adjacency .== 0] .= 0
-    # I1[PQ .== 0] .= 0
-    # I1[graph.delta_i .== 0] .= 0
+#     grad = param.gamma * graph.delta_tau ./ graph.delta_i .* PQ .* I0.^-(1 + param.gamma)
+#     grad[graph.adjacency .== 0] .= 0
+#     # I1[PQ .== 0] .= 0
+#     # I1[graph.delta_i .== 0] .= 0
 
-    # ============
-    # REMOVE LINKS: remove 5% worst links
-    # ============
-    I1 = copy(I0)
-    nremove = ceil(Int, 0.05 * graph.ndeg) # remove 5% of the links
-    remove_list = sortperm(vec(grad[tril(graph.adjacency)]), alg=QuickSort)[1:nremove]
+#     # ============
+#     # REMOVE LINKS: remove 5% worst links
+#     # ============
+#     I1 = copy(I0)
+#     nremove = ceil(Int, 0.05 * graph.ndeg) # remove 5% of the links
+#     remove_list = sortperm(vec(grad[tril(graph.adjacency)]), alg=QuickSort)[1:nremove]
 
-    id = 1
-    for j in 1:J
-        for k in graph.nodes[j]
-            if id in remove_list  # if link is in the list to remove
-                I1[j, k] = 1e-6
-                I1[k, j] = 1e-6
-            end
-            id += 1
-        end
-    end
+#     id = 1
+#     for j in 1:J
+#         for k in graph.nodes[j]
+#             if id in remove_list  # if link is in the list to remove
+#                 I1[j, k] = 1e-6
+#                 I1[k, j] = 1e-6
+#             end
+#             id += 1
+#         end
+#     end
 
-    # TODO: Finish revision this function from here onwards! 
-    # Problem: need model as input to solve again!!
-    # ====================
-    # COMPUTE NEW GRADIENT
-    # ====================
-    results = solve_allocation(param, graph, I1) # Assuming this function is defined elsewhere
+#     # TODO: Finish revision this function from here onwards! 
+#     # Problem: need model as input to solve again!!
+#     # ====================
+#     # COMPUTE NEW GRADIENT
+#     # ====================
+#     results = solve_allocation(param, graph, I1) # Assuming this function is defined elsewhere
 
-    if !param.cong # no cross-good congestion
-        Pjkn = repeat(permute(results[:Pjn], [1, 3, 2]), outer=[1, J, 1])
-        PQ = Pjkn .* results[:Qjkn].^(1 + param.beta)
-        grad = param.gamma * graph.delta_tau .* sum(PQ + permute(PQ, [2, 1, 3]), dims=3) .* I0.^-(1 + param.gamma) ./ graph.delta_i
-        grad[.!graph.adjacency] .= 0
-    else # cross-good congestion
-        PCj = repeat(results[:PCj], outer=[1, J])
-        matm = permutedims(repeat(param.m, outer=[1, J, J]), [2, 1, 3])
-        cost = sum(matm .* results[:Qjkn].^param.nu, dims=3).^((param.beta + 1) / param.nu)
-        PQ = PCj .* cost
-        grad = param.gamma * graph.delta_tau .* (PQ + PQ') .* I0.^-(1 + param.gamma) ./ graph.delta_i
-        grad[.!graph.adjacency] .= 0
-    end
+#     if !param.cong # no cross-good congestion
+#         Pjkn = repeat(permute(results[:Pjn], [1, 3, 2]), outer=[1, J, 1])
+#         PQ = Pjkn .* results[:Qjkn].^(1 + param.beta)
+#         grad = param.gamma * graph.delta_tau .* sum(PQ + permute(PQ, [2, 1, 3]), dims=3) .* I0.^-(1 + param.gamma) ./ graph.delta_i
+#         grad[.!graph.adjacency] .= 0
+#     else # cross-good congestion
+#         PCj = repeat(results[:PCj], outer=[1, J])
+#         matm = permutedims(repeat(param.m, outer=[1, J, J]), [2, 1, 3])
+#         cost = sum(matm .* results[:Qjkn].^param.nu, dims=3).^((param.beta + 1) / param.nu)
+#         PQ = PCj .* cost
+#         grad = param.gamma * graph.delta_tau .* (PQ + PQ') .* I0.^-(1 + param.gamma) ./ graph.delta_i
+#         grad[.!graph.adjacency] .= 0
+#     end
 
-    # ========
-    # ADD LINK: add the most beneficial link
-    # ========
+#     # ========
+#     # ADD LINK: add the most beneficial link
+#     # ========
 
-    I2 = copy(I1)
-    add_list = sortperm(vec(grad[tril(graph.adjacency)]), rev=true, alg=QuickSort)
-    add_link = add_list[1]
+#     I2 = copy(I1)
+#     add_list = sortperm(vec(grad[tril(graph.adjacency)]), rev=true, alg=QuickSort)
+#     add_link = add_list[1]
 
-    id = 1
-    for j in 1:J
-        for k in graph.nodes[j]
-            if id == add_link # if link is the one to add
-                I2[j, k] = I2[j, k] = param.K / (2 * graph.ndeg)
-            end
-            id += 1
-        end
-    end
+#     id = 1
+#     for j in 1:J
+#         for k in graph.nodes[j]
+#             if id == add_link # if link is the one to add
+#                 I2[j, k] = I2[j, k] = param.K / (2 * graph.ndeg)
+#             end
+#             id += 1
+#         end
+#     end
 
-    # =======
-    # RESCALE
-    # =======
+#     # =======
+#     # RESCALE
+#     # =======
 
-    # Make sure graph satisfies symmetry and capacity constraint
-    I2 = (I2 + I2') / 2 # make sure kappa is symmetric
-    total_delta_i = sum(graph.delta_i .* I2)
-    I2 *= param.K / total_delta_i # rescale
+#     # Make sure graph satisfies symmetry and capacity constraint
+#     I2 = (I2 + I2') / 2 # make sure kappa is symmetric
+#     total_delta_i = sum(graph.delta_i .* I2)
+#     I2 *= param.K / total_delta_i # rescale
 
-    return I2
-end
+#     return I2
+# end
 
 
 

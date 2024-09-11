@@ -1,5 +1,11 @@
 # OptimalTransportNetworks.jl
+
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://sebkrantz.github.io/OptimalTransportNetworks.jl/stable)
+[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://sebkrantz.github.io/OptimalTransportNetworks.jl/dev)
+[![Julia version](https://juliahub.com/docs/General/OptimalTransportNetworks/stable/version.svg)](https://juliahub.com/ui/Packages/General/OptimalTransportNetworks)
+
 **Optimal Transport Networks in Spatial Equilibrium - in Julia**
+
 
 Modern Julia ([JuMP](https://github.com/jump-dev/JuMP.jl)) translation of the [MATLAB OptimalTransportNetworkToolbox (v1.0.4b)](https://github.com/SebKrantz/OptimalTransportNetworkToolbox) implementing the quantitative spatial economic model of:
 
@@ -7,7 +13,7 @@ Fajgelbaum, P. D., & Schaal, E. (2020). Optimal transport networks in spatial eq
 
 The model/software uses duality principles to optimize over the space of networks, nesting an optimal flows problem and a neoclasical general-equilibrium trade model into a global network design problem to derive the optimal (welfare maximizing) transport network (extension) from any primitive set of economic fundamantals [population per location, productivity per location for each of *N* traded goods, endowment of a non-traded good, and (optionally) a pre-existing transport network]. 
 
-For more information about the model see [this folder](https://github.com/SebKrantz/OptimalTransportNetworks.jl/tree/main/misc/paper_materials) and the [MATLAB User Guide](https://raw.githubusercontent.com/SebKrantz/OptimalTransportNetworkToolbox/main/docs/User%20Guide.pdf). 
+For more information about the model see [this folder](https://github.com/SebKrantz/OptimalTransportNetworkToolbox/tree/main/docs/paper_materials) and the [MATLAB User Guide](https://raw.githubusercontent.com/SebKrantz/OptimalTransportNetworkToolbox/main/docs/User%20Guide.pdf). 
 
 The model is the first of its kind and a pathbreaking contribution towards the welfare maximizing planning of transport infrastructure. Its creation has been funded by the European Union through an [ERC Research Grant](https://cordis.europa.eu/project/id/804095). The author of this Julia library has no personal connections to the authors, but has used their Matlab library for research purposes and belives that it deserves an accessible open-source implementation. Community efforts to further improve the code are welcome. In particular, there is a probabilistic extenstion to solving the model using MCMC methods which may be more suitable for large networks, implemented in:
 
