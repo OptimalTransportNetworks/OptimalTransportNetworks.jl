@@ -164,16 +164,16 @@ end
 Construct the appropriate model based on the parameters and auxiliary data.
 
 # Arguments
-- `param`: A named tuple containing the model parameters.
 - `auxdata`: Auxiliary data required for constructing the model.
 
 # Returns
 - `model`: The constructed model.
 - `recover_allocation`: A function to recover the allocation from the model solution.
 """
-function get_model(param, auxdata)
+function get_model(auxdata)
+     param = auxdata.param
+     graph = auxdata.graph
      optimizer = get(param, :optimizer, Ipopt.Optimizer)
-     param = dict_to_namedtuple(param)
 
     if haskey(param, :model)
         model = param.model(optimizer, auxdata)
@@ -182,7 +182,7 @@ function get_model(param, auxdata)
         end
         recover_allocation = param.recover_allocation 
     elseif param.mobility == 1 && param.cong
-        if all(sum(param.Zjn .> 0, dims = 2) .<= 1) # Armington case
+        if all(sum(graph.Zjn .> 0, dims = 2) .<= 1) # Armington case
             model = model_mobility_cgc_armington(optimizer, auxdata)
             recover_allocation = recover_allocation_mobility_cgc_armington
         else
@@ -190,7 +190,7 @@ function get_model(param, auxdata)
             recover_allocation = recover_allocation_mobility_cgc
         end
     elseif param.mobility == 0.5 && param.cong
-        if all(sum(param.Zjn .> 0, dims = 2) .<= 1) # Armington case
+        if all(sum(graph.Zjn .> 0, dims = 2) .<= 1) # Armington case
             model = model_partial_mobility_cgc_armington(optimizer, auxdata)
             recover_allocation = recover_allocation_partial_mobility_cgc_armington
         else
@@ -198,7 +198,7 @@ function get_model(param, auxdata)
             recover_allocation = recover_allocation_partial_mobility_cgc
         end
     elseif param.mobility == 0 && param.cong
-        if all(sum(param.Zjn .> 0, dims = 2) .<= 1) # Armington case
+        if all(sum(graph.Zjn .> 0, dims = 2) .<= 1) # Armington case
             model = model_fixed_cgc_armington(optimizer, auxdata)
             recover_allocation = recover_allocation_fixed_cgc_armington
         else
@@ -206,7 +206,7 @@ function get_model(param, auxdata)
             recover_allocation = recover_allocation_fixed_cgc
         end
     elseif param.mobility == 1 && !param.cong
-        if all(sum(param.Zjn .> 0, dims = 2) .<= 1) # Armington case
+        if all(sum(graph.Zjn .> 0, dims = 2) .<= 1) # Armington case
             model = model_mobility_armington(optimizer, auxdata)
             recover_allocation = recover_allocation_mobility_armington
         else
@@ -214,7 +214,7 @@ function get_model(param, auxdata)
             recover_allocation = recover_allocation_mobility
         end
     elseif param.mobility == 0.5 && !param.cong
-        if all(sum(param.Zjn .> 0, dims = 2) .<= 1) # Armington case
+        if all(sum(graph.Zjn .> 0, dims = 2) .<= 1) # Armington case
             model = model_partial_mobility_armington(optimizer, auxdata)
             recover_allocation = recover_allocation_partial_mobility_armington    
         else
@@ -222,7 +222,7 @@ function get_model(param, auxdata)
             recover_allocation = recover_allocation_partial_mobility    
         end
     elseif param.mobility == 0 && !param.cong
-        if all(sum(param.Zjn .> 0, dims = 2) .<= 1) # Armington case
+        if all(sum(graph.Zjn .> 0, dims = 2) .<= 1) # Armington case
             model = model_fixed_armington(optimizer, auxdata)
             recover_allocation = recover_allocation_fixed_armington
         elseif param.beta <= 1 && param.a < 1 && param.duality
