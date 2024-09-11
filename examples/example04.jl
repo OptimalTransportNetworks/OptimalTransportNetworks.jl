@@ -95,13 +95,3 @@ plot_graph(graph, results[:Ijk], aspect_ratio = 3/4,
            node_sizes = sizes, node_shades = shades, 
            edge_min_thickness = 1, edge_max_thickness = 4)
 
-
-
-sizes = 2 .* results[:river][:cj] .* (param[:Lj] .> 1e-6) / maximum(results[:river][:cj])
-shades = results[:river][:cj] .* (param[:Lj] .> 1e-6) / maximum(results[:river][:cj])
-
-plot_graph(graph, results[:river][:Ijk], aspect_ratio = 3/4,
-           geography = geographies[:river], obstacles = true,
-           mesh = true, mesh_transparency = 0.2, 
-           node_sizes = sizes, node_shades = shades, 
-           edge_min_thickness = 1, edge_max_thickness = 4)
