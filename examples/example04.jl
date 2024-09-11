@@ -16,8 +16,8 @@ param, graph = create_graph(param, w, h, type = "map")
 # ----------------
 # Draw populations
 
-param[:Zjn] = ones(param[:J], 1) .* 1e-3  # matrix of productivity (not 0 to avoid numerical glitches)
-param[:Lj] = ones(param[:J]) .* 1e-3  # matrix of population
+param[:Zjn] = ones(param[:J], 1) .* 1e-6  # matrix of productivity (not 0 to avoid numerical glitches)
+param[:Lj] = ones(param[:J]) .* 1e-6  # matrix of population
 
 Ni = find_node(graph, ceil(w/2), ceil(h/2))  # center
 param[:Zjn][Ni] = 1  # more productive node
@@ -29,7 +29,7 @@ for i in 1:ncities-1
     newdraw = false
     while newdraw == false
         j = round(Int, 1 + rand() * (param[:J] - 1))
-        if param[:Lj][j] <= 1e-3
+        if param[:Lj][j] <= 1e-6
             newdraw = true
             param[:Lj][j] = 1
         end
@@ -37,7 +37,7 @@ for i in 1:ncities-1
 end
 
 param[:hj] = param[:Hj] ./ param[:Lj]
-param[:hj][param[:Lj] .== 1e-3] .= 1  # catch errors in places with infinite housing per capita
+param[:hj][param[:Lj] .== 1e-6] .= 1  # catch errors in places with infinite housing per capita
 
 
 # --------------
@@ -68,6 +68,14 @@ geography = (z = z, obstacles = obstacles)
 # to changes in elevation in building costs (symmetric up/down)
 graph = apply_geography(graph, geography, alpha_up_i = 10, alpha_down_i = 10)
 
+# Plot endowments          
+plot_graph(graph, aspect_ratio = 3/4, 
+            geography = geography, obstacles = true,
+            mesh = true, mesh_transparency = 0.2, 
+            node_sizes = param[:Lj], node_shades = param[:Zjn], 
+            node_color = :seismic,
+            edge_min_thickness = 1, edge_max_thickness = 4)
+
 # =======================
 # COMPUTE OPTIMAL NETWORK
 # =======================
@@ -78,24 +86,22 @@ graph = apply_geography(graph, geography, alpha_up_i = 10, alpha_down_i = 10)
 # PLOT RESULTS
 # ============
 
-sizes = 2 .* results[:cj] .* (param[:Lj] .> 1e-3) / maximum(results[:cj])
-shades = results[:cj] .* (param[:Lj] .> 1e-3) / maximum(results[:cj])
+sizes = 2 .* results[:cj] .* (param[:Lj] .> 1e-6) / maximum(results[:cj])
+shades = results[:cj] .* (param[:Lj] .> 1e-6) / maximum(results[:cj])
 
-plot_graph(graph, results[:Ijk], 
+plot_graph(graph, results[:Ijk], aspect_ratio = 3/4,
            geography = geography, obstacles = true,
            mesh = true, mesh_transparency = 0.2, 
            node_sizes = sizes, node_shades = shades, 
            edge_min_thickness = 1, edge_max_thickness = 4)
 
 
-# sizes = param[:Lj] .+ 1
-# shades = param[:Zjn]
-           
-# plot_graph(graph, # results[:Ijk], edges = false,
-#             geography = geography, obstacles = true,
-#             mesh = true, mesh_transparency = 0.2, 
-#             node_sizes = sizes, node_shades = shades, 
-#             node_color = :seismic,
-#             edge_min_thickness = 1, edge_max_thickness = 4)
-           
-                     
+
+sizes = 2 .* results[:river][:cj] .* (param[:Lj] .> 1e-6) / maximum(results[:river][:cj])
+shades = results[:river][:cj] .* (param[:Lj] .> 1e-6) / maximum(results[:river][:cj])
+
+plot_graph(graph, results[:river][:Ijk], aspect_ratio = 3/4,
+           geography = geographies[:river], obstacles = true,
+           mesh = true, mesh_transparency = 0.2, 
+           node_sizes = sizes, node_shades = shades, 
+           edge_min_thickness = 1, edge_max_thickness = 4)
