@@ -50,8 +50,8 @@ Plot a graph visualization with various styling options.
 # Examples
 ```julia
 param = init_parameters(K = 10)
-param, graph = create_graph(param)
-param[:Zjn][51] = 10.0
+graph = create_graph(param)
+graph[:Zjn][51] = 10.0
 results = optimal_network(param, graph)
 plot_graph(graph, results[:Ijk])
 ```
