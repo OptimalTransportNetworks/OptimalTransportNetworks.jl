@@ -133,7 +133,7 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
             PQ = dropdims(sum(PQ + permutedims(PQ, [2, 1, 3]), dims=3), dims = 3)
         else
             PQ = repeat(results[:PCj], 1, J)
-            matm = permutedims(repeat(graph.m, 1, J, J), [3, 2, 1])
+            matm = permutedims(repeat(param.m, 1, J, J), [3, 2, 1])
             cost = dropdims(sum(matm .* results[:Qjkn] .^ param.nu, dims=3), dims = 3) .^ ((param.beta + 1) / param.nu)
             PQ .*= cost
             PQ += PQ'
