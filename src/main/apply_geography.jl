@@ -131,11 +131,18 @@ function apply_geography(graph, geography; kwargs...)
                                 rmi = findfirst(==(i), nodes_new[j])
                                 if rmi !== nothing
                                     deleteat!(nodes_new[j], rmi)
+                                    # if isempty(nodes_new[j])
+                                    #     deleteat!(nodes_new, j)
+                                    # end
                                 end
                                 rmj = findfirst(==(j), nodes_new[i])
                                 if rmj !== nothing
                                     deleteat!(nodes_new[i], rmj)
+                                    # if isempty(nodes_new[i])
+                                    #     deleteat!(nodes_new, i)
+                                    # end
                                 end
+                                
                                 adjacency_new[i, j] = false
                                 adjacency_new[j, i] = false
                                 has_been_destroyed = true
@@ -162,10 +169,16 @@ function apply_geography(graph, geography; kwargs...)
                 rmio = findfirst(==(io), nodes_new[jo])
                 if rmio !== nothing
                     deleteat!(nodes_new[jo], rmio)
+                    # if isempty(nodes_new[jo])
+                    #     deleteat!(nodes_new, jo)
+                    # end
                 end
                 rmjo = findfirst(==(jo), nodes_new[io])
                 if rmjo !== nothing
                     deleteat!(nodes_new[io], rmjo)
+                    # if isempty(nodes_new[io])
+                    #     deleteat!(nodes_new, io)
+                    # end
                 end
                 adjacency_new[io, jo] = false
                 adjacency_new[jo, io] = false
