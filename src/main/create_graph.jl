@@ -17,7 +17,6 @@ Initialize the underlying graph, population and productivity parameters.
 - `x::Vector{Float64}`: x coordinate (longitude) of each node (only used for custom network)
 - `y::Vector{Float64}`: y coordinate (latitude) of each node (only used for custom network)
 - `omega::Vector{Float64}`: Vector of Pareto weights for each node or region in partial mobility case (default ones(J or nregions))
-- `m::Vector{Float64}=ones(N)`: Vector of weights Nx1 in the cross congestion cost function
 - `Zjn::Matrix{Float64}`: J x N matrix of producties per node (j = 1:J) and good (n = 1:N) (default ones(J, N))
 - `Lj::Vector{Float64}`: Vector of populations in each node (j = 1:J) (only for fixed labour case)
 - `Hj::Vector{Float64}`: Vector of immobile good in each node (j = 1:J) (e.g. housing, default ones(J))
