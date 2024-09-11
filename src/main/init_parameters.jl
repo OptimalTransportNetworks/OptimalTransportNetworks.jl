@@ -9,14 +9,15 @@ Returns a `param` dict with the model parameters. These are independent of the g
 - `alpha::Float64=0.5`: Cobb-Douglas coefficient on final good c^alpha * h^(1-alpha)
 - `beta::Float64=1`: Parameter governing congestion in transport cost
 - `gamma::Float64=1`: Elasticity of transport cost relative to infrastructure
+- `K::Float64=1`: Amount of concrete/asphalt (infrastructure budget)
 - `sigma::Float64=5`: Elasticity of substitution across goods (CES)
 - `rho::Float64=2`: Curvature in utility (c^alpha * h^(1-alpha))^(1-rho)/(1-rho)
 - `a::Float64=0.8`: Curvature of the production function L^alpha
-- `nu::Float64=1`: Elasticity of substitution b/w goods in transport costs if cross-good congestion
 - `N::Int64=1`: Number of goods traded in the economy (used for checks in `create_graph()`)
-- `K::Float64=1`: Amount of concrete/asphalt
 - `labor_mobility::Any=false`: Switch for labor mobility (true/false or 'partial')
 - `cross_good_congestion::Bool=false`: Switch for cross-good congestion
+- `nu::Float64=1`: Elasticity of substitution b/w goods in transport costs if cross-good congestion
+- `m::Vector{Float64}=ones(N)`: Vector of weights Nx1 in the cross congestion cost function
 - `annealing::Bool=true`: Switch for the use of annealing at the end of iterations (only if gamma > beta)
 - `verbose::Bool=true`: Switch to turn on/off text output (from Ipopt or other optimizers)
 - `duality::Bool=false`: Switch to turn on/off duality whenever available
@@ -38,8 +39,9 @@ Returns a `param` dict with the model parameters. These are independent of the g
 param = init_parameters(K = 10, labor_mobility = true)
 ```
 """
-function init_parameters(; alpha = 0.5, beta = 1, gamma = 1, sigma = 5, rho = 2, a = 0.8, nu = 1, K = 1,
-                         labor_mobility = false, cross_good_congestion=false, annealing=true, 
+function init_parameters(; alpha = 0.5, beta = 1, gamma = 1, K = 1, sigma = 5, rho = 2, a = 0.8, N = 1, 
+                         labor_mobility = false, cross_good_congestion=false, nu = 1, m = ones(N), 
+                         annealing=true, 
                          verbose = true, duality = false, warm_start = true, 
                          kappa_min = 1e-5, min_iter = 20, max_iter = 200, tol = 1e-5, kwargs...)
     param = Dict()
@@ -61,6 +63,11 @@ function init_parameters(; alpha = 0.5, beta = 1, gamma = 1, sigma = 5, rho = 2,
     param[:rho] = rho
     param[:a] = a
     param[:nu] = nu
+    if length(m) != N
+        error("m must have length N = $N, but has length $(length(m))")
+    end
+    param[:N] = N
+    param[:m] = m
     if labor_mobility === "partial" || labor_mobility === 0.5
         param[:mobility] = 0.5
     else
@@ -99,6 +106,10 @@ end
 
 # Check if the parameters are consistent with the graph structure
 function check_graph_param(graph, param)
+
+    if haskey(param, :m) && length(param[:m]) != graph[:N]
+        @warn "m does not have the right length N = $(graph[:N])."
+    end
 
     if haskey(param, :omegaj) && !haskey(graph, :omegaj)
         graph[:omegaj] = param[:omegaj]
