@@ -37,9 +37,9 @@ Runs the simulated annealing method starting from network `I0`. Only sensible if
 # Examples
 ```julia
 # Nonconvex case, disabling automatic annealing
-param = init_parameters(K = 10, annealing = false, gamma = 2)
-param, graph = create_graph(param)
-param[:Zjn][61] = 10.0
+param = init_parameters(K = 10, gamma = 2, annealing = false)
+graph = create_graph(param)
+graph[:Zjn][61] = 10.0
 results = optimal_network(param, graph)
 
 # Run annealing
@@ -103,7 +103,7 @@ function annealing(param, graph, I0; kwargs...)
         # TODO: set IO (kappa_ex)?
     else
         auxdata = create_auxdata(param, graph, edges, I0)
-        model, recover_allocation = get_model(param, auxdata)
+        model, recover_allocation = get_model(auxdata)
     end
 
     if !options.verbose
@@ -514,12 +514,10 @@ function shake_network(param, graph, I0, results, options)
 end
 
 
-"""
-    rebranch_network(param, graph, I0, results, options)
 
-This function implements the rebranching algorithm described in the paper.
-Links are reshuffled everywhere so that each node is better connected to its best neighbor
-(those with the lowest price index for traded goods, i.e., more central places in the trading network).
+# This function implements the rebranching algorithm described in the paper.
+# Links are reshuffled everywhere so that each node is better connected to its best neighbor
+# (those with the lowest price index for traded goods, i.e., more central places in the trading network).
 """
 function rebranch_network(param, graph, I0, results, options)
     J = graph.J
@@ -558,12 +556,9 @@ function rebranch_network(param, graph, I0, results, options)
 end
 
 
-"""
-    random_rebranch_network(param, graph, I0, results, options)
 
-This function does the same as `rebranch_network` except that only a few nodes
-(#num_random_perturbations) are selected for rebranching at random.
-"""
+# This function does the same as `rebranch_network` except that only a few nodes
+# (#num_random_perturbations) are selected for rebranching at random.
 function random_rebranch_network(param, graph, I0, results, options)
     J = graph.J
 

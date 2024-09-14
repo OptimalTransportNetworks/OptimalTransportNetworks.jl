@@ -17,13 +17,13 @@ param = init_parameters(labor_mobility = true, K = 10, gamma = 1, beta = 1, verb
 # ------------
 # Init network
 
-param, graph = create_graph(param, 11, 11, type = "map") # create a map network of 11x11 nodes located in [0,10]x[0,10]
+graph = create_graph(param, 11, 11, type = "map") # create a map network of 11x11 nodes located in [0,10]x[0,10]
 # note: by default, productivity and population are equalized everywhere
 
 # Customize graph
-param[:Zjn] = fill(0.1, param[:J], param[:N]) # set most places to low productivity
+graph[:Zjn] = fill(0.1, graph[:J], param[:N]) # set most places to low productivity
 Ni = find_node(graph, 6, 6) # Find index of the central node at (6,6)
-param[:Zjn][Ni, :] .= 1 # central node more productive
+graph[:Zjn][Ni, :] .= 1 # central node more productive
 
 # ==========
 # RESOLUTION

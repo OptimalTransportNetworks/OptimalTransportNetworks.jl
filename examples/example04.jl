@@ -11,33 +11,33 @@ import Random
 param = init_parameters(K = 100, labor_mobility = false,
                         N = 1, gamma = 1, beta = 1, duality = false)
 w = 13; h = 13
-param, graph = create_graph(param, w, h, type = "map")
+graph = create_graph(param, w, h, type = "map")
 
 # ----------------
 # Draw populations
 
-param[:Zjn] = ones(param[:J], 1) .* 1e-6  # matrix of productivity (not 0 to avoid numerical glitches)
-param[:Lj] = ones(param[:J]) .* 1e-6  # matrix of population
+graph[:Zjn] = ones(graph[:J], 1) .* 1e-6  # matrix of productivity (not 0 to avoid numerical glitches)
+graph[:Lj] = ones(graph[:J]) .* 1e-6  # matrix of population
 
 Ni = find_node(graph, ceil(w/2), ceil(h/2))  # center
-param[:Zjn][Ni] = 1  # more productive node
-param[:Lj][Ni] = 1  # more productive node
+graph[:Zjn][Ni] = 1  # more productive node
+graph[:Lj][Ni] = 1  # more productive node
 
 Random.seed!(5)
 ncities = 20  # draw a number of random cities in space
 for i in 1:ncities-1
     newdraw = false
     while newdraw == false
-        j = round(Int, 1 + rand() * (param[:J] - 1))
-        if param[:Lj][j] <= 1e-6
+        j = round(Int, 1 + rand() * (graph[:J] - 1))
+        if graph[:Lj][j] <= 1e-6
             newdraw = true
-            param[:Lj][j] = 1
+            graph[:Lj][j] = 1
         end
     end
 end
 
-param[:hj] = param[:Hj] ./ param[:Lj]
-param[:hj][param[:Lj] .== 1e-6] .= 1  # catch errors in places with infinite housing per capita
+graph[:hj] = graph[:Hj] ./ graph[:Lj]
+graph[:hj][graph[:Lj] .== 1e-6] .= 1  # catch errors in places with infinite housing per capita
 
 
 # --------------
@@ -72,7 +72,7 @@ graph = apply_geography(graph, geography, alpha_up_i = 10, alpha_down_i = 10)
 plot_graph(graph, aspect_ratio = 3/4, 
             geography = geography, obstacles = true,
             mesh = true, mesh_transparency = 0.2, 
-            node_sizes = param[:Lj], node_shades = param[:Zjn], 
+            node_sizes = graph[:Lj], node_shades = graph[:Zjn], 
             node_color = :seismic,
             edge_min_thickness = 1, edge_max_thickness = 4)
 
@@ -86,8 +86,8 @@ plot_graph(graph, aspect_ratio = 3/4,
 # PLOT RESULTS
 # ============
 
-sizes = 2 .* results[:cj] .* (param[:Lj] .> 1e-6) / maximum(results[:cj])
-shades = results[:cj] .* (param[:Lj] .> 1e-6) / maximum(results[:cj])
+sizes = 2 .* results[:cj] .* (graph[:Lj] .> 1e-6) / maximum(results[:cj])
+shades = results[:cj] .* (graph[:Lj] .> 1e-6) / maximum(results[:cj])
 
 plot_graph(graph, results[:Ijk], aspect_ratio = 3/4,
            geography = geography, obstacles = true,

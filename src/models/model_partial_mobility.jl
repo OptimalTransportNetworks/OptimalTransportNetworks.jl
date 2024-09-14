@@ -14,13 +14,13 @@ function model_partial_mobility(optimizer, auxdata)
     Apos = auxdata.edges.Apos
     Aneg = auxdata.edges.Aneg
     psigma = (param.sigma - 1) / param.sigma
-    Hj = param.Hj
-    Lr = param.Lr
-    if length(param.omegar) != param.nregions
-        error("length(param.omegar) = $(length(param.omegar)) does not match number of regions = $(param.nregions)")
+    Hj = graph.Hj
+    Lr = graph.Lr
+    if length(graph.omegar) != graph.nregions
+        error("length(graph.omegar) = $(length(graph.omegar)) does not match number of regions = $(graph.nregions)")
     end
-    if length(Lr) != param.nregions
-        error("Populations Lr = $(length(Lr)) does not match number of regions = $(param.nregions)")
+    if length(Lr) != graph.nregions
+        error("Populations Lr = $(length(Lr)) does not match number of regions = $(graph.nregions)")
     end
 
     # Model
@@ -28,14 +28,14 @@ function model_partial_mobility(optimizer, auxdata)
     set_string_names_on_creation(model, false)
 
     # Variables + bounds
-    @variable(model, ur[1:param.nregions], container=Array, start = 0.0)               # Utility per capita in each region
+    @variable(model, ur[1:graph.nregions], container=Array, start = 0.0)               # Utility per capita in each region
     @variable(model, Cjn[1:graph.J, 1:param.N] >= 1e-8, container=Array, start = 1e-6) # Good specific consumption
     @variable(model, Qin[1:graph.ndeg, 1:param.N], container=Array, start = 0.0)       # Good specific flow
     # NOTE: Fajgelbaum et al (2019) only optimize Lj and distribute it equally for goods with positive productivity
     @variable(model, Lj[1:graph.J] >= 1e-8, container=Array)                           # Total labour
     @variable(model, Ljn[1:graph.J, 1:param.N] >= 1e-8, container=Array)               # Good specific labour
     # Calculate start values for Lj and Ljn
-    pop_start = (Lr ./ gsum(ones(graph.J), param.nregions, region))[region]
+    pop_start = (Lr ./ gsum(ones(graph.J), graph.nregions, region))[region]
     set_start_value.(Lj, pop_start)
     pop_start_goods = repeat(pop_start / param.N, 1, param.N)
     set_start_value.(Ljn, pop_start_goods)
@@ -45,7 +45,7 @@ function model_partial_mobility(optimizer, auxdata)
     set_parameter_value.(kappa_ex, kappa_ex_init)
 
     # Objective
-    @expression(model, U, sum(param.omegar .* Lr .* ur))   # Overall utility
+    @expression(model, U, sum(graph.omegar .* Lr .* ur))   # Overall utility
     @objective(model, Max, U)
 
     # Utility constraint (Lj * ur <= ... )
@@ -55,9 +55,9 @@ function model_partial_mobility(optimizer, auxdata)
     end
 
     # Balanced flow constraints: same as with unrestricted mobility (no restrictions on goods)
-    # Yjn = @expression(model, param.Zjn .* Ljn .^ param.a) # Same thing
-    @expression(model, Yjn[j=1:graph.J, n=1:param.N], param.Zjn[j, n] * Ljn[j, n]^param.a)
-    @constraint(model, Pjn[j in 1:param.J, n in 1:param.N],
+    # Yjn = @expression(model, graph.Zjn .* Ljn .^ param.a) # Same thing
+    @expression(model, Yjn[j=1:graph.J, n=1:param.N], graph.Zjn[j, n] * Ljn[j, n]^param.a)
+    @constraint(model, Pjn[j in 1:graph.J, n in 1:param.N],
         Cjn[j, n] + sum(A[j, i] * Qin[i, n] for i in 1:graph.ndeg) -
         Yjn[j, n] + sum(
             ifelse(Qin[i, n] > 0, Apos[j, i], Aneg[j, i]) *
@@ -67,7 +67,7 @@ function model_partial_mobility(optimizer, auxdata)
     )
 
     # Labor resource constraints (within each region)
-    @constraint(model, -1e-8 .<= gsum(Lj, param.nregions, region) .- Lr .<= 1e-8)
+    @constraint(model, -1e-8 .<= gsum(Lj, graph.nregions, region) .- Lr .<= 1e-8)
 
     # Local labor availability constraints ( sum Ljn <= Lj )
     @constraint(model, -1e-8 .<= sum(Ljn, dims=2) .- Lj .<= 1e-8)
@@ -90,7 +90,7 @@ function recover_allocation_partial_mobility(model, auxdata)
     results[:Ljn] = value.(model_dict[:Ljn])
     results[:Lj] = value.(model_dict[:Lj])
     results[:cj] = ifelse.(results[:Lj] .== 0, 0.0, results[:Cj] ./ results[:Lj])
-    results[:hj] = ifelse.(results[:Lj] .== 0, 0.0, param.Hj ./ results[:Lj])
+    results[:hj] = ifelse.(results[:Lj] .== 0, 0.0, graph.Hj ./ results[:Lj])
     results[:uj] = param.u.(results[:cj], results[:hj])
     # Prices
     results[:Pjn] = shadow_price.(model_dict[:Pjn])

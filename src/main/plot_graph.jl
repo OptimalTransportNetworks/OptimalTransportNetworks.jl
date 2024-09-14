@@ -50,8 +50,8 @@ Plot a graph visualization with various styling options.
 # Examples
 ```julia
 param = init_parameters(K = 10)
-param, graph = create_graph(param)
-param[:Zjn][51] = 10.0
+graph = create_graph(param)
+graph[:Zjn][51] = 10.0
 results = optimal_network(param, graph)
 plot_graph(graph, results[:Ijk])
 ```
@@ -88,11 +88,12 @@ function plot_graph(graph, edges = nothing; kwargs...)
 
     # PLOT COLORMAP
     if op.map !== nothing || op.geography !== nothing
-        if op.geography !== nothing
-            vec_map = op.geography[:z]
-        else
-            vec_map = vec(op.map)
-        end
+        vec_map = op.geography !== nothing ? op.geography[:z] : vec(op.map)
+        # if length(vec_map) != length(vec_x) && haskey(graph, :rm_nodes)
+        #     if length(vec_map) == length(graph.rm_nodes)
+        #         vec_map = vec_map[.!graph.rm_nodes]
+        #     end
+        # end
         # Interpolate map onto grid
         xmap = range(minimum(vec_x), stop=maximum(vec_x), length=2*length(vec_x))
         ymap = range(minimum(vec_y), stop=maximum(vec_y), length=2*length(vec_y))
@@ -120,6 +121,23 @@ function plot_graph(graph, edges = nothing; kwargs...)
     # PLOT OBSTACLES
     if op.obstacles && length(op.geography[:obstacles]) > 0
         obstacles = op.geography[:obstacles]
+
+        # if haskey(graph, :x_orig)
+        #     vec_x_orig = graph.x_orig
+        #     vec_y_orig = graph.y_orig
+
+        #     for i in 1:size(obstacles, 1)
+        #         x1 = vec_x_orig[obstacles[i, 1]]
+        #         y1 = vec_y_orig[obstacles[i, 1]]
+        #         x2 = vec_x_orig[obstacles[i, 2]]
+        #         y2 = vec_y_orig[obstacles[i, 2]]
+    
+        #         plot!(pl, [x1, x2], [y1, y2], 
+        #               linecolor = op.obstacle_color, 
+        #               linewidth = op.obstacle_thickness, 
+        #               linealpha = 1, label = nothing)
+        #     end
+        # else
         for i in 1:size(obstacles, 1)
             x1 = vec_x[obstacles[i, 1]]
             y1 = vec_y[obstacles[i, 1]]
@@ -127,10 +145,11 @@ function plot_graph(graph, edges = nothing; kwargs...)
             y2 = vec_y[obstacles[i, 2]]
 
             plot!(pl, [x1, x2], [y1, y2], 
-                  linecolor = op.obstacle_color, 
-                  linewidth = op.obstacle_thickness, 
-                  linealpha = 1, label = nothing)
+                linecolor = op.obstacle_color, 
+                linewidth = op.obstacle_thickness, 
+                linealpha = 1, label = nothing)
         end
+        # end
     end
 
     # PLOT MESH

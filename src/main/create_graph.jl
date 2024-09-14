@@ -2,38 +2,34 @@
 # using LinearAlgebra
 
 """
-    create_graph(param, w = 11, h = 11; type = "map", kwargs...) -> Dict, Dict
+    create_graph(param, w = 11, h = 11; type = "map", N = 1, kwargs...) -> Dict
 
 Initialize the underlying graph, population and productivity parameters.
 
 # Arguments
-- `param::Dict`: Dict that contains the model parameters
-- `w::Int64=11`: Number of nodes along the width of the underlying graph (integer)  
-- `h::Int64=11`: Number of nodes along the height of the underlying graph (integer, odd if triangle)
+- `param::Dict`: Dict that contains the model parameters (only needed for checks)
+- `w::Int64=11`: Number of nodes along the width of the underlying graph if type != "custom" (integer)  
+- `h::Int64=11`: Number of nodes along the height of the underlying graph if type != "custom" (integer, odd if triangle)
 
 # Keyword Arguments
 - `type::String="map"`: Either "map", "square", "triangle", or "custom" 
-- `omega::Vector{Float64}`: Vector of Pareto weights for each node or region in partial mobility case (default ones(J or nregions))
-- `Zjn::Matrix{Float64}`: J x N matrix of producties per node (j = 1:J) and good (n = 1:N) (default ones(J, N))
 - `adjacency::BitMatrix`: J x J Adjacency matrix (only used for custom network)
 - `x::Vector{Float64}`: x coordinate (longitude) of each node (only used for custom network)
 - `y::Vector{Float64}`: y coordinate (latitude) of each node (only used for custom network)
+- `omega::Vector{Float64}`: Vector of Pareto weights for each node or region in partial mobility case (default ones(J or nregions))
+- `Zjn::Matrix{Float64}`: J x N matrix of producties per node (j = 1:J) and good (n = 1:N) (default ones(J, N))
 - `Lj::Vector{Float64}`: Vector of populations in each node (j = 1:J) (only for fixed labour case)
 - `Hj::Vector{Float64}`: Vector of immobile good in each node (j = 1:J) (e.g. housing, default ones(J))
 - `Lr::Vector{Float64}`: Vector of populations in each region (r = 1:nregions) (only for partial mobility)
 - `region::Vector{Int64}`: Vector indicating region of each location (only for partial mobility)
 
-# Notes
-- `create_graph()` will overwrite any parameters `Zjn`, `Lj`, `Hj`, `omega`, `Lr`, already set in the `param` Dict with the default values. So these values should be set inside `create_graph()`, or after `create_graph()` has been called.
-
 # Examples
 ```julia
-param, graph = create_graph(init_parameters())
+graph = create_graph(init_parameters())
 ```
 """
 function create_graph(param, w = 11, h = 11; type = "map", kwargs...)
 
-    param = namedtuple_to_dict(param)
     options = retrieve_options_create_graph(param, w, h, type; kwargs...)
 
     if type == "map"
@@ -46,26 +42,25 @@ function create_graph(param, w = 11, h = 11; type = "map", kwargs...)
         graph = create_custom(options[:adjacency], options[:x], options[:y])
     end
 
-    param[:J] = graph[:J]
-    param[:Zjn] = haskey(options, :Zjn) ? options[:Zjn] : ones(graph[:J], param[:N])
-    param[:Hj] = haskey(options, :Hj) ? options[:Hj] : ones(graph[:J])
+    graph[:Zjn] = haskey(options, :Zjn) ? options[:Zjn] : ones(graph[:J], param[:N])
+    graph[:Hj] = haskey(options, :Hj) ? options[:Hj] : ones(graph[:J])
 
     if param[:mobility] == false
-        param[:Lj] = haskey(options, :Lj) ? options[:Lj] : ones(graph[:J]) / graph[:J]
-        param[:hj] = param[:Hj] ./ param[:Lj]
-        param[:hj][param[:Lj] .== 0] .= 1
-        param[:omegaj] = options[:omega]
+        graph[:Lj] = haskey(options, :Lj) ? options[:Lj] : ones(graph[:J]) / graph[:J]
+        graph[:hj] = graph[:Hj] ./ graph[:Lj]
+        graph[:hj][graph[:Lj] .== 0] .= 1
+        graph[:omegaj] = options[:omega]
     elseif param[:mobility] == 0.5
         graph[:region] = options[:region]
-        param[:omegar] = options[:omega]
-        param[:Lr] = options[:Lr]
-        param[:nregions] = options[:nregions]
+        graph[:omegar] = options[:omega]
+        graph[:Lr] = options[:Lr]
+        graph[:nregions] = options[:nregions]
     end
 
     # Running checks on population / productivity / housing parameters
-    check_graph_param(param)
+    check_graph_param(graph, param)
 
-    return param, graph
+    return graph
 end
 
 function isadjacency(M)

@@ -1,6 +1,6 @@
 
 """
-    apply_geography(graph, geography; kwargs...) -> updated_graph
+    apply_geography(graph, geography; kwargs...) -> Dict
 
 Update the network building costs of a graph based on geographical features and remove edges impeded by geographical barriers. 
 Aversion to altitude changes rescales building infrastructure costs `delta_i` by (see also user manual to MATLAB toolbox):\n
@@ -32,7 +32,7 @@ and similarly for graph traversal costs `delta_tau`.
 
 # Examples
 ```julia
-param, graph = create_graph(init_parameters())
+graph = create_graph(init_parameters())
 geography = (z = 10*(rand(graph[:J]) .> 0.95), obstacles = [1 15; 70 72])
 updated_graph = apply_geography(graph, geography)
 
@@ -90,6 +90,7 @@ function apply_geography(graph, geography; kwargs...)
     end
 
     # Remove edges where geographical barriers are (rivers)
+    # remove_edge = false
     if obstacles !== nothing
 
         # Store initial delta matrics (avoid double counting)
@@ -101,6 +102,9 @@ function apply_geography(graph, geography; kwargs...)
         across_obstacle = falses(graph.J, graph.J)
         along_obstacle = falses(graph.J, graph.J)
         remove_edge = isinf(op.across_obstacle_delta_i) || isinf(op.across_obstacle_delta_tau) # remove the edge
+        # if remove_edge
+        #     rm_nodes = falses(graph.J)
+        # end
 
         for i in 1:graph.J
             neighbors = graph.nodes[i]
@@ -132,14 +136,14 @@ function apply_geography(graph, geography; kwargs...)
                                 if rmi !== nothing
                                     deleteat!(nodes_new[j], rmi)
                                     # if isempty(nodes_new[j])
-                                    #     deleteat!(nodes_new, j)
+                                    #     rm_nodes[j] = true # deleteat!(nodes_new, j)
                                     # end
                                 end
                                 rmj = findfirst(==(j), nodes_new[i])
                                 if rmj !== nothing
                                     deleteat!(nodes_new[i], rmj)
                                     # if isempty(nodes_new[i])
-                                    #     deleteat!(nodes_new, i)
+                                    #     rm_nodes[i] = true # deleteat!(nodes_new, i)
                                     # end
                                 end
                                 
@@ -165,19 +169,20 @@ function apply_geography(graph, geography; kwargs...)
         # This is for edges along obstable: allowing different delta (e.g., water transport on river)
         if isinf(op.along_obstacle_delta_i) || isinf(op.along_obstacle_delta_tau)
             # if infinite, remove edge
+            remove_edge = true
             for (io, jo) in zip(obstacles[:, 1], obstacles[:, 2])
                 rmio = findfirst(==(io), nodes_new[jo])
                 if rmio !== nothing
                     deleteat!(nodes_new[jo], rmio)
                     # if isempty(nodes_new[jo])
-                    #     deleteat!(nodes_new, jo)
+                    #     rm_nodes[jo] = true # deleteat!(nodes_new, jo)
                     # end
                 end
                 rmjo = findfirst(==(jo), nodes_new[io])
                 if rmjo !== nothing
                     deleteat!(nodes_new[io], rmjo)
                     # if isempty(nodes_new[io])
-                    #     deleteat!(nodes_new, io)
+                    #     rm_nodes[io] = true # deleteat!(nodes_new, io)
                     # end
                 end
                 adjacency_new[io, jo] = false
@@ -200,9 +205,52 @@ function apply_geography(graph, geography; kwargs...)
 
     # Creating new object
     graph_new = namedtuple_to_dict(graph)
+
+    # if remove_edge && any(rm_nodes)
+    #     keep = findall(.!rm_nodes)
+    #     graph_new[:x_orig] = graph[:x]
+    #     graph_new[:x] = graph[:x][keep]
+    #     graph_new[:y_orig] = graph[:y]
+    #     graph_new[:y] = graph[:y][keep]
+    #     graph_new[:J] = length(graph_new[:x])
+    #     graph_new[:rm_nodes] = rm_nodes
+    #     graph_new[:delta_i] = delta_i_new[keep, keep]
+    #     graph_new[:delta_tau] = delta_tau_new[keep, keep]
+    #     nodes_new = nodes_new[keep]
+    #     for i in keep
+    #         for k in 1:length(nodes_new)
+    #             node_k = filter(x -> x != i, nodes_new[k])
+    #             nodes_new[k] = ifelse.(node_k .> i, node_k .- 1, node_k) # reindex nodes k > i to k-1
+    #         end
+    #     end
+    #     graph_new[:nodes] = nodes_new
+    #     graph_new[:adjacency] = adjacency_new[keep, keep]
+    #     # make sure that the degrees of freedom of the updated graph match the # of links
+    #     graph_new[:ndeg] = sum(tril(graph_new[:adjacency]))
+    #     graph_new[:across_obstacle] = across_obstacle[keep, keep]
+    #     graph_new[:along_obstacle] = along_obstacle[keep, keep]
+
+    #     if haskey(graph, :Lj)
+    #         graph_new[:Lj] = graph[:Lj][keep]
+    #     end
+    #     if haskey(graph, :Hj)
+    #         graph_new[:Hj] = graph[:Hj][keep]
+    #     end
+    #     if haskey(graph, :hj)
+    #         graph_new[:hj] = graph_new[:Hj] ./ graph_new[:Lj]
+    #     end
+    #     if haskey(graph, :omegaj)
+    #         graph_new[:omegaj] = graph[:omegaj][keep]
+    #     end
+    #     if haskey(graph, :Zjn)
+    #         graph_new[:Zjn] = graph[:Zjn][keep, :]
+    #     end
+    #     if haskey(graph, :region)
+    #         graph_new[:region] = graph[:region][keep]
+    #     end
+    # else
     graph_new[:delta_i] = delta_i_new
     graph_new[:delta_tau] = delta_tau_new
-
     if obstacles !== nothing
         graph_new[:nodes] = nodes_new
         graph_new[:adjacency] = adjacency_new
@@ -211,6 +259,7 @@ function apply_geography(graph, geography; kwargs...)
         graph_new[:across_obstacle] = across_obstacle
         graph_new[:along_obstacle] = along_obstacle
     end
+    # end
 
     return graph_new
 end

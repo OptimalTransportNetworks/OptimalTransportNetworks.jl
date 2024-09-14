@@ -1,35 +1,31 @@
 
-# ==============================================================
-#  OPTIMAL TRANSPORT NETWORKS IN SPATIAL EQUILIBRIUM
-#  by P. Fajgelbaum, E. Schaal, D. Henricot, C. Mantovani 2017-19
-# ================================================= version 1.0.4
 
 """
     init_parameters(; kwargs...) -> Dict
 
-Returns a `param` dict with the model parameters.
+Returns a `param` dict with the model parameters. These are independent of the graph structure and dimensions.
 
 # Keyword Arguments
 - `alpha::Float64=0.5`: Cobb-Douglas coefficient on final good c^alpha * h^(1-alpha)
 - `beta::Float64=1`: Parameter governing congestion in transport cost
 - `gamma::Float64=1`: Elasticity of transport cost relative to infrastructure
-- `K::Float64=1`: Amount of concrete/asphalt
+- `K::Float64=1`: Amount of concrete/asphalt (infrastructure budget)
 - `sigma::Float64=5`: Elasticity of substitution across goods (CES)
 - `rho::Float64=2`: Curvature in utility (c^alpha * h^(1-alpha))^(1-rho)/(1-rho)
 - `a::Float64=0.8`: Curvature of the production function L^alpha
-- `m::Vector{Float64}=ones(N)`: Vector of weights Nx1 in the cross congestion cost function
-- `N::Int64=1`: Number of goods
-- `nu::Float64=1`: Elasticity of substitution b/w goods in transport costs if cross-good congestion
+- `N::Int64=1`: Number of goods traded in the economy (used for checks in `create_graph()`)
 - `labor_mobility::Any=false`: Switch for labor mobility (true/false or 'partial')
 - `cross_good_congestion::Bool=false`: Switch for cross-good congestion
+- `nu::Float64=1`: Elasticity of substitution b/w goods in transport costs if cross-good congestion
+- `m::Vector{Float64}=ones(N)`: Vector of weights Nx1 in the cross congestion cost function
 - `annealing::Bool=true`: Switch for the use of annealing at the end of iterations (only if gamma > beta)
 - `verbose::Bool=true`: Switch to turn on/off text output (from Ipopt or other optimizers)
 - `duality::Bool=false`: Switch to turn on/off duality whenever available
 - `warm_start::Bool=true`: Use the previous solution as a warm start for the next iteration
-- `kappa_min::Float64=1e-5`: Minimum value for road capacities κ
+- `kappa_min::Float64=1e-5`: Minimum value for road capacities K
 - `min_iter::Int64=20`: Minimum number of iterations
 - `max_iter::Int64=200`: Maximum number of iterations
-- `tol::Float64=1e-5`: Tolerance for convergence of road capacities κ
+- `tol::Float64=1e-5`: Tolerance for convergence of road capacities K
 
 # Optional Parameters
 - `optimizer = Ipopt.Optimizer`: Optimizer to be used
@@ -43,8 +39,9 @@ Returns a `param` dict with the model parameters.
 param = init_parameters(K = 10, labor_mobility = true)
 ```
 """
-function init_parameters(; alpha = 0.5, beta = 1, gamma = 1, K = 1, sigma = 5, rho = 2, a = 0.8, N = 1, m = ones(N), nu = 1, 
-                         labor_mobility = false, cross_good_congestion=false, annealing=true, 
+function init_parameters(; alpha = 0.5, beta = 1, gamma = 1, K = 1, sigma = 5, rho = 2, a = 0.8, N = 1, 
+                         labor_mobility = false, cross_good_congestion=false, nu = 1, m = ones(N), 
+                         annealing=true, 
                          verbose = true, duality = false, warm_start = true, 
                          kappa_min = 1e-5, min_iter = 20, max_iter = 200, tol = 1e-5, kwargs...)
     param = Dict()
@@ -65,9 +62,12 @@ function init_parameters(; alpha = 0.5, beta = 1, gamma = 1, K = 1, sigma = 5, r
     param[:sigma] = sigma
     param[:rho] = rho
     param[:a] = a
-    param[:m] = m
-    param[:N] = N
     param[:nu] = nu
+    if length(m) != N
+        error("m must have length N = $N, but has length $(length(m))")
+    end
+    param[:N] = N
+    param[:m] = m
     if labor_mobility === "partial" || labor_mobility === 0.5
         param[:mobility] = 0.5
     else
@@ -98,57 +98,65 @@ function init_parameters(; alpha = 0.5, beta = 1, gamma = 1, K = 1, sigma = 5, r
     param[:F] = (L, a) -> L^a
     param[:Fprime] = (L, a) -> a * L^(a - 1)
 
-    # CHECK CONSISTENCY WITH ENDOWMENTS/PRODUCTIVITY (if applicable)
-    check_graph_param(param)
+    # # CHECK CONSISTENCY WITH ENDOWMENTS/PRODUCTIVITY (if applicable)
+    # check_graph_param(param)
 
     return param
 end
 
-function check_graph_param(param)
+# Check if the parameters are consistent with the graph structure
+function check_graph_param(graph, param)
 
-    ## These are graph parameters that should not be in the parameters dict
-
-    # if haskey(param, :x) && length(param[:x]) != param[:J]
-    #     @warn "x does not have the right length J = $(param[:J])."
-    # end
-
-    # if haskey(param, :y) && length(param[:y]) != param[:J]
-    #     @warn "y does not have the right length J = $(param[:J])."
-    # end
-
-    # if haskey(param, :adjacency) && size(param[:adjacency]) != (param[:J], param[:J])
-    #     @warn "adjacency matrix does not have the right dimensions J x J."
-    # end
-
-    # if haskey(param, :region) && length(param[:region]) != param[:J]
-    #     @warn "region does not have the right length J = $(param[:J])."
-    # end
-
-    if haskey(param, :omegaj) && length(param[:omegaj]) != param[:J]
-        @warn "omegaj does not have the right length J = $(param[:J])."
+    if haskey(param, :m) && length(param[:m]) != param[:N]
+        @warn "m does not have the right length N = $(param[:N])."
     end
 
-    if haskey(param, :omegar) && length(param[:omegar]) != param[:nregions]
-        @warn "omegar does not have the right length nregions = $(param[:nregions])."
+    if haskey(param, :omegaj) && !haskey(graph, :omegaj)
+        graph[:omegaj] = param[:omegaj]
+    end
+    if haskey(graph, :omegaj) && length(graph[:omegaj]) != graph[:J]
+        @warn "omegaj does not have the right length J = $(graph[:J])."
     end
 
-    if haskey(param, :Lr) && length(param[:Lr]) != param[:nregions]
-        @warn "Lr does not have the right length nregions = $(param[:nregions])."
+    if haskey(param, :omegar) && !haskey(graph, :omegar)
+        graph[:omegar] = param[:omegar]
+    end
+    if haskey(graph, :omegar) && length(graph[:omegar]) != graph[:nregions]
+        @warn "omegar does not have the right length nregions = $(graph[:nregions])."
     end
 
-    if haskey(param, :Lj) && param[:mobility] == 0 && length(param[:Lj]) != param[:J]
-        @warn "Lj does not have the right length J = $(param[:J])."
+    if haskey(param, :Lr) && !haskey(graph, :Lr)
+        graph[:Lr] = param[:Lr]
+    end
+    if haskey(graph, :Lr) && length(graph[:Lr]) != graph[:nregions]
+        @warn "Lr does not have the right length nregions = $(graph[:nregions])."
+    end
+
+    if haskey(param, :Lj) && !haskey(graph, :Lj) && param[:mobility] == 0
+        graph[:Lj] = param[:Lj]
+    end
+    if haskey(graph, :Lj) && param[:mobility] == 0 && length(graph[:Lj]) != graph[:J]
+        @warn "Lj does not have the right length J = $(graph[:J])."
     end
     
-    if haskey(param, :Zjn) && size(param[:Zjn]) != (param[:J], param[:N])
-        @warn "Zjn does not have the right size J ($(param[:J])) x N ($(param[:N]))."
+    if haskey(param, :Zjn) && !haskey(graph, :Zjn)
+        graph[:Zjn] = param[:Zjn]
+    end
+    if haskey(graph, :Zjn) && size(graph[:Zjn]) != (graph[:J], param[:N])
+        @warn "Zjn does not have the right size J ($(graph[:J])) x N ($(param[:N]))."
     end
 
-    if haskey(param, :Hj) && length(param[:Hj]) != param[:J]
-        @warn "Hj does not have the right length J = $(param[:J])."
+    if haskey(param, :Hj) && !haskey(graph, :Hj)
+        graph[:Hj] = param[:Hj]
+    end
+    if haskey(graph, :Hj) && length(graph[:Hj]) != graph[:J]
+        @warn "Hj does not have the right length J = $(graph[:J])."
     end
 
-    if haskey(param, :hj) && length(param[:hj]) != param[:J]
-        @warn "hj does not have the right length J = $(param[:J])."
+    if haskey(param, :hj) && !haskey(graph, :hj)
+        graph[:hj] = param[:hj]
+    end
+    if haskey(graph, :hj) && length(graph[:hj]) != graph[:J]
+        @warn "hj does not have the right length J = $(graph[:J])."
     end
 end

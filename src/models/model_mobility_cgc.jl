@@ -34,7 +34,7 @@ function model_mobility_cgc(optimizer, auxdata)
     @objective(model, Max, u)
 
     # Utility constraint (Lj*u <= ... )
-    @constraint(model, Lj .* u - (cj .* Lj / param.alpha) .^ param.alpha .* (param.Hj / (1 - param.alpha)) .^ (1 - param.alpha) .<= -1e-8)
+    @constraint(model, Lj .* u - (cj .* Lj / param.alpha) .^ param.alpha .* (graph.Hj / (1 - param.alpha)) .^ (1 - param.alpha) .<= -1e-8)
 
     # Create the matrix B_direct (resp. B_indirect) of transport cost along the direction of the edge (resp. in edge opposite direction)
     B_direct = @expression(model, ((Qin_direct .^ param.nu) * m) .^ beta_nu ./ kappa_ex)
@@ -44,7 +44,7 @@ function model_mobility_cgc(optimizer, auxdata)
     @constraint(model, cj .* Lj + Apos * B_direct + Aneg * B_indirect - Dj .<= -1e-8)
 
     # Balanced flow constraints
-    @expression(model, Yjn, param.Zjn .* (Ljn .^ param.a))
+    @expression(model, Yjn, graph.Zjn .* (Ljn .^ param.a))
     @constraint(model, Pjn, Djn + A * Qin_direct - A * Qin_indirect - Yjn .<= -1e-8)
 
     # Labor resource constraint
@@ -71,7 +71,7 @@ function recover_allocation_mobility_cgc(model, auxdata)
     results[:Dj] = dropdims(value.(model_dict[:Dj]), dims = 2)
     results[:cj] = value.(model_dict[:cj])
     results[:Cj] = results[:cj] .* results[:Lj]
-    results[:hj] = ifelse.(results[:Lj] .== 0, 0.0, param.Hj ./ results[:Lj])
+    results[:hj] = ifelse.(results[:Lj] .== 0, 0.0, graph.Hj ./ results[:Lj])
     results[:uj] = param.u.(results[:cj], results[:hj])
     # Prices
     results[:Pjn] = shadow_price.(model_dict[:Pjn])

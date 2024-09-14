@@ -13,15 +13,15 @@ param = init_parameters(labor_mobility = false, K = 100, gamma = 1, beta = 1, N 
 # Init network
 
 w, h = 13, 13
-param, graph = create_graph(param, w, h, type = "triangle") # create a triangular network of 21x21
+graph = create_graph(param, w, h, type = "triangle") # create a triangular network of 21x21
 
 ncities = 20 # number of random cities
-param[:Lj] .= 0 # set population to minimum everywhere
-param[:Zjn] .= 0.01 # set low productivity everywhere
+graph[:Lj] .= 0 # set population to minimum everywhere
+graph[:Zjn] .= 0.01 # set low productivity everywhere
 
 Ni = find_node(graph, ceil(Int, w/2), ceil(Int, h/2)) # Find the central node
-param[:Zjn][Ni] = 1 # central node is more productive
-param[:Lj][Ni] = 1 # cities are equally populated
+graph[:Zjn][Ni] = 1 # central node is more productive
+graph[:Lj][Ni] = 1 # cities are equally populated
 
 # Draw the rest of the cities randomly
 Random.seed!(5) # reinit random number generator
@@ -29,15 +29,15 @@ for i in 1:ncities
     newdraw = false
     while !newdraw
         j = round(Int, 1 + rand() * (graph[:J] - 1))
-        if param[:Lj][j] != 1 / (ncities + 1) # make sure node j is unpopulated           
+        if graph[:Lj][j] != 1 / (ncities + 1) # make sure node j is unpopulated           
             newdraw = true
-            param[:Lj][j] = 1
+            graph[:Lj][j] = 1
         end
     end
 end
 
 # For Ipopt: population cannot be zero!
-param[:Lj][param[:Lj] .== 0] .= 1e-6
+graph[:Lj][graph[:Lj] .== 0] .= 1e-6
 
 # ==========
 # RESOLUTION

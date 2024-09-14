@@ -51,15 +51,15 @@ a simplified interface and only exports key functions, while retaining full flex
 ```julia
 # Convex case
 param = init_parameters(K = 10)
-param, graph = create_graph(param)
-param[:Zjn][61] = 10.0
+graph = create_graph(param)
+graph[:Zjn][61] = 10.0
 results = optimal_network(param, graph)
 plot_graph(graph, results[:Ijk])
 
 # Nonconvex case, disabling automatic annealing
-param = init_parameters(K = 10, annealing = false, gamma = 2)
-param, graph = create_graph(param)
-param[:Zjn][61] = 10.0
+param = init_parameters(K = 10, gamma = 2, annealing = false)
+graph = create_graph(param)
+graph[:Zjn][61] = 10.0
 results = optimal_network(param, graph)
 
 # Run annealing
