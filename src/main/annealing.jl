@@ -518,7 +518,6 @@ end
 # This function implements the rebranching algorithm described in the paper.
 # Links are reshuffled everywhere so that each node is better connected to its best neighbor
 # (those with the lowest price index for traded goods, i.e., more central places in the trading network).
-"""
 function rebranch_network(param, graph, I0, results, options)
     J = graph.J
 
