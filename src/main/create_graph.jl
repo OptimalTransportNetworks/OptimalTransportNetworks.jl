@@ -253,10 +253,8 @@ Creates a triangular graph structure with width `w` and height `h`
 horizontal and along the two diagonals)
 
 # Arguments
-- `w`: Width of graph (i.e. the max number of nodes along horizontal dimension), 
-must be an integer
-- `h`: Height of graph (i.e. the max number of nodes along vertical dimension),  
-must be an odd integer
+- `w`: Width of graph (i.e. the max number of nodes along horizontal dimension), must be an integer
+- `h`: Height of graph (i.e. the max number of nodes along vertical dimension), must be an odd integer
 """
 function create_triangle(w, h)
     if h % 2 == 0
@@ -361,10 +359,8 @@ with width w and height h (nodes have 4 neighbors in total, along
 horizontal and vertical dimensions, NOT diagonals)
 
 # Arguments
-- `w`: width of graph (ie. the number of nodes along horizontal
-dimension), must be an integer 
-- `h`: height of graph (ie. the number of nodes along vertical
-dimension), must be an integer
+- `w`: width of graph (ie. the number of nodes along horizontal dimension), must be an integer 
+- `h`: height of graph (ie. the number of nodes along vertical dimension), must be an integer
 """
 function create_square(w, h)
     J = w * h
