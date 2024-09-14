@@ -41,10 +41,3 @@ OptimalTransportNetworks.represent_edges
 OptimalTransportNetworks.create_auxdata
 OptimalTransportNetworks.get_model
 ```
-
-<!-- ```@autodocs
-Modules = [OptimalTransportNetworks]
-Public = false
-Private = true
-Order = [:function]
-``` -->
