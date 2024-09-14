@@ -31,15 +31,15 @@ remove_node
 # Documented Internal Functions
 
 ```@docs
-dict_to_namedtuple
-namedtuple_to_dict
-create_map
-create_square
-create_triangle
-create_custom
-represent_edges
-create_auxdata
-get_model
+OptimalTransportNetworks.dict_to_namedtuple
+OptimalTransportNetworks.namedtuple_to_dict
+OptimalTransportNetworks.create_map
+OptimalTransportNetworks.create_square
+OptimalTransportNetworks.create_triangle
+OptimalTransportNetworks.create_custom
+OptimalTransportNetworks.represent_edges
+OptimalTransportNetworks.create_auxdata
+OptimalTransportNetworks.get_model
 ```
 
 <!-- ```@autodocs
