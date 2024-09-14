@@ -3,7 +3,7 @@ using Random
 using Plots
 
 # Initialize parameters
-param = init_parameters(K = 100, rho = 0, labor_mobility = false)
+param = init_parameters(K = 100, sigma = 2, rho = 0, labor_mobility = false)
 width, height = 13, 13
 
 # Create graph
@@ -17,7 +17,7 @@ Ni = find_node(g0, ceil(width/2), ceil(height/2)) # center
 g0[:Zjn][Ni] = 1 # more productive node
 g0[:Lj][Ni] = 1 # more productive node
 
-Random.seed!(10) # use 5, 8, 10 or 11
+Random.seed!(11) # use 5, 8, 10 or 11
 nb_cities = 20 # draw a number of random cities in space
 for i in 1:nb_cities-1
     newdraw = false
@@ -113,11 +113,13 @@ plots = Vector{Any}(undef, length(simulation))
 i = 0
 for s in simulation
     i += 1
+    sizes = 2 .* results[Symbol(s)][:cj] .* (g0[:Lj] .> 1e-6) / maximum(results[Symbol(s)][:cj])
+    shades = results[Symbol(s)][:cj] .* (g0[:Lj] .> 1e-6) / maximum(results[Symbol(s)][:cj])
     plots[i] = plot_graph(g0, results[Symbol(s)][:Ijk], 
                           geography = geographies[Symbol(s)], obstacles = obstacles[i] == "on",
                           mesh = true, mesh_transparency = 0.2,
-                          node_sizes = results[Symbol(s)][:cj], 
-                          node_shades = g0[:Zjn], node_color = :seismic,
+                          node_sizes = sizes, node_shades = shades, 
+                          node_color = :seismic,
                           edge_min_thickness = 1, edge_max_thickness = 4)
     title!(plots[i], "Geography $(s)")
 end
