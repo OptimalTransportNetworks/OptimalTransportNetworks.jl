@@ -25,7 +25,7 @@ Initialize the underlying graph, population and productivity parameters.
 
 # Examples
 ```julia
-graph = create_graph()
+graph = create_graph(init_parameters())
 ```
 """
 function create_graph(param, w = 11, h = 11; type = "map", kwargs...)
