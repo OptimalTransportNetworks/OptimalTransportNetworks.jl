@@ -30,9 +30,22 @@ remove_node
 
 # Documented Internal Functions
 
-```@autodocs
+```@docs
+dict_to_namedtuple
+namedtuple_to_dict
+create_map
+create_square
+create_triangle
+create_custom
+represent_edges
+create_auxdata
+get_model
+```
+
+<!-- ```@autodocs
+<!-- ```@autodocs
 Modules = [OptimalTransportNetworks]
 Public = false
 Private = true
 Order = [:function]
-```
+``` -->
