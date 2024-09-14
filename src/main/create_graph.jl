@@ -2,7 +2,7 @@
 # using LinearAlgebra
 
 """
-    create_graph(param, w = 11, h = 11; type = "map", N = 1, kwargs...) -> Dict
+    create_graph(param, w = 11, h = 11; type = "map", kwargs...) -> Dict
 
 Initialize the underlying graph, population and productivity parameters.
 
