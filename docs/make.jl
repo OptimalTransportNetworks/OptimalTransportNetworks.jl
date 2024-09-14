@@ -1,18 +1,14 @@
 using Documenter
 using OptimalTransportNetworks
 
-DocMeta.setdocmeta!(OptimalTransportNetworks, :DocTestSetup, :(using OptimalTransportNetworks); recursive=true)
-
 makedocs(
-    modules = [OptimalTransportNetworks],
-    authors = "Sebastian Krantz",
-    repo = "https://github.com/SebKrantz/OptimalTransportNetworks.jl/blob/{commit}{path}#{line}",
     sitename = "OptimalTransportNetworks.jl",
-    format = Documenter.HTML(;
-        prettyurls = get(ENV, "CI", "false") == "true",
-        canonical = "https://SebKrantz.github.io/OptimalTransportNetworks.jl",
-        edit_link = "main",
-        assets = String[],
+    modules = [OptimalTransportNetworks],
+    checkdocs = :none,
+    format = Documenter.HTML(
+        # Add these options for version switching
+        prettyurls = get(ENV, "CI", nothing) == "true",
+        canonical = "https://SebKrantz.github.io/OptimalTransportNetworks.jl/stable"
     ),
     pages = [
         "Home" => "index.md",
@@ -23,6 +19,6 @@ makedocs(
 deploydocs(
     repo = "github.com/SebKrantz/OptimalTransportNetworks.jl.git",
     devbranch = "main",
-    tag = "stable",
     push_preview = true,
+    versions = ["stable" => "v^", "dev" => "main"]
 )
