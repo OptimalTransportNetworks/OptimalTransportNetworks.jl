@@ -5,7 +5,11 @@ makedocs(
     sitename = "OptimalTransportNetworks.jl",
     modules = [OptimalTransportNetworks],
     checkdocs = :none,
-    format = Documenter.HTML(),
+    format = Documenter.HTML(
+        # Add these options for version switching
+        prettyurls = get(ENV, "CI", nothing) == "true",
+        canonical = "https://SebKrantz.github.io/OptimalTransportNetworks.jl/stable"
+    ),
     pages = [
         "Home" => "index.md",
         "API" => "api.md"
@@ -14,7 +18,7 @@ makedocs(
 
 deploydocs(
     repo = "github.com/SebKrantz/OptimalTransportNetworks.jl.git",
-    branch = "gh-pages",
-    # deploy_config = Dict("DOCUMENTER_KEY" => ENV["DOCUMENTER_KEY"]), 
-    # push_preview = true, ..
+    devbranch = "development",
+    push_preview = true,
+    versions = ["stable" => "v^", "dev" => "development"]
 )
