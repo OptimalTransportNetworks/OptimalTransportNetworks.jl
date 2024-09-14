@@ -3,11 +3,11 @@ using Random
 using Plots
 
 # Initialize parameters
-param = init_parameters(K = 100, labor_mobility = false)
+param = init_parameters(K = 100, rho = 0, labor_mobility = false)
 width, height = 13, 13
 
 # Create graph
-param, g0 = create_graph(param, width, height, type = "map")
+g0 = create_graph(param, width, height, type = "map")
 
 # Set fundamentals
 g0[:Zjn] = ones(g0[:J], 1) .* 1e-7  # matrix of productivity (not 0 to avoid numerical glitches)

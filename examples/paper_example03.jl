@@ -48,7 +48,7 @@ results[1] = optimal_network(param, graph)
 
 # Nonconvex
 param[:gamma] = 2
-results[2] = optimal_network(graph, I0 = results[1][:Ijk])
+results[2] = optimal_network(param, graph, I0 = results[1][:Ijk])
 
 # Plot results
 
@@ -59,7 +59,8 @@ for j in 1:2
     # Initialize an empty array to hold the subplots
     plots = Vector{Any}(undef, (1 + param[:N])) 
     # Plot network
-    plots[1] = plot_graph(graph, results[j][:Ijk], node_shades = results[j][:Lj], node_sizes = results[j][:Lj], node_sizes_scale = 40)
+    plots[1] = plot_graph(graph, results[j][:Ijk], node_shades = results[j][:Lj], 
+                          node_sizes = results[j][:Lj], node_sizes_scale = 40)
     title!(plots[1], "(a) Transport Network")
     # Plot goods flows
     for i in 1:param[:N]

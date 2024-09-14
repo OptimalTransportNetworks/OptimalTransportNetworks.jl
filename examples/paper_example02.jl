@@ -46,7 +46,7 @@ param[:gamma] = 2
 results[2] = optimal_network(param, graph)
 
 # Nonconvex - annealing
-results[3] = annealing(graph, results[2][:Ijk], perturbation_method = "rebranching")
+results[3] = annealing(param, graph, results[2][:Ijk], perturbation_method = "rebranching")
 
 welfare_increase = (results[3][:welfare] / results[2][:welfare]) ^ (1 / (param[:alpha] * (1 - param[:rho]))) # compute welfare increase in consumption equivalent
 

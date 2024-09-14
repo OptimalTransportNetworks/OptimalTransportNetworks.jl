@@ -50,7 +50,7 @@ graph[:Lj][graph[:Lj] .== 0] .= 1e-6
     # second, in the nonconvex case (gamma>beta)
     param[:gamma] = 2 # change only gamma, keep other parameters
     res[2] = optimal_network(param, graph) # optimize by iterating on FOCs
-    res[3] = annealing(graph, res[2][:Ijk]) # improve with annealing, starting from previous result
+    res[3] = annealing(param, graph, res[2][:Ijk]) # improve with annealing, starting from previous result
 end
 
 # ==========
