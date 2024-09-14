@@ -43,7 +43,6 @@ OptimalTransportNetworks.get_model
 ```
 
 <!-- ```@autodocs
-<!-- ```@autodocs
 Modules = [OptimalTransportNetworks]
 Public = false
 Private = true
