@@ -16,12 +16,6 @@ Order   = [:function]
 
 # Exported Functions
 
-```@autodocs
-Modules = [OptimalTransportNetworks]
-Private = false
-Order = [:function]
-```
-
 ```@docs
 init_parameters
 create_graph
