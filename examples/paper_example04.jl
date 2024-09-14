@@ -3,38 +3,38 @@ using Random
 using Plots
 
 # Initialize parameters
-param = init_parameters(K = 100, labor_mobility = false)
+param = init_parameters(K = 100, sigma = 2, rho = 0, labor_mobility = false)
 width, height = 13, 13
 
 # Create graph
-param, g0 = create_graph(param, width, height, type = "map")
+g0 = create_graph(param, width, height, type = "map")
 
 # Set fundamentals
-param[:Zjn] = ones(param[:J], 1) .* 1e-7  # matrix of productivity (not 0 to avoid numerical glitches)
-param[:Lj] = ones(param[:J]) .* 1e-7  # matrix of population
+g0[:Zjn] = ones(g0[:J], 1) .* 1e-7  # matrix of productivity (not 0 to avoid numerical glitches)
+g0[:Lj] = ones(g0[:J]) .* 1e-7  # matrix of population
 
 Ni = find_node(g0, ceil(width/2), ceil(height/2)) # center
-param[:Zjn][Ni] = 1 # more productive node
-param[:Lj][Ni] = 1 # more productive node
+g0[:Zjn][Ni] = 1 # more productive node
+g0[:Lj][Ni] = 1 # more productive node
 
-Random.seed!(10) # use 5, 8, 10 or 11
+Random.seed!(11) # use 5, 8, 10 or 11
 nb_cities = 20 # draw a number of random cities in space
 for i in 1:nb_cities-1
     newdraw = false
     while newdraw == false
-        j = round(Int, 1 + rand() * (param[:J] - 1))
-        if param[:Lj][j] <= 1e-7
+        j = round(Int, 1 + rand() * (g0[:J] - 1))
+        if g0[:Lj][j] <= 1e-7
             newdraw = true
-            param[:Lj][j] = 1
+            g0[:Lj][j] = 1
         end
     end
 end
 
-param[:hj] = param[:Hj] ./ param[:Lj]
-param[:hj][param[:Lj] .== 1e-7] .= 1  # catch errors in places with infinite housing per capita
+g0[:hj] = g0[:Hj] ./ g0[:Lj]
+g0[:hj][g0[:Lj] .== 1e-7] .= 1  # catch errors in places with infinite housing per capita
 
 # Draw geography
-z = zeros(param[:J]) # altitude of each node
+z = zeros(g0[:J]) # altitude of each node
 geographies = Dict()
 geographies[:blank] = (z = z, obstacles = nothing)
 
@@ -113,11 +113,13 @@ plots = Vector{Any}(undef, length(simulation))
 i = 0
 for s in simulation
     i += 1
+    sizes = 2 .* results[Symbol(s)][:cj] .* (g0[:Lj] .> 1e-6) / maximum(results[Symbol(s)][:cj])
+    shades = results[Symbol(s)][:cj] .* (g0[:Lj] .> 1e-6) / maximum(results[Symbol(s)][:cj])
     plots[i] = plot_graph(g0, results[Symbol(s)][:Ijk], 
                           geography = geographies[Symbol(s)], obstacles = obstacles[i] == "on",
                           mesh = true, mesh_transparency = 0.2,
-                          node_sizes = results[Symbol(s)][:cj] .* (param[:Lj] .> 1e-7), 
-                          node_shades = param[:Zjn], node_color = :seismic,
+                          node_sizes = sizes, node_shades = shades, 
+                          node_color = :seismic,
                           edge_min_thickness = 1, edge_max_thickness = 4)
     title!(plots[i], "Geography $(s)")
 end

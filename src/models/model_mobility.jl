@@ -10,7 +10,7 @@ function model_mobility(optimizer, auxdata)
     Apos = auxdata.edges.Apos
     Aneg = auxdata.edges.Aneg
     psigma = (param.sigma - 1) / param.sigma
-    Hj = param.Hj
+    Hj = graph.Hj
 
     # Model
     model = Model(optimizer)
@@ -37,9 +37,9 @@ function model_mobility(optimizer, auxdata)
     end
 
     # balanced flow constraints
-    # Yjn = @expression(model, param.Zjn .* Ljn .^ param.a) # Same thing
-    @expression(model, Yjn[j=1:graph.J, n=1:param.N], param.Zjn[j, n] * Ljn[j, n]^param.a)
-    @constraint(model, Pjn[j in 1:param.J, n in 1:param.N],
+    # Yjn = @expression(model, graph.Zjn .* Ljn .^ param.a) # Same thing
+    @expression(model, Yjn[j=1:graph.J, n=1:param.N], graph.Zjn[j, n] * Ljn[j, n]^param.a)
+    @constraint(model, Pjn[j in 1:graph.J, n in 1:param.N],
         Cjn[j, n] + sum(A[j, i] * Qin[i, n] for i in 1:graph.ndeg) -
         Yjn[j, n] + sum(
             ifelse(Qin[i, n] > 0, Apos[j, i], Aneg[j, i]) *
@@ -71,7 +71,7 @@ function recover_allocation_mobility(model, auxdata)
     results[:Ljn] = value.(model_dict[:Ljn])
     results[:Lj] = value.(model_dict[:Lj])
     results[:cj] = ifelse.(results[:Lj] .== 0, 0.0, results[:Cj] ./ results[:Lj])
-    results[:hj] = ifelse.(results[:Lj] .== 0, 0.0, param.Hj ./ results[:Lj])
+    results[:hj] = ifelse.(results[:Lj] .== 0, 0.0, graph.Hj ./ results[:Lj])
     results[:uj] = param.u.(results[:cj], results[:hj])
     # Prices
     results[:Pjn] = shadow_price.(model_dict[:Pjn])

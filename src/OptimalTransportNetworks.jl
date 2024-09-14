@@ -22,7 +22,8 @@ Fajgelbaum, P. D., & Schaal, E. (2020). Optimal transport networks in spatial eq
 
 The library is based on the JuMP modeling framework for mathematical optimization in Julia, and roughly follows the 
 MATLAB OptimalTransportNetworkToolbox (v1.0.4b) provided by the authors. Compared to MATLAB, the Julia library presents
-a simplified interface and only exports key functions, while retaining full flexibility. 
+a simplified interface. Notably, the `graph` object contains both the graph structure and all data parameterizing 
+the network, whereas the `param` object only contains (non-spatial) model parameters.
 
 # Exported Functions
 
@@ -51,15 +52,15 @@ a simplified interface and only exports key functions, while retaining full flex
 ```julia
 # Convex case
 param = init_parameters(K = 10)
-param, graph = create_graph(param)
-param[:Zjn][61] = 10.0
+graph = create_graph(param)
+graph[:Zjn][61] = 10.0
 results = optimal_network(param, graph)
 plot_graph(graph, results[:Ijk])
 
 # Nonconvex case, disabling automatic annealing
-param = init_parameters(K = 10, annealing = false, gamma = 2)
-param, graph = create_graph(param)
-param[:Zjn][61] = 10.0
+param = init_parameters(K = 10, gamma = 2, annealing = false)
+graph = create_graph(param)
+graph[:Zjn][61] = 10.0
 results = optimal_network(param, graph)
 
 # Run annealing

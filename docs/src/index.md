@@ -37,7 +37,7 @@ import MathOptInterface as MOI
 import MathOptSymbolicAD
 
 param[:model_attr] = Dict(:backend => (MOI.AutomaticDifferentiationBackend(), 
-                                        MathOptSymbolicAD.DefaultBackend())) 
+                                       MathOptSymbolicAD.DefaultBackend())) 
                                 # Or:  MathOptSymbolicAD.ThreadedBackend()
 ```
 
@@ -45,7 +45,7 @@ param[:model_attr] = Dict(:backend => (MOI.AutomaticDifferentiationBackend(),
 
 ```julia
 param[:optimizer_attr] = Dict(:hsllib => "/usr/local/lib/libhsl.dylib", # Adjust path
-                                :linear_solver => "ma57") # Use ma57, ma86 or ma97
+                              :linear_solver => "ma57") # Use ma57, ma86 or ma97
 ```
 
 The [Ipopt.jl README](https://github.com/jump-dev/Ipopt.jl?tab=readme-ov-file#linear-solvers) suggests to use the larger LibHSL package for which there exists a Julia module and proceed similarly. In addition, users may try an [optimized BLAS](https://github.com/jump-dev/Ipopt.jl?tab=readme-ov-file#blas-and-lapack) and see if it yields significant performance gains (and let me know if it does). 

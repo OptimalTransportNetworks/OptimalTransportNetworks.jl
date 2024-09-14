@@ -10,7 +10,7 @@ function model_fixed(optimizer, auxdata)
     Apos = auxdata.edges.Apos
     Aneg = auxdata.edges.Aneg
     psigma = (param.sigma - 1) / param.sigma
-    Lj = param.Lj
+    Lj = graph.Lj
 
     # Model
     model = Model(optimizer)
@@ -27,15 +27,15 @@ function model_fixed(optimizer, auxdata)
 
     # Defining Utility Funcion: from Cjn + parameters (by operator overloading)
     @expression(model, Cj, sum(Cjn .^ psigma, dims=2) .^ (1 / psigma))
-    @expression(model, cj, ifelse.(param.Lj .== 0, 0.0, Cj ./ param.Lj))
-    @expression(model, uj, ((cj / param.alpha) .^ param.alpha .* (param.hj / (1-param.alpha)) .^ (1-param.alpha)) .^ (1-param.rho) / (1-param.rho))
-    @expression(model, U, sum(param.omegaj .* param.Lj .* uj))
+    @expression(model, cj, ifelse.(graph.Lj .== 0, 0.0, Cj ./ graph.Lj))
+    @expression(model, uj, ((cj / param.alpha) .^ param.alpha .* (graph.hj / (1-param.alpha)) .^ (1-param.alpha)) .^ (1-param.rho) / (1-param.rho))
+    @expression(model, U, sum(graph.omegaj .* graph.Lj .* uj))
     @objective(model, Max, U)
 
     # Define Yjn (production) as expression
-    @expression(model, Yjn[j=1:graph.J, n=1:param.N], param.Zjn[j, n] * Ljn[j, n]^param.a)
+    @expression(model, Yjn[j=1:graph.J, n=1:param.N], graph.Zjn[j, n] * Ljn[j, n]^param.a)
     # Balanced flow constraints
-    @constraint(model, Pjn[j in 1:param.J, n in 1:param.N],
+    @constraint(model, Pjn[j in 1:graph.J, n in 1:param.N],
         Cjn[j, n] + sum(A[j, i] * Qin[i, n] for i in 1:graph.ndeg) -
         Yjn[j, n] + sum(
             ifelse(Qin[i, n] > 0, Apos[j, i], Aneg[j, i]) *
@@ -62,9 +62,9 @@ function recover_allocation_fixed(model, auxdata)
     results[:Cjn] = value.(model_dict[:Cjn])
     results[:Cj] = dropdims(value.(model_dict[:Cj]), dims = 2)
     results[:Ljn] = value.(model_dict[:Ljn])
-    results[:Lj] = param.Lj
+    results[:Lj] = graph.Lj
     results[:cj] = dropdims(value.(model_dict[:cj]), dims = 2)
-    results[:hj] = ifelse.(results[:Lj] .== 0, 0.0, param.Hj ./ results[:Lj])
+    results[:hj] = ifelse.(results[:Lj] .== 0, 0.0, graph.Hj ./ results[:Lj])
     results[:uj] = dropdims(value.(model_dict[:uj]), dims = 2)
     # Prices
     results[:Pjn] = shadow_price.(model_dict[:Pjn])
