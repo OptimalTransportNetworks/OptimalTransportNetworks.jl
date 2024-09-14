@@ -23,5 +23,6 @@ makedocs(
 deploydocs(
     repo = "github.com/SebKrantz/OptimalTransportNetworks.jl.git",
     devbranch = "main",
+    tag = "stable",
     push_preview = true,
 )
