@@ -1,4 +1,18 @@
 
+"""
+    dict_to_namedtuple(dict)
+
+Convert a dictionary to a NamedTuple.
+
+If the input is already a NamedTuple, it is returned unchanged.
+Otherwise, it creates a new NamedTuple from the dictionary's keys and values.
+
+# Arguments
+- `dict`: A dictionary or NamedTuple to be converted.
+
+# Returns
+- A NamedTuple equivalent to the input dictionary.
+"""
 function dict_to_namedtuple(dict)
     if dict isa NamedTuple
         return dict
@@ -7,6 +21,20 @@ function dict_to_namedtuple(dict)
     end
 end
 
+"""
+    namedtuple_to_dict(namedtuple)
+
+Convert a NamedTuple to a dictionary.
+
+If the input is already a dictionary, it is returned unchanged.
+Otherwise, it creates a new dictionary from the NamedTuple's pairs.
+
+# Arguments
+- `namedtuple`: A NamedTuple or dictionary to be converted.
+
+# Returns
+- A dictionary equivalent to the input NamedTuple.
+"""
 function namedtuple_to_dict(namedtuple)
     if namedtuple isa Dict
         return namedtuple
@@ -31,11 +59,7 @@ function gen_network_flows(Qin, graph, N)
     return Qjkn
 end
 
-"""
-    kappa_extract(graph, kappa)
-
-Description: auxiliary function that converts kappa_jk into kappa_i
-"""
+# Description: auxiliary function that converts kappa_jk into kappa_i
 function kappa_extract(graph, kappa)
     kappa_ex = zeros(graph.ndeg)
     nodes = graph.nodes
@@ -92,6 +116,22 @@ function rowmult(A, v)
     return r
 end 
 
+"""
+    represent_edges(graph)
+
+Creates a NamedTuple providing detailed representation of the graph edges. 
+
+# Arguments
+- `graph`: NamedTuple that contains the underlying graph (created by `dict_to_namedtuple(create_graph())`)
+
+# Returns
+- A NamedTuple with the following fields:
+  - `A`: J x ndeg matrix where each column represents an edge. The value is 1 if the edge starts at node J, -1 if it ends at node J, and 0 otherwise.
+  - `Apos`: J x ndeg matrix where each column represents an edge. The value is the positive part of the edge flow.
+  - `Aneg`: J x ndeg matrix where each column represents an edge. The value is the negative part of the edge flow.
+  - `edge_start`: J x ndeg matrix where each column represents an edge. The value is the starting node of the edge.
+  - `edge_end`: J x ndeg matrix where each column represents an edge. The value is the ending node of the edge.
+"""
 function represent_edges(graph)
     # Create matrix A
     # Note: matrix A is of dimension J*ndeg and takes value 1 when node J is
@@ -127,13 +167,18 @@ end
 Creates the auxdata structure that contains all the auxiliary parameters for estimation
 
 # Arguments
-- `param`: structure that contains the model's parameters
-- `graph`: structure that contains the underlying graph (created by create_graph function)
-- `edges`: structure that contains the edges of the graph (created by represent_edges function)
-- `I`: provides the current JxJ symmetric matrix of infrastructure investment
+- `param`: NamedTuple that contains the model's parameters (created by `dict_to_namedtuple(init_parameters())`)
+- `graph`: NamedTuple that contains the underlying graph (created by `dict_to_namedtuple(create_graph())`)
+- `edges`: NamedTuple that contains the edges of the graph (created by `represent_edges()`)
+- `I`: J x J symmetric matrix of current infrastructure (investments)
 
-# Output
-- `auxdata`: structure auxdata to be used by IPOPT bundle.
+# Returns
+- A NamedTuple with the following fields:
+  - `param`: The input parameter NamedTuple.
+  - `graph`: The input graph NamedTuple.
+  - `edges`: The edges of the graph.
+  - `kappa`: The kappa matrix: I^gamma / delta_tau
+  - `kappa_ex`: The extracted kappa values (ndeg x 1)
 """
 function create_auxdata(param, graph, edges, I)
     # Make named tuples
@@ -161,13 +206,13 @@ end
 """
     get_model(auxdata)
 
-Construct the appropriate model based on the parameters and auxiliary data.
+Construct the appropriate JuMP model based on the parameters and auxiliary data.
 
 # Arguments
-- `auxdata`: Auxiliary data required for constructing the model.
+- `auxdata`: Auxiliary data required for constructing the model (created by `create_auxdata()`).
 
 # Returns
-- `model`: The constructed model.
+- `model`: The constructed JuMP model.
 - `recover_allocation`: A function to recover the allocation from the model solution.
 """
 function get_model(auxdata)
