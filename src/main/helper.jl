@@ -206,7 +206,7 @@ end
 """
     get_model(auxdata)
 
-Construct the appropriate JuMP model based on the parameters and auxiliary data.
+Construct the appropriate JuMP model based on the auxiliary data.
 
 # Arguments
 - `auxdata`: Auxiliary data required for constructing the model (created by `create_auxdata()`).
