@@ -119,7 +119,6 @@ for s in simulation
                           geography = geographies[Symbol(s)], obstacles = obstacles[i] == "on",
                           mesh = true, mesh_transparency = 0.2,
                           node_sizes = sizes, node_shades = shades, 
-                          node_color = :seismic,
                           edge_min_thickness = 1, edge_max_thickness = 4)
     title!(plots[i], "Geography $(s)")
 end
