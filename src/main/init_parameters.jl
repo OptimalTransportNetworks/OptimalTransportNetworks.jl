@@ -31,8 +31,8 @@ Returns a `param` dict with the model parameters. These are independent of the g
 - `optimizer = Ipopt.Optimizer`: Optimizer to be used
 - `optimizer_attr::Dict`: Dict of attributes passed to the optimizer (e.g. `Dict(:tol => 1e-5)`)
 - `model_attr::Dict`: Dict of tuples (length 2) passed to the model (e.g. `Dict(:backend => (MOI.AutomaticDifferentiationBackend(), MathOptSymbolicAD.DefaultBackend()))` to use Symbolic AD)
-- `model::Function`: For custom models => a function that taks an optimizer and an 'auxdata' structure as created by create_auxdata() as input and returns a fully parameterized JuMP model
-- `recover_allocation::Function`: For custom models => a function that takes a solution and 'auxdata' structure as input and returns the allocation variables. In particular, it should return a dict with symbol keys returning at least objects :welfare => scalar welfare measure, :Pjn => prices, :PCj => aggregate condumption, and :Qjkn => flows. 
+- `model::Function`: For custom models => a function that taks an optimizer and an 'auxdata' structure as created by `create_auxdata()` as input and returns a fully parameterized JuMP model
+- `recover_allocation::Function`: For custom models => a function that takes a solved JuMP model and 'auxdata' structure as input and returns the allocation variables. In particular, it should return a dict with symbol keys returning at least objects :welfare => scalar welfare measure, :Pjn => prices, :PCj => aggregate consumption, and :Qjkn => flows. 
 
 # Examples
 ```julia
@@ -48,6 +48,7 @@ function init_parameters(; alpha = 0.5, beta = 1, gamma = 1, K = 1, sigma = 5, r
 
     if !isempty(kwargs)
         for (key, value) in kwargs
+            println("Non-standard parameter '$(key)' added")
             param[key] = value
         end
     end
