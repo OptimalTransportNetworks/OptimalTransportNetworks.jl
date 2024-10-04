@@ -36,16 +36,18 @@ function model_fixed_duality(optimizer, auxdata)
     @variable(model, kappa_ex[i = 1:graph.ndeg] in Parameter(i), container=Array)
     set_parameter_value.(kappa_ex, kappa_ex_init)
 
-    # Calculate consumption cj
+    # Calculate price of consumption bundle PCj
+    @expression(model, PCj[j=1:graph.J], sum(Pjn[j, n]^(1-sigma) for n=1:param.N)^(1/(1-sigma)))
+    # Calculate paer-capita consumption cj
     @expression(model, cj[j=1:graph.J],
-        alpha * (sum(Pjn[j, n]^(1-sigma) for n=1:param.N)^(1/(1-sigma)) / omegaj[j])^(-1/(1+alpha*(rho-1))) * hj1malpha[j]^(-((rho-1)/(1+alpha*(rho-1))))
+        alpha * (PCj[j] / omegaj[j])^(-1/(1+alpha*(rho-1))) * hj1malpha[j]^(-((rho-1)/(1+alpha*(rho-1))))
     )
     # Utility per worker in location j
     @expression(model, uj[j=1:graph.J], ((cj[j]/alpha)^alpha * hj1malpha[j])^(1-rho)/(1-rho))
     # zeta (auxiliarly variable)
     zeta = @expression(model, [j=1:graph.J], omegaj[j] * uj[j] * (1-rho) * alpha / cj[j])
-    # Calculate consumption c(j,n)
-    @expression(model, cjn[j=1:graph.J, n=1:param.N], (Pjn[j, n] / zeta[j])^(-sigma) * cj[j])
+    # Calculate consumption C(j,n)
+    @expression(model, Cjn[j=1:graph.J, n=1:param.N], (Pjn[j, n] / zeta[j])^(-sigma) * cj[j] * Lj[j])
 
     # No cross-good congestion: Eq. 11 in the main paper
     # Calculate Q, Qin_direct and Qin_indirect
@@ -56,10 +58,10 @@ function model_fixed_duality(optimizer, auxdata)
     @expression(model, Qin_indirect[i=1:graph.ndeg, n=1:param.N], # Flow in edge opposite direction
         max(1/(1+beta) * kappa_ex[i] * (Pjn[es[i],n]/Pjn[ee[i],n] - 1), 0)^(1/beta)
     )
-    # -> Seems here we let the size of the flow decide the direction NOT NEEDED!
-    @expression(model, Qin[i=1:graph.ndeg, n=1:param.N],
-        ifelse(Qin_direct[i,n] > Qin_indirect[i,n], Qin_direct[i,n], -Qin_indirect[i,n])
-    )
+    # # -> Seems here we let the size of the flow decide the direction NOT NEEDED!
+    # @expression(model, Qin[i=1:graph.ndeg, n=1:param.N],
+    #     ifelse(Qin_direct[i,n] > Qin_indirect[i,n], Qin_direct[i,n], -Qin_indirect[i,n])
+    # )
     # Calculate labor allocation Ljn
     PZ = @expression(model, (Pjn .* Zjn) .^ (1/(1-a)))
     @expression(model, Ljn[j=1:graph.J, n=1:param.N],
@@ -69,7 +71,7 @@ function model_fixed_duality(optimizer, auxdata)
     @expression(model, Yjn, Zjn .* Ljn .^ a)
     # Create flow constraint expression
     @expression(model, cons[j=1:graph.J, n=1:param.N],
-        cjn[j,n] * Lj[j] - Yjn[j,n] + sum(A[j,i] * (Qin_direct[i,n] - Qin_indirect[i,n]) + 
+        Cjn[j,n] - Yjn[j,n] + sum(A[j,i] * (Qin_direct[i,n] - Qin_indirect[i,n]) + 
             (Apos[j,i] * Qin_direct[i,n]^(1+beta) + Aneg[j,i] * Qin_indirect[i,n]^(1+beta)) / kappa_ex[i] for i=1:graph.ndeg)
         # sum(A[j,i] * Qin_direct[i,n] for i=1:graph.ndeg) -
         # sum(A[j,i] * Qin_indirect[i,n] for i=1:graph.ndeg) +
@@ -92,7 +94,7 @@ function recover_allocation_fixed_duality(model, auxdata)
     results[:welfare] = value(model_dict[:U])
     results[:Yjn] = value.(model_dict[:Yjn])
     results[:Yj] = dropdims(sum(results[:Yjn], dims=2), dims = 2)
-    results[:Cjn] = value.(model_dict[:cjn]) .* repeat(graph.Lj, 1, param.N)
+    results[:Cjn] = value.(model_dict[:Cjn])
     results[:cj] = value.(model_dict[:cj])
     results[:Cj] = results[:cj] .* graph.Lj
     results[:Ljn] = value.(model_dict[:Ljn])
@@ -101,9 +103,11 @@ function recover_allocation_fixed_duality(model, auxdata)
     results[:uj] = value.(model_dict[:uj]) # param.u.(results[:cj], results[:hj])
     # Prices
     results[:Pjn] = value.(model_dict[:Pjn])
-    results[:PCj] = dropdims(sum(results[:Pjn] .^ (1-param.sigma), dims=2), dims = 2) .^ (1/(1-param.sigma))    
+    results[:PCj] = value.(model_dict[:PCj])  
     # Network flows
-    results[:Qin] = value.(model_dict[:Qin])
+    Qin_direct = value.(model_dict[:Qin_direct])
+    Qin_indirect = value.(model_dict[:Qin_indirect])
+    results[:Qin] = ifelse.(Qin_direct .> Qin_indirect, Qin_direct, -Qin_indirect)
     results[:Qjkn] = gen_network_flows(results[:Qin], graph, param.N)
     return results
 end
