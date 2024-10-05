@@ -243,7 +243,10 @@ function get_model(auxdata)
             recover_allocation = recover_allocation_partial_mobility_cgc
         end
     elseif param.mobility == 0 && param.cong
-        if all(sum(graph.Zjn .> 0, dims = 2) .<= 1) # Armington case
+        if param.beta <= 1 && param.a < 1 && param.duality
+            model = model_fixed_duality_cgc(optimizer, auxdata)
+            recover_allocation = recover_allocation_fixed_duality_cgc
+        elseif all(sum(graph.Zjn .> 0, dims = 2) .<= 1) # Armington case
             model = model_fixed_cgc_armington(optimizer, auxdata)
             recover_allocation = recover_allocation_fixed_cgc_armington
         else
@@ -267,12 +270,12 @@ function get_model(auxdata)
             recover_allocation = recover_allocation_partial_mobility    
         end
     elseif param.mobility == 0 && !param.cong
-        if all(sum(graph.Zjn .> 0, dims = 2) .<= 1) # Armington case
-            model = model_fixed_armington(optimizer, auxdata)
-            recover_allocation = recover_allocation_fixed_armington
-        elseif param.beta <= 1 && param.a < 1 && param.duality
+        if param.beta <= 1 && param.a < 1 && param.duality
             model = model_fixed_duality(optimizer, auxdata)
             recover_allocation = recover_allocation_fixed_duality
+        elseif all(sum(graph.Zjn .> 0, dims = 2) .<= 1) # Armington case
+            model = model_fixed_armington(optimizer, auxdata)
+            recover_allocation = recover_allocation_fixed_armington
         else
             model = model_fixed(optimizer, auxdata)
             recover_allocation = recover_allocation_fixed
