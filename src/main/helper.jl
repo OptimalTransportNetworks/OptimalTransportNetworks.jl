@@ -39,7 +39,8 @@ function namedtuple_to_dict(namedtuple)
     if namedtuple isa Dict
         return namedtuple
     else
-        return Dict(pairs(namedtuple))
+        # return Dict(Symbol(k) => v for (k, v) in pairs(namedtuple))
+        return Dict(pairs(namedtuple)) # Can be of fixed type
     end
 end
 
@@ -271,8 +272,8 @@ function get_model(auxdata)
         end
     elseif param.mobility == 0 && !param.cong
         if param.beta <= 1 && param.a < 1 && param.duality
-            model = model_fixed_duality(optimizer, auxdata)
-            recover_allocation = recover_allocation_fixed_duality
+            model = nothing # model_fixed_duality(optimizer, auxdata)
+            recover_allocation = solve_allocation_by_duality # recover_allocation_fixed_duality
         elseif all(sum(graph.Zjn .> 0, dims = 2) .<= 1) # Armington case
             model = model_fixed_armington(optimizer, auxdata)
             recover_allocation = recover_allocation_fixed_armington
@@ -286,26 +287,27 @@ function get_model(auxdata)
 
     # --------------
     # CUSTOMIZATIONS
-
-    if haskey(param, :optimizer_attr)
-        for (key, value) in param.optimizer_attr
-            set_optimizer_attribute(model, String(key), value)
-        end
-    end
-
-    if haskey(param, :model_attr) 
-        for value in values(param.model_attr)
-            if !(value isa Tuple)  
-                error("model_attr must be a dict of tuples.")
+    if model !== nothing
+        if haskey(param, :optimizer_attr)
+            for (key, value) in param.optimizer_attr
+                set_optimizer_attribute(model, String(key), value)
             end
-            set_optimizer_attribute(model, value[1], value[2])
         end
+
+        if haskey(param, :model_attr)
+            for value in values(param.model_attr)
+                if !(value isa Tuple)  
+                    error("model_attr must be a dict of tuples.")
+                end
+                set_optimizer_attribute(model, value[1], value[2])
+            end
+        end
+        # E.g.:
+        # set_attribute(model,
+        #    MOI.AutomaticDifferentiationBackend(),
+        #    MathOptSymbolicAD.DefaultBackend(),
+        # )
     end
-    # E.g.:
-    # set_attribute(model,
-    #    MOI.AutomaticDifferentiationBackend(),
-    #    MathOptSymbolicAD.DefaultBackend(),
-    # )
     return model, recover_allocation
 end
 
