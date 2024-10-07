@@ -20,7 +20,8 @@ function solve_allocation_by_duality(x0, auxdata, verbose=true)
 
     # Initialize x0 if not provided
     if isempty(x0)
-        x0 = vec(range(1, 2, length=graph.J) * range(1, 2, length=param.N)')
+        RN = param.N > 1 ? range(1, 2, length=param.N)' : 1
+        x0 = vec(range(1, 2, length=graph.J) * RN)
     end
 
     obj = (x) -> objective_duality(x, auxdata)
