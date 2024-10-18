@@ -106,7 +106,7 @@ function annealing(param, graph, I0; kwargs...)
         model, recover_allocation = get_model(auxdata)
     end
 
-    if !options.verbose
+    if !options.verbose && model !== nothing
         set_silent(model)
     end
 
@@ -139,8 +139,12 @@ function annealing(param, graph, I0; kwargs...)
 
     # rng(0) # set the seed of random number generator for replicability
     acceptance_str = ["rejected", "accepted"]
-    all_vars = all_variables_except_kappa_ex(model)
-    start_values = start_value.(all_vars)
+    if model === nothing
+        start_values = []
+    else
+        all_vars = all_variables_except_kappa_ex(model)
+        start_values = start_value.(all_vars)
+    end
     while T > T_min
         accepted = false
 
@@ -161,26 +165,40 @@ function annealing(param, graph, I0; kwargs...)
         end
 
         k = 0
-        set_start_value.(all_vars, start_values) # reset start values
+        # reset start values
+        if model === nothing
+            start_values = []
+        else
+            set_start_value.(all_vars, start_values) 
+        end
         while k <= num_deepening - 1
 
             auxdata = create_auxdata(param, graph, edges, I1)
-            set_parameter_value.(model.obj_dict[:kappa_ex], auxdata.kappa_ex)
-
-            optimize!(model)
-
-            results = recover_allocation(model, auxdata)
-            score = results[:welfare]
-
-            if (!is_solved_and_feasible(model, allow_almost = true) || isnan(score)) && param.verbose # optimization failed
-                println("optimization failed! k=$(k), return flag=$(termination_status(model))")
-                k = num_deepening - 1
-                score = -Inf
-            end
-
-            if param.warm_start
-                vars_solution = value.(all_vars)
-                set_start_value.(all_vars, vars_solution)
+            if model === nothing
+                results, status, start_values = recover_allocation(start_values, auxdata, options.verbose)
+                score = results[:welfare]
+                if (!any(status .== [0, 1]) || isnan(score)) && param.verbose # optimization failed
+                    println("optimization failed! k=$(k), return flag=$(status)")
+                    k = num_deepening - 1
+                    score = -Inf
+                end
+                if !param.warm_start
+                    start_values = []
+                end
+            else
+                set_parameter_value.(model.obj_dict[:kappa_ex], auxdata.kappa_ex)
+                optimize!(model)
+                results = recover_allocation(model, auxdata)
+                score = results[:welfare]
+                if (!is_solved_and_feasible(model, allow_almost = true) || isnan(score)) && param.verbose # optimization failed
+                    println("optimization failed! k=$(k), return flag=$(termination_status(model))")
+                    k = num_deepening - 1
+                    score = -Inf
+                end
+                if param.warm_start
+                    vars_solution = value.(all_vars)
+                    set_start_value.(all_vars, vars_solution)
+                end
             end
 
             if score > best_score
@@ -242,18 +260,31 @@ function annealing(param, graph, I0; kwargs...)
     # Last deepening before returning found optimum
     has_converged = false
     I0 = best_I
-    set_start_value.(all_vars, start_values) # reset start values
+    # reset start values
+    if model === nothing
+        start_values = []
+    else
+        set_start_value.(all_vars, start_values) 
+    end
     while !has_converged && counter < 100
         # Update auxdata
         auxdata = create_auxdata(param, graph, edges, I0)
-        set_parameter_value.(model.obj_dict[:kappa_ex], auxdata.kappa_ex)
 
         # Solve allocation
-        optimize!(model)
-        if !is_solved_and_feasible(model, allow_almost = true)
-            println("Solver returned with error code $(termination_status(model)).")
+        if model === nothing
+            results, status, start_values = recover_allocation(start_values, auxdata, options.verbose)
+            if !any(status .== [0, 1]) 
+                println("Solver returned with error code $(status).")
+            end
+        else
+            set_parameter_value.(model.obj_dict[:kappa_ex], auxdata.kappa_ex)
+            optimize!(model)
+            if !is_solved_and_feasible(model, allow_almost = true)
+                println("Solver returned with error code $(termination_status(model)).")
+            end
+            results = recover_allocation(model, auxdata)
         end
-        results = recover_allocation(model, auxdata)
+
         score = results[:welfare]
 
         # # Fajgelbaum & Schaal always use initial values here. 
