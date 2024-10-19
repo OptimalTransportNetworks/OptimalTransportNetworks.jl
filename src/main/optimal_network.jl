@@ -108,7 +108,7 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
 
             if solve_allocation
                 if status != 0
-                    warning("Solver returned with error code $(status)).")
+                    @warn "Solver returned with error code $(status))."
                 end
                 return results
             end
@@ -137,7 +137,7 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
 
             if solve_allocation
                 if !is_solved_and_feasible(model, allow_almost = true)
-                    warning("Solver returned with error code $(termination_status(model)).")
+                    @warn "Solver returned with error code $(termination_status(model))."
                 end
                 return results
             end
