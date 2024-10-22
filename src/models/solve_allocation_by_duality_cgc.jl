@@ -300,6 +300,7 @@ function recover_allocation_duality_cgc(x, auxdata)
     m = param.m
     nu = param.nu
     hj1malpha = (graph.hj / (1-param.alpha)) .^ (1-param.alpha)
+    nadj = .!graph.adjacency
 
     # Extract price vectors
     Pjn = reshape(x, (graph.J, param.N))
@@ -325,30 +326,28 @@ function recover_allocation_duality_cgc(x, auxdata)
         
     # Calculate the aggregate flows Qjk
     Qjk = zeros(graph.J, graph.J)
-    temp = ((1 + param.beta) * PDj) .^ (-nu/(nu-1))
+    temp = (kappa ./ ((1 + param.beta) * PDj)) .^ (nu/(nu-1))
+    temp[nadj] .= 0
     for n in 1:param.N
         Lambda = repeat(Pjn[:, n], 1, graph.J)
         LL = Lambda' - Lambda # P^n_k - P^n_j
-        LL[.!graph.adjacency] .= 0
-        Qjk += m[n] * ((LL .* kappa) ./ m[n]) .^ (nu/(nu-1))
+        Qjk += m[n] * (LL / m[n]) .^ (nu/(nu-1))
     end
     Qjk = (Qjk .* temp) .^ (nu-1)/(nu*param.beta)
-    Qjk[.!graph.adjacency] .= 0
-
 
     # Calculate the flows Qjkn
     Qjkn = zeros(graph.J, graph.J, param.N)
-    temp = (1 + param.beta) * PDj .* Qjk .^ (1+param.beta-nu)
+    temp = kappa ./ ((1 + param.beta) * PDj .* Qjk .^ (1+param.beta-nu))
+    temp[nadj] .= 0
     for n in 1:param.N
         Lambda = repeat(Pjn[:, n], 1, graph.J)
         LL = Lambda' - Lambda # P^n_k - P^n_j
-        LL[.!graph.adjacency] .= 0
-        Qjkn[:, :, n] = ((LL .* kappa) ./ (m[n] * temp)) .^ (1/(nu-1))
+        Qjkn[:, :, n] = ((LL .* temp) / m[n]) .^ (1/(nu-1))
     end
 
     # Now calculating consumption bundle pre-transport cost
     temp = Qjk .^ (1+param.beta) ./ kappa
-    temp[.!graph.adjacency] .= 0
+    temp[nadj] .= 0
     Dj = Cj + sum(temp, dims = 2)
     Djn = Dj .* (Pjn ./ PDj) .^ (-param.sigma) 
     
