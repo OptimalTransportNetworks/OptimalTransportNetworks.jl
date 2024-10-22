@@ -32,8 +32,10 @@ function solve_allocation_by_duality(x0, auxdata, verbose=true)
     n = graph.J * param.N
 
     # Get the Hessian structure
-    auxdata = (auxdata..., hess = hessian_structure_duality(auxdata))
-    nnz_hess = length(auxdata.hess[1])
+    hess_str = hessian_structure_duality(auxdata)
+    auxdata = (auxdata..., hess = hess_str, hess_ind = CartesianIndex.(hess_str[1], hess_str[2]))
+    nnz_hess = length(hess_str[1])
+
 
     prob = Ipopt.CreateIpoptProblem(
         n,
@@ -170,52 +172,58 @@ function hessian_duality(
         mat_P = repeat(P, param.N, param.N * graph.J)
 
         # Create masks
+        # This lets different products in the same location relate
         Iij = kron(ones(param.N, param.N), I(graph.J))
+        # This is adjacency, but only for the same product (n == n')
         Inm = kron(I(param.N), graph.adjacency)
 
         # Compute terms for Hessian
         termA = -param.sigma * (repeat(P, param.N) .^ param.sigma .* x .^ (-(param.sigma + 1)) .* repeat(res.Cj, param.N))
+
+        part1 = Iij .* Lambda .^ (-param.sigma) .* Lambda' .^ (-param.sigma) .* mat_P .^ (2 * param.sigma)
+
+        termB = param.sigma * part1 ./ mat_P .* repeat(res.Cj, param.N, graph.J * param.N)
         
-        termB = param.sigma * Iij .* Lambda .^ (-param.sigma) .* Lambda' .^ (-param.sigma) .* 
-                mat_P .^ (2 * param.sigma - 1) .* repeat(res.Cj, param.N, graph.J * param.N)
-        
-        termC = Iij .* Lambda .^ (-param.sigma) .* Lambda' .^ (-param.sigma) .* mat_P .^ (2 * param.sigma) .* 
-                repeat(graph.Lj ./ (graph.omegaj .* param.usecond.(res.cj, graph.hj)), param.N, graph.J * param.N)
+        termC = part1 .* repeat(graph.Lj ./ (graph.omegaj .* param.usecond.(res.cj, graph.hj)), param.N, graph.J * param.N)
         
         diff = Lambda' - Lambda
         mat_kappa = repeat(kappa, param.N, param.N)
+        part1 = 1 / (param.beta * (1 + param.beta)^(1 / param.beta)) * Inm .* mat_kappa .^ (1 / param.beta)
+        abs_diff_1betam1 = abs.(diff) .^ (1 / param.beta - 1)
+        diffpos = diff .> 0
+        diffneg = diff .< 0
         
-        termD = 1 / (param.beta * (1 + param.beta)^(1 / param.beta)) * Inm .* mat_kappa .^ (1 / param.beta) .* 
-                abs.(diff) .^ (1 / param.beta - 1) .* 
-                ((diff .> 0) .* Lambda' ./ Lambda .^ (1 + 1 / param.beta) + 
-                (diff .< 0) .* Lambda ./ Lambda' .^ (1 + 1 / param.beta))
+        termD = part1 .* abs_diff_1betam1 .* 
+                (diffpos .* Lambda' ./ Lambda .^ (1 + 1 / param.beta) + 
+                 diffneg .* Lambda ./ Lambda' .^ (1 + 1 / param.beta))
         
-        termE = -1 / (param.beta * (1 + param.beta)^(1 / param.beta)) * Inm .* mat_kappa .^ (1 / param.beta) .* 
-                abs.(diff) .^ (1 / param.beta - 1) .* 
-                ((diff .> 0) .* Lambda' .^ 2 ./ Lambda .^ (2 + 1 / param.beta) + 
-                (diff .< 0) ./ Lambda' .^ (1 / param.beta))
+        termE = -part1 .* abs_diff_1betam1 .* 
+                (diffpos .* Lambda' .^ 2 ./ Lambda .^ (2 + 1 / param.beta) + 
+                 diffneg ./ Lambda' .^ (1 / param.beta))
         termE = sum(termE, dims=2)
 
         # Compute labor term
         if param.a == 1
             X = 0
         else
+            # This is Psi in your notes
             denom = sum((lambda .* graph.Zjn) .^ (1 / (1 - param.a)), dims=2)
-            Lambdaz = repeat(x .* graph.Zjn[:], 1, graph.J * param.N)
-            X_nondiag = param.a / (1 - param.a) * Iij .* repeat(graph.Zjn[:], 1, graph.J * param.N) .* 
-                        repeat(graph.Zjn[:]', graph.J * param.N) .* 
-                        repeat(graph.Lj .^ param.a ./ denom .^ (1 + param.a), param.N, graph.J * param.N) .* 
-                        Lambdaz .^ (param.a / (1 - param.a)) .* Lambdaz' .^ (param.a / (1 - param.a))
-            X_diag = -param.a / (1 - param.a) * repeat((graph.Lj ./ denom) .^ param.a, param.N) .* 
-                    graph.Zjn[:] ./ x .* (x .* graph.Zjn[:]) .^ (param.a / (1 - param.a))
-            X = X_nondiag + Diagonal(X_diag[:])
+            num = (x .* graph.Zjn[:]) .^ (1 / (1 - param.a))
+            # Non-diagonal elements: using 1-a in denominator because output is subtracted
+            X = param.a / (1 - param.a) * Iij .* (graph.Zjn[:] * graph.Zjn[:]') .* (num * num') .^ param.a .*    
+                repeat(graph.Lj .^ param.a ./ denom .^ (1 + param.a), param.N, graph.J * param.N) 
+            # The term that is multiplied to get the diagonal            
+            X_diag = (num - repeat(denom, param.N)) ./ num
+            # Adding the diagonal
+            @inbounds for i in 1:length(X_diag)
+                X[i, i] *= X_diag[i]
+            end
         end
         # Compute Hessian
         h = -obj_factor * (Diagonal(termA[:]) + termB + termC + termD + Diagonal(termE[:]) + X)
         
         # Return lower triangular part
-        r, c = auxdata.hess
-        values .= h[CartesianIndex.(r, c)]
+        values .= h[auxdata.hess_ind]
     end
     return
 end
@@ -227,6 +235,7 @@ function recover_allocation_duality(x, auxdata)
     omegaj = graph.omegaj
     kappa = auxdata.kappa
     Lj = graph.Lj
+    hj1malpha = (graph.hj / (1-param.alpha)) .^ (1-param.alpha)
 
     # Extract price vectors
     Pjn = reshape(x, (graph.J, param.N))
@@ -234,9 +243,8 @@ function recover_allocation_duality(x, auxdata)
 
     # Calculate labor allocation
     if param.a < 1
-        Ljn = ((Pjn .* graph.Zjn) .^ (1 / (1 - param.a))) ./ 
-              repeat(sum((Pjn .* graph.Zjn) .^ (1 / (1 - param.a)), dims=2), 1, param.N) .* 
-              repeat(Lj, 1, param.N)
+        temp = (Pjn .* graph.Zjn) .^ (1 / (1 - param.a))
+        Ljn = temp .* (Lj ./ sum(temp, dims=2))
         Ljn[graph.Zjn .== 0] .= 0
     else
         _, max_id = findmax(Pjn .* graph.Zjn, dims=2)
@@ -246,22 +254,24 @@ function recover_allocation_duality(x, auxdata)
     Yjn = graph.Zjn .* (Ljn .^ param.a)
 
     # Calculate consumption
-    cj = param.alpha * (sum(Pjn .^ (1 - param.sigma), dims=2) .^ (1 / (1 - param.sigma)) ./ omegaj) .^ 
+    cj = param.alpha * (PCj ./ omegaj) .^ 
          (-1 / (1 + param.alpha * (param.rho - 1))) .* 
-         (graph.hj / (1 - param.alpha)) .^ (-((1 - param.alpha) * (param.rho - 1) / (1 + param.alpha * (param.rho - 1))))
+         hj1malpha .^ (-(param.rho - 1)/(1 + param.alpha * (param.rho - 1)))
     
-    zeta = omegaj .* ((cj / param.alpha) .^ param.alpha .* (graph.hj / (1 - param.alpha)) .^ (1 - param.alpha)) .^ (-param.rho) .* 
-           ((cj / param.alpha) .^ (param.alpha - 1) .* (graph.hj / (1 - param.alpha)) .^ (1 - param.alpha))
+    # This is = PCj
+    zeta = omegaj .* ((cj / param.alpha) .^ param.alpha .* hj1malpha) .^ (-param.rho) .* 
+           ((cj / param.alpha) .^ (param.alpha - 1) .* hj1malpha)
     
-    cjn = (Pjn ./ repeat(zeta, 1, param.N)) .^ (-param.sigma) .* repeat(cj, 1, param.N)
+    cjn = (Pjn ./ zeta) .^ (-param.sigma) .* cj
     Cj = cj .* Lj
-    Cjn = cjn .* repeat(Lj, 1, param.N)
+    Cjn = cjn .* Lj
 
     # Calculate the flows Qjkn
     Qjkn = zeros(graph.J, graph.J, param.N)
     for n in 1:param.N
         Lambda = repeat(Pjn[:, n], 1, graph.J)
-        LL = max.(Lambda' - Lambda, 0)
+        # Note: max(P^n_k/P^n_j-1, 0) = max(P^n_k-P^n_j, 0)/P^n_j
+        LL = max.(Lambda' - Lambda, 0) # P^n_k - P^n_j
         LL[.!graph.adjacency] .= 0
         Qjkn[:, :, n] = (1 / (1 + param.beta) * kappa .* LL ./ Lambda) .^ (1 / param.beta)
     end
