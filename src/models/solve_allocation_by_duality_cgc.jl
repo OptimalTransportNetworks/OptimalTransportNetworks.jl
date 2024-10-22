@@ -84,19 +84,16 @@ end
 
 # Objective function
 function objective_duality_cgc(x, auxdata)
-    param = auxdata.param
     graph = auxdata.graph
-
     res = recover_allocation_duality_cgc(x, auxdata)
-    Pjn = reshape(x, (graph.J, param.N))
 
     # Compute constraint
     cons = res.Djn + dropdims(sum(res.Qjkn - permutedims(res.Qjkn, (2, 1, 3)), dims=2), dims = 2) - res.Yjn
-    cons = sum(Pjn .* cons, dims=2)
+    cons = sum(res.Pjn .* cons, dims=2)
 
     # Compute objective value
-    f = sum(graph.omegaj .* graph.Lj .* param.u.(res.cj, graph.hj)) - sum(cons)
-    return f # Negative objective because Ipopt minimizes  
+    f = sum(graph.omegaj .* graph.Lj .* auxdata.param.u.(res.cj, graph.hj)) - sum(cons)
+    return f # Negative objective because Ipopt minimizes?  
 end
 
 # Gradient function = negative constraint
