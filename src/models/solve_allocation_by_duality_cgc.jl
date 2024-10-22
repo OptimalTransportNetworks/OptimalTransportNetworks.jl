@@ -115,7 +115,7 @@ function hessian_duality_cgc(
     rows::Vector{Int32},
     cols::Vector{Int32},
     obj_factor::Float64,
-    lambda::Vector{Float64},
+    lambda::Vector{Float64}, # No constraints: thus no lagrange multipliers
     values::Union{Nothing,Vector{Float64}},
     auxdata
 )
@@ -200,13 +200,13 @@ function hessian_duality_cgc(
             # Now terms sum_k(Q^n_{jk} - Q^n_{kj}) as well as T'_2 G
             for k in neighbors
                 # Constant Terms
-                K0 = (1 + beta) * kappa[j, k]
+                K0 = (1 + beta) / kappa[j, k]
                 PK0 = PDj[j] * K0
                 K = K0^m1dbeta
 
                 # Terms with Derivatives
                 A = ((Pjn[k, nd] - Pjn[j, nd])/m[nd])^(1/(nu-1)) # 0 for n' != n
-                B = (res.Qjk[j, k] * PK0^m1dbeta)^((nu-beta-1)/(nu-1))
+                B = (res.Qjk[j, k] * PK0^m1dbeta)^(numbetam1/(nu-1))
 
                 # Computing the right derivative: Q^n_{jk}
                 if jd == j # P^x_j
@@ -241,13 +241,13 @@ function hessian_duality_cgc(
                 Pkprime = m1dbeta * Pjn[k, nd]^(-sigma) * Pk^(1+beta - beta*sigma)
 
                 # Constant Terms
-                K0 = (1 + beta) * kappa[k, j]
+                K0 = (1 + beta) / kappa[k, j]
                 PK0 = PDj[k] * K0
                 K = K0^m1dbeta
 
                 # Terms with Derivatives
                 A = ((Pjn[j, nd] - Pjn[k, nd])/m[nd])^(1/(nu-1)) # 0 for n' != n
-                B = (res.Qjk[k, j] * PK0^m1dbeta)^((nu-beta-1)/(nu-1))
+                B = (res.Qjk[k, j] * PK0^m1dbeta)^(numbetam1/(nu-1))
 
                 # Computing the right derivative: Q^n_{kj}
                 if jd == k # P^x_k
