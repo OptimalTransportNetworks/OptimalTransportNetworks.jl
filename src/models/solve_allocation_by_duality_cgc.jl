@@ -184,7 +184,7 @@ function hessian_duality_cgc(
                 for k in neighbors # TODO: add to loop below ?? 
                     T += res.Qjk[j, k]^(1+beta) / kappa[j, k]
                 end
-                Cprime = 1/omegaj[j] * Pjn[j, nd]^(-sigma) * PDj[j]^sigma * param.usecond(PDj[j]/omegaj[j], graph.hj[j])
+                Cprime = 1/omegaj[j] * Pjn[j, nd]^(-sigma) * PDj[j]^sigma * param.uprimeinvprime(PDj[j]/omegaj[j], graph.hj[j])
                 Gprime = sigma * Pjn[j, n] * Pjn[j, nd]^(-sigma) * PDj[j]^(sigma-2) * G^((sigma+1)/sigma)
                 if nd == n
                     Gprime -= sigma / PDj[j] * G^((sigma+1)/sigma)
