@@ -32,10 +32,8 @@ function solve_allocation_by_duality(x0, auxdata, verbose=true)
     n = graph.J * param.N
 
     # Get the Hessian structure
-    hess_str = hessian_structure_duality(auxdata)
-    auxdata = (auxdata..., hess = hess_str, hess_ind = CartesianIndex.(hess_str[1], hess_str[2]))
-    nnz_hess = length(hess_str[1])
-
+    auxdata = (auxdata..., hess = hessian_structure_duality(auxdata))
+    nnz_hess = length(auxdata.hess[1])
 
     prob = Ipopt.CreateIpoptProblem(
         n,
@@ -149,11 +147,6 @@ function hessian_duality(
     auxdata
 )
     if values === nothing
-        # # Return the sparsity structure
-        # nz = length(findnz(tril(h))[1])
-        # resize!(rows, nz)
-        # resize!(cols, nz)
-        # r, c, _ = findnz(tril(h))
         r, c = auxdata.hess
         rows .= r
         cols .= c
@@ -161,69 +154,94 @@ function hessian_duality(
         # function hessian(x, auxdata, obj_factor, lambda)
         param = auxdata.param
         graph = auxdata.graph
+        nodes = graph.nodes
         kappa = auxdata.kappa
+        beta = param.beta
+        m1dbeta = -1 / beta
+        sigma = param.sigma
+        a = param.a
+        adam1 = a / (a - 1)
+        J = graph.J
+        Zjn = graph.Zjn
+        Lj = graph.Lj
+        omegaj = graph.omegaj
+        # Constant term for Q'^n_{jk}
+        cons = m1dbeta / (1 + beta)        
+        hess_str = auxdata.hess
 
+        # Precompute elements
         res = recover_allocation_duality(x, auxdata)
-        Lambda = repeat(x, 1, graph.J * param.N)
-        lambda = reshape(x, (graph.J, param.N))
+        Pjn = res.Pjn
+        PCj = res.PCj
+        Qjkn = res.Qjkn
 
-        # Compute price index
-        P = sum(lambda .^ (1 - param.sigma), dims=2) .^ (1 / (1 - param.sigma))
-        mat_P = repeat(P, param.N, param.N * graph.J)
-
-        # Create masks
-        # This lets different products in the same location relate
-        Iij = kron(ones(param.N, param.N), I(graph.J))
-        # This is adjacency, but only for the same product (n == n')
-        Inm = kron(I(param.N), graph.adjacency)
-
-        # Compute terms for Hessian
-        termA = -param.sigma * (repeat(P, param.N) .^ param.sigma .* x .^ (-(param.sigma + 1)) .* repeat(res.Cj, param.N))
-
-        part1 = Iij .* Lambda .^ (-param.sigma) .* Lambda' .^ (-param.sigma) .* mat_P .^ (2 * param.sigma)
-
-        termB = param.sigma * part1 ./ mat_P .* repeat(res.Cj, param.N, graph.J * param.N)
-        
-        termC = part1 .* repeat(graph.Lj ./ (graph.omegaj .* param.usecond.(res.cj, graph.hj)), param.N, graph.J * param.N)
-        
-        diff = Lambda' - Lambda # P^n_k - P^n_j
-        mat_kappa = repeat(kappa, param.N, param.N)
-        part1 = 1 / (param.beta * (1 + param.beta)^(1 / param.beta)) * Inm .* mat_kappa .^ (1 / param.beta)
-        abs_diff_1betam1 = abs.(diff) .^ (1 / param.beta - 1)
-        diffpos = diff .> 0
-        diffneg = diff .< 0
-        
-        termD = part1 .* abs_diff_1betam1 .* 
-                (diffpos .* Lambda' ./ Lambda .^ (1 + 1 / param.beta) + 
-                 diffneg .* Lambda ./ Lambda' .^ (1 + 1 / param.beta))
-        
-        termE = -part1 .* abs_diff_1betam1 .* 
-                (diffpos .* Lambda' .^ 2 ./ Lambda .^ (2 + 1 / param.beta) + 
-                 diffneg ./ Lambda' .^ (1 / param.beta))
-        termE = sum(termE, dims=2)
-
-        # Compute labor term
-        if param.a == 1
-            X = 0
-        else
-            # This is Psi in your notes
-            denom = sum((lambda .* graph.Zjn) .^ (1 / (1 - param.a)), dims=2)
-            num = (x .* graph.Zjn[:]) .^ (1 / (1 - param.a))
-            # Non-diagonal elements: using 1-a in denominator because output is subtracted
-            X = param.a / (1 - param.a) * Iij .* (graph.Zjn[:] * graph.Zjn[:]') .* (num * num') .^ param.a .*    
-                repeat(graph.Lj .^ param.a ./ denom .^ (1 + param.a), param.N, graph.J * param.N) 
-            # The term that is multiplied to get the diagonal            
-            X_diag = (num - repeat(denom, param.N)) ./ num
-            # Adding the diagonal
-            @inbounds for i in 1:length(X_diag)
-                X[i, i] *= X_diag[i]
-            end
+        # Prepare computation of production function 
+        if a != 1
+            psi = (Pjn .* Zjn) .^ (1 / (1 - a))
+            Psi = sum(psi, dims=2)
         end
-        # Compute Hessian
-        h = -obj_factor * (Diagonal(termA[:]) + termB + termC + termD + Diagonal(termE[:]) + X)
+
+        # Now the big loop over the hessian terms to compute
+        ind = 0
         
-        # Return lower triangular part
-        values .= h[auxdata.hess_ind]
+        # https://stackoverflow.com/questions/38901275/inbounds-propagation-rules-in-julia
+        @inbounds for (jdnd, jn) in zip(hess_str[1], hess_str[2])
+            ind += 1
+            # First get the indices of the element and the respective derivative 
+            j = (jn-1) % J + 1
+            n = Int(ceil(jn / J))
+            jd = (jdnd-1) % J + 1
+            nd = Int(ceil(jdnd / J))
+            # Get neighbors k
+            neighbors = nodes[j]
+
+            # Stores the derivative term
+            term = 0.0
+
+            # Starting with C^n_j = CG, derivative: C'G + CG'
+            if jd == j # 0 for P^n_k
+                Cprime = Lj[j]/omegaj[j] * (PCj[j] / Pjn[j, nd])^sigma / param.usecond(res.cj[j], graph.hj[j]) # param.uprimeinvprime(PCj[j]/omegaj[j], graph.hj[j])
+                G = (Pjn[j, n] / PCj[j])^(-sigma)
+                Gprime = sigma * (Pjn[j, n] * Pjn[j, nd])^(-sigma) * PCj[j]^(2*sigma-1) 
+                if nd == n
+                    Gprime -= sigma / PCj[j] * G^((sigma+1)/sigma)
+                end
+                term += Cprime * G + res.Cj[j] * Gprime
+            end
+
+            # Now terms sum_k((Q^n_{jk} + K_{jk}(Q^n_{jk})^(1+beta)) - Q^n_{kj})
+            if nd == n 
+                for k in neighbors
+                    if jd == j # P^x_j
+                        diff = Pjn[k, n] - Pjn[j, n]
+                        if diff >= 0
+                            term += m1dbeta * (Pjn[k, n] / Pjn[j, n])^2 * Qjkn[j, k, n] / diff
+                        else
+                            term += m1dbeta * Qjkn[k, j, n] / abs(diff)
+                        end
+                    elseif jd == k # P^x_k
+                        diff = Pjn[k, n] - Pjn[j, n]
+                        if diff >= 0
+                            term -= m1dbeta * Pjn[k, n] / Pjn[j, n] * Qjkn[j, k, n] / diff
+                        else
+                            term -= m1dbeta * Pjn[j, n] / Pjn[k, n] * Qjkn[k, j, n] / abs(diff)
+                        end
+                    end
+                end # End of k loop
+            end
+
+            # Finally: need to compute production function (X)
+            if a != 1 && jd == j
+                X = adam1 * Zjn[j, n] * Zjn[j, nd] * (psi[j, n] * psi[j, nd])^a / Psi[j]^(a+1) * Lj[j]^a
+                if nd == n
+                    X *= 1 - Psi[j] / psi[j, n]
+                end
+                term -= X
+            end
+
+            # Assign result
+            values[ind] = -obj_factor * term + 1e-5 # Somehow need this increment to make it work
+        end
     end
     return
 end
@@ -268,11 +286,12 @@ function recover_allocation_duality(x, auxdata)
 
     # Calculate the flows Qjkn
     Qjkn = zeros(graph.J, graph.J, param.N)
-    for n in 1:param.N
+    nadj = findall(.!graph.adjacency)
+    @inbounds for n in 1:param.N
         Lambda = repeat(Pjn[:, n], 1, graph.J)
         # Note: max(P^n_k/P^n_j-1, 0) = max(P^n_k-P^n_j, 0)/P^n_j
         LL = max.(Lambda' - Lambda, 0) # P^n_k - P^n_j
-        LL[.!graph.adjacency] .= 0
+        LL[nadj] .= 0
         Qjkn[:, :, n] = (1 / (1 + param.beta) * kappa .* LL ./ Lambda) .^ (1 / param.beta)
     end
 
