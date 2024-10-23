@@ -96,7 +96,7 @@ function objective_duality(x, auxdata)
     cost[res.Qjkn .== 0] .= 0  # Deal with cases Qjkn=kappa=0
 
     # Compute constraint
-    cons = res.cjn .* graph.Lj .+ dropdims(sum(res.Qjkn .+ cost .- permutedims(res.Qjkn, (2, 1, 3)), dims=2), dims = 2) .- res.Yjn
+    cons = res.cjn .* graph.Lj + dropdims(sum(res.Qjkn + cost - permutedims(res.Qjkn, (2, 1, 3)), dims=2), dims = 2) - res.Yjn
     cons = sum(Pjn .* cons, dims=2)
 
     # Compute objective value
@@ -117,7 +117,7 @@ function gradient_duality(x::Vector{Float64}, grad_f::Vector{Float64}, auxdata)
     cost[res.Qjkn .== 0] .= 0  # Deal with cases Qjkn=kappa=0
 
     # Compute constraint
-    cons = res.cjn .* graph.Lj .+ dropdims(sum(res.Qjkn .+ cost .- permutedims(res.Qjkn, (2, 1, 3)), dims=2), dims = 2) .- res.Yjn
+    cons = res.cjn .* graph.Lj + dropdims(sum(res.Qjkn + cost - permutedims(res.Qjkn, (2, 1, 3)), dims=2), dims = 2) - res.Yjn
 
     grad_f .= -cons[:]  # Flatten the array and store in grad_f
     return
@@ -186,7 +186,7 @@ function hessian_duality(
         
         termC = part1 .* repeat(graph.Lj ./ (graph.omegaj .* param.usecond.(res.cj, graph.hj)), param.N, graph.J * param.N)
         
-        diff = Lambda' - Lambda
+        diff = Lambda' - Lambda # P^n_k - P^n_j
         mat_kappa = repeat(kappa, param.N, param.N)
         part1 = 1 / (param.beta * (1 + param.beta)^(1 / param.beta)) * Inm .* mat_kappa .^ (1 / param.beta)
         abs_diff_1betam1 = abs.(diff) .^ (1 / param.beta - 1)
