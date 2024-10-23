@@ -101,7 +101,7 @@ function objective_duality(x, auxdata)
 
     # Compute objective value
     f = sum(graph.omegaj .* graph.Lj .* param.u.(res.cj, graph.hj)) - sum(cons)
-    return f # Negative objective because Ipopt minimizes  
+    return f # Negative objective because Ipopt minimizes?  
 end
 
 # Gradient function = negative constraint
