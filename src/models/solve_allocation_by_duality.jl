@@ -127,7 +127,7 @@ function hessian_structure_duality(auxdata)
     param = auxdata.param
 
     # Create the Hessian structure
-    H_structure = sparse(tril(repeat(I(graph.J), param.N, param.N) + kron(I(param.N), graph.adjacency)))
+    H_structure = tril(repeat(sparse(I(graph.J)), param.N, param.N) + kron(sparse(I(param.N)), sparse(graph.adjacency)))
         
     # Get the row and column indices of non-zero elements
     rows, cols, _ = findnz(H_structure)
@@ -136,7 +136,6 @@ end
 
 
 # Hessian computation function
-
 function hessian_duality(
     x::Vector{Float64},
     rows::Vector{Int32},
