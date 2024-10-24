@@ -16,7 +16,7 @@ Returns a `param` dict with the model parameters. These are independent of the g
 - `N::Int64=1`: Number of goods traded in the economy (used for checks in `create_graph()`)
 - `labor_mobility::Any=false`: Switch for labor mobility (true/false or 'partial')
 - `cross_good_congestion::Bool=false`: Switch for cross-good congestion
-- `nu::Float64=1`: Elasticity of substitution b/w goods in transport costs if cross-good congestion
+- `nu::Float64=1.5`: Elasticity of substitution b/w goods in transport costs if cross-good congestion
 - `m::Vector{Float64}=ones(N)`: Vector of weights Nx1 in the cross congestion cost function
 - `annealing::Bool=true`: Switch for the use of annealing at the end of iterations (only if gamma > beta)
 - `verbose::Bool=true`: Switch to turn on/off text output (from Ipopt or other optimizers)
@@ -40,9 +40,9 @@ param = init_parameters(K = 10, labor_mobility = true)
 ```
 """
 function init_parameters(; alpha = 0.5, beta = 1, gamma = 1, K = 1, sigma = 5, rho = 2, a = 0.8, N = 1, 
-                         labor_mobility = false, cross_good_congestion=false, nu = 1, m = ones(N), 
+                         labor_mobility = false, cross_good_congestion=false, nu = 1.5, m = ones(N), 
                          annealing=true, 
-                         verbose = true, duality = false, warm_start = true, 
+                         verbose = true, duality = true, warm_start = true, 
                          kappa_min = 1e-5, min_iter = 20, max_iter = 200, tol = 1e-5, kwargs...)
     param = Dict()
 
@@ -93,7 +93,8 @@ function init_parameters(; alpha = 0.5, beta = 1, gamma = 1, K = 1, sigma = 5, r
     param[:u] = (c, h) -> ((c / alpha)^alpha * (h / (1 - alpha))^(1 - alpha))^(1 - rho) / (1 - rho)
     param[:uprime] = (c, h) -> ((c / alpha)^alpha * (h / (1 - alpha))^(1 - alpha))^-rho * ((c / alpha)^(alpha - 1) * (h / (1 - alpha))^(1 - alpha))
     param[:usecond] = (c, h) -> -rho * ((c / alpha)^alpha * (h / (1 - alpha))^(1 - alpha))^(-rho - 1) * ((c / alpha)^(alpha - 1) * (h / (1 - alpha))^(1 - alpha))^2 + (alpha - 1) / alpha * ((c / alpha)^alpha * (h / (1 - alpha))^(1 - alpha))^-rho * ((c / alpha)^(alpha - 2) * (h / (1 - alpha))^(1 - alpha))
-    param[:uprimeinv] = (x, h) -> alpha * x^(-1 / (1 + alpha * (rho - 1))) * (h / (1 - alpha))^-((1 - alpha) * (rho - 1) / (1 + alpha * (rho - 1)))
+    param[:uprimeinv] = (x, h) -> alpha * x^(-1 / (1 + alpha * (rho - 1))) * (h / (1 - alpha))^((1 - alpha) * (1 - rho) / (1 + alpha * (rho - 1)))
+    param[:uprimeinvprime] = (x, h) -> -alpha / (1 + alpha * (rho - 1)) * x^(-1 / (1 + alpha * (rho - 1)) - 1) * (h / (1 - alpha))^((1 - alpha) * (1 - rho) / (1 + alpha * (rho - 1)))
     
     # Define production function 
     param[:F] = (L, a) -> L^a

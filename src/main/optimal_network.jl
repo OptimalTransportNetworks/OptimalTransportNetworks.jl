@@ -73,7 +73,7 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
         return model, recover_allocation
     end
 
-    if !verbose
+    if !verbose && model !== nothing
         set_silent(model)
     end
     
@@ -87,47 +87,77 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
     # K in average infrastructure units
     K_infra = (param.K / mean(graph.delta_i[graph.adjacency .== 1]))
     distance = 0.0
-    all_vars = all_variables_except_kappa_ex(model)
-    start_values = start_value.(all_vars)
+    if model === nothing
+        start_values = []
+    else
+        all_vars = all_variables_except_kappa_ex(model)
+        start_values = start_value.(all_vars)
+    end
     used_warm_start = false
 
     while (!has_converged && counter < param.max_iter) || counter <= param.min_iter
 
-        # if save_before_it_crashes
-        #     debug_file_str = "debug.mat"
-        #     save(debug_file_str, "param", "graph", "kappa", "I0", "I1", "counter")
-        # end
 
         skip_update = false
 
-        t0 = time()
-        optimize!(model)
-        t1 = time()
+        # Dual Solution: Most efficient
+        if model === nothing
+            t0 = time()
+            results, status, start_values = recover_allocation(start_values, auxdata, verbose)
+            t1 = time()
 
-        results = recover_allocation(model, auxdata)
-
-        if solve_allocation
-            if !is_solved_and_feasible(model, allow_almost = true)
-                warning("Solver returned with error code $(termination_status(model)).")
+            if solve_allocation
+                if status != 0
+                    @warn "Solver returned with error code $(status))."
+                end
+                return results
             end
-            return results
-        end
 
-        if !is_solved_and_feasible(model, allow_almost = true)
-            if used_warm_start # if error happens with warm start, then try again starting cold
-                set_start_value.(all_vars, start_values)
-                used_warm_start = false
-                skip_update = true
+            if !any(status .== [0, 1])
+                if used_warm_start # if error happens with warm start, then try again starting cold
+                    start_values = []
+                    used_warm_start = false
+                    skip_update = true
+                else
+                    error("Solver returned with error code $(status).")
+                end
             else
-                error("Solver returned with error code $(termination_status(model)).")
+                if param.warm_start
+                    used_warm_start = true
+                else
+                    start_values = []
+                end
             end
-        elseif param.warm_start # Set next run starting values to previous run solution.
-            vars_solution = value.(all_vars)
-            set_start_value.(all_vars, vars_solution)
-            used_warm_start = true
+
+        else # Primal Solution (Using JuMP Model)
+            t0 = time()
+            optimize!(model)
+            results = recover_allocation(model, auxdata)
+            t1 = time()
+
+            if solve_allocation
+                if !is_solved_and_feasible(model, allow_almost = true)
+                    @warn "Solver returned with error code $(termination_status(model))."
+                end
+                return results
+            end
+
+            if !is_solved_and_feasible(model, allow_almost = true)
+                if used_warm_start # if error happens with warm start, then try again starting cold
+                    set_start_value.(all_vars, start_values)
+                    used_warm_start = false
+                    skip_update = true
+                else
+                    error("Solver returned with error code $(termination_status(model)).")
+                end
+            elseif param.warm_start # Set next run starting values to previous run solution.
+                vars_solution = value.(all_vars)
+                set_start_value.(all_vars, vars_solution)
+                used_warm_start = true
+            end
         end
-        
-        # See macro defined below
+
+        # Computing prices times optimal flows term which yields optimal infrastructure
         if !param.cong
             PQ = permutedims(repeat(results[:Pjn], 1, 1, J), [1, 3, 2]) .* results[:Qjkn] .^ (1 + param.beta)
             PQ = dropdims(sum(PQ + permutedims(PQ, [2, 1, 3]), dims=3), dims = 3)
@@ -139,6 +169,7 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
             PQ += PQ'
         end
         
+        # This computes optimal infrastructure
         I1 = (graph.delta_tau ./ graph.delta_i .* PQ) .^ (1 / (1 + param.gamma))
         I1[graph.adjacency .== 0] .= 0
         I1[PQ .== 0] .= 0
@@ -159,7 +190,9 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
             I0 += (1 - weight_old) * I1
             # This creates kappa and updates the model
             auxdata = create_auxdata(param, graph, edges, I0)
-            set_parameter_value.(model[:kappa_ex], auxdata.kappa_ex)
+            if model !== nothing
+                set_parameter_value.(model[:kappa_ex], auxdata.kappa_ex)
+            end
         end
     end
 
@@ -178,19 +211,25 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
     # SIMULATED ANNEALING
 
     if param.gamma > param.beta && param.annealing
-        set_start_value.(all_vars, start_values) # MATLAB code does this in the annealing function
+        if model !== nothing
+            set_start_value.(all_vars, start_values) # MATLAB code does this in the annealing function
+        end
         results = annealing(param, graph, I0, final_model = model, 
                             recover_allocation = recover_allocation, 
                             allocation = results, verbose = verbose)
     end
 
     if return_model == 2
-        if !verbose
-            unset_silent(model)
+        if model !== nothing
+            if !verbose
+                unset_silent(model)
+            end
+            # Better do this for use in annealing
+            set_start_value.(all_vars, start_values) 
         end
-        set_start_value.(all_vars, start_values) # Better do this for use in annealing
         return results, model, recover_allocation
     end
+
     return results
 end
 
