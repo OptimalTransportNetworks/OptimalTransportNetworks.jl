@@ -43,7 +43,7 @@ function solve_allocation_by_duality(x0, auxdata, verbose=true)
         Float64[],      # No constraint lower bounds
         Float64[],      # No constraint upper bounds
         0,              # Number of non-zeros in Jacobian (not used without constraints)
-        nnz_hess,       # Int((n * (n + 1)) / 2),  # Number of non-zeros in Hessian
+        nnz_hess,       # Number of non-zeros in Hessian
         obj,            # Objective function
         (args...) -> Float64[], # Constraints function (empty)
         grad,           # Gradient function
@@ -154,7 +154,6 @@ function hessian_duality(
         param = auxdata.param
         graph = auxdata.graph
         nodes = graph.nodes
-        kappa = auxdata.kappa
         beta = param.beta
         m1dbeta = -1 / beta
         sigma = param.sigma
@@ -163,9 +162,7 @@ function hessian_duality(
         J = graph.J
         Zjn = graph.Zjn
         Lj = graph.Lj
-        omegaj = graph.omegaj
-        # Constant term for Q'^n_{jk}
-        cons = m1dbeta / (1 + beta)        
+        omegaj = graph.omegaj  
         hess_str = auxdata.hess
 
         # Precompute elements
