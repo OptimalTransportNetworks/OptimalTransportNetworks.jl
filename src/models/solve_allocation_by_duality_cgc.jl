@@ -32,9 +32,8 @@ function solve_allocation_by_duality_cgc(x0, auxdata, verbose=true)
     n = graph.J * param.N
 
     # Get the Hessian structure
-    hess_str = hessian_structure_duality(auxdata)
-    auxdata = (auxdata..., hess = hess_str, hess_ind = CartesianIndex.(hess_str[1], hess_str[2]))
-    nnz_hess = length(hess_str[1])
+    auxdata = (auxdata..., hess = hessian_structure_duality(auxdata))
+    nnz_hess = length(auxdata.hess[1])
 
     prob = Ipopt.CreateIpoptProblem(
         n,
@@ -186,13 +185,14 @@ function hessian_duality_cgc(
                 for k in neighbors # TODO: add to loop below ?? 
                     T += res.Qjk[j, k]^(1+beta) / kappa[j, k]
                 end
-                Cprime = Lj[j]/omegaj[j] * (PDj[j] / Pjn[j, nd])^sigma * param.uprimeinvprime(PDj[j]/omegaj[j], graph.hj[j])
                 Gprime = sigma * (Pjn[j, n] * Pjn[j, nd])^(-sigma) * PDj[j]^(2*sigma-1) 
+                # Adding all derivative terms apart from second part of T'
                 if nd == n
+                    Cprime = Lj[j]/omegaj[j] * (PDj[j] / Pjn[j, nd])^sigma * param.uprimeinvprime(PDj[j]/omegaj[j], graph.hj[j])
+                    term += (Cprime + (1+beta) * Pprime / P * T) * G
                     Gprime -= sigma / PDj[j] * G^((sigma+1)/sigma)
                 end
-                # Adding all derivative terms apart from second part of T'
-                term += (Cprime + (1+beta) * Pprime / P * T) * G + (res.Cj[j] + T) * Gprime
+                term += (res.Cj[j] + T) * Gprime
             end
             # Constant term for iterating through neighbors for computing T'_2 G
             cons = numbetam1 / (numbetam1 + nu*beta) * P^(1+beta) * G
@@ -224,7 +224,7 @@ function hessian_duality_cgc(
                             term += K * (Pprime*A*B + P*A*Bprime)
                         end
                         # This computes the remaining derivative of D^n_j (T'_2 G)
-                        term += cons * K / (1+beta) * Bprime * B^(-nu*beta/(numbetam1+nu*beta))
+                        term += cons * K / (1+beta) * Bprime * B^((-nu*beta)/(numbetam1+nu*beta))
                     elseif jd == k # P^x_k (P' is zero)
                         Bprime = -cons2 * A * B^((numbetam1 - nu*beta)/numbetam1) # simply the negative
                         if nd == n # P^n_k
@@ -234,7 +234,7 @@ function hessian_duality_cgc(
                             term += K * P*A*Bprime
                         end
                         # This computes the remaining derivative of D^n_j (T'_2 G)
-                        term += cons * K / (1+beta) * Bprime * B^(-nu*beta/(numbetam1+nu*beta))
+                        term += cons * K / (1+beta) * Bprime * B^((-nu*beta)/(numbetam1+nu*beta))
                     end
                 end
 
