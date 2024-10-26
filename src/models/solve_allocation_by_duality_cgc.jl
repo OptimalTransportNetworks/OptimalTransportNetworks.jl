@@ -53,7 +53,7 @@ function solve_allocation_by_duality_cgc(x0, auxdata, verbose=true)
 
     # Set Ipopt options
     Ipopt.AddIpoptStrOption(prob, "hessian_approximation", "exact")
-    Ipopt.AddIpoptIntOption(prob, "max_iter", 3000)
+    Ipopt.AddIpoptIntOption(prob, "max_iter", 200)
     Ipopt.AddIpoptIntOption(prob, "print_level", verbose ? 5 : 0)
 
     if haskey(param, :optimizer_attr)
@@ -184,7 +184,7 @@ function hessian_duality_cgc(
             G = (Pjn[j, n] / PCj[j])^(-sigma)
             if jd == j # 0 for P^n_k
                 Gprime = sigma * (Pjn[j, n] * Pjn[j, nd])^(-sigma) * PCj[j]^(2*sigma-1) 
-                Cprime = Lj[j]/omegaj[j] * (PCj[j] / Pjn[j, nd])^sigma / param.usecond(res.cj[j], graph.hj[j]) # * param.uprimeinvprime(PCj[j]/omegaj[j], graph.hj[j])
+                Cprime = Lj[j]/omegaj[j] * (PCj[j] / Pjn[j, nd])^sigma * param.uprimeinvprime(PCj[j]/omegaj[j], graph.hj[j]) # / param.usecond(res.cj[j], graph.hj[j]) 
                 if nd == n
                     Gprime -= sigma / PCj[j] * G^((sigma+1)/sigma)
                 end
@@ -194,8 +194,9 @@ function hessian_duality_cgc(
             # Now terms sum_k(Q^n_{jk} - Q^n_{kj}) as well as T'G + TG'
             for k in neighbors
                 diff = Pjn[k, n] - Pjn[j, n]
-                if diff >= 0 # Flows in the direction of k
+                if diff > 0 # Flows in the direction of k
                     tmp = Qjkn[j, k, n]
+                    T = Qjk[j, k]^(1+beta) / kappa[j, k]
                     PK0 = PCj[j] * (1 + beta) / kappa[j, k]
                     KPABprimemQjkn = cons * ((Pjn[k, nd] - Pjn[j, nd])/m[nd])^n1dnum1 * Qjk[j, k]^(-nu*beta*n1dnum1) * PK0^(nu*n1dnum1)
                     if jd == j
@@ -205,14 +206,14 @@ function hessian_duality_cgc(
                             term -= tmp * n1dnum1 / diff   # KPA'B
                         end 
                         term += tmp * KPABprimemQjkn # KPAB'
-                        term += Qjk[j, k]^(1+beta) / kappa[j, k] * ((1+beta)*KPprimeABmQjkn + cons2 * KPABprimemQjkn) * G # T'G
-                        term += Qjk[j, k]^(1+beta) / kappa[j, k] * Gprime  # TG'
+                        term += T * ((1+beta)*KPprimeABmQjkn + cons2 * KPABprimemQjkn) * G # T'G
+                        term += T * Gprime  # TG'
                     elseif jd == k
                         if nd == n
                             term += tmp * n1dnum1 / diff  # KPA'B [A'(k) has opposite sign]
                         end 
                         term -= tmp * KPABprimemQjkn # KPAB' [B'(k) has opposite sign]
-                        term -= Qjk[j, k]^(1+beta) / kappa[j, k] * cons2 * KPABprimemQjkn * G # T'G [B'(k) has opposite sign]
+                        term -= T * cons2 * KPABprimemQjkn * G # T'G [B'(k) has opposite sign]
                     end
                 else # Flows in the direction of j
                     tmp = Qjkn[k, j, n]
