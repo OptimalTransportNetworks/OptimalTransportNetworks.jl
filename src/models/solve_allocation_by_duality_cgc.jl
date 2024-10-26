@@ -142,13 +142,19 @@ function hessian_duality_cgc(
         Zjn = graph.Zjn
         Lj = graph.Lj
         omegaj = graph.omegaj
-        # N = param.N
         hess_str = auxdata.hess
+
+        # Constant term: first part of Bprime
+        cons = m1dbeta * n1dnum1 * numbetam1
+        # Constant in T'
+        cons2 = numbetam1 / (numbetam1+nu*beta)
 
         # Precompute elements
         res = recover_allocation_duality_cgc(x, auxdata)
         Pjn = res.Pjn
-        PDj = res.PDj
+        PCj = res.PCj
+        Qjk = res.Qjk
+        Qjkn = res.Qjkn
 
         # Prepare computation of production function 
         if a != 1
@@ -173,104 +179,57 @@ function hessian_duality_cgc(
             # Stores the derivative term
             term = 0.0
 
-            # Needed for both Q^n_{jk} and D^n_j
-            P = PDj[j]^m1dbeta
-            Pprime = m1dbeta * Pjn[j, nd]^(-sigma) * P^(1+beta - beta*sigma)
-
-            # Starting with D^n_j = (C+T)G, derivative: (C'+T')G + (C+T)G'
-            # T' can be additively split. Here I compute (C' + T'_1)G + (C+T)G'
-            G = (Pjn[j, n] / PDj[j])^(-sigma)
+            # Starting with D^n_j = (C+T)G, derivative: (C'+T')G + (C+T)G' = C'G + CG' + T'G + TG'
+            # Terms involving T are computed below. Here forcus on C'G + CG'
+            G = (Pjn[j, n] / PCj[j])^(-sigma)
             if jd == j # 0 for P^n_k
-                T = 0.0 
-                for k in neighbors # TODO: add to loop below ?? 
-                    T += res.Qjk[j, k]^(1+beta) / kappa[j, k]
-                end
-                Gprime = sigma * (Pjn[j, n] * Pjn[j, nd])^(-sigma) * PDj[j]^(2*sigma-1) 
-                # Adding all derivative terms apart from second part of T'
+                Gprime = sigma * (Pjn[j, n] * Pjn[j, nd])^(-sigma) * PCj[j]^(2*sigma-1) 
+                Cprime = Lj[j]/omegaj[j] * (PCj[j] / Pjn[j, nd])^sigma / param.usecond(res.cj[j], graph.hj[j]) # * param.uprimeinvprime(PCj[j]/omegaj[j], graph.hj[j])
                 if nd == n
-                    Cprime = Lj[j]/omegaj[j] * (PDj[j] / Pjn[j, nd])^sigma * param.uprimeinvprime(PDj[j]/omegaj[j], graph.hj[j])
-                    term += (Cprime + (1+beta) * Pprime / P * T) * G
-                    Gprime -= sigma / PDj[j] * G^((sigma+1)/sigma)
+                    Gprime -= sigma / PCj[j] * G^((sigma+1)/sigma)
                 end
-                term += (res.Cj[j] + T) * Gprime
+                term += Cprime * G + res.Cj[j] * Gprime
             end
-            # Constant term for iterating through neighbors for computing T'_2 G
-            cons = numbetam1 / (numbetam1 + nu*beta) * P^(1+beta) * G
-            # Cconstant tern: first part of Bprime
-            cons2 = m1dbeta * n1dnum1 * numbetam1
 
-            # Now terms sum_k(Q^n_{jk} - Q^n_{kj}) as well as T'_2 G
+            # Now terms sum_k(Q^n_{jk} - Q^n_{kj}) as well as T'G + TG'
             for k in neighbors
-                
-                # Terms with Derivative
-                diff = Pjn[k, nd] - Pjn[j, nd]
-                if diff >= 0
-                    A = (diff/m[nd])^(1/(nu-1)) # 0 for n' != n
-                    # Constant Terms
-                    K0 = (1 + beta) / kappa[j, k]
-                    PK0 = PDj[j] * K0
-                    K = K0^m1dbeta
-
-                    # Terms with Derivatives..continued
-                    B = (res.Qjk[j, k] * PK0^m1dbeta)^(numbetam1/(nu-1))
-
-                    # Computing the right derivative: Q^n_{jk}
-                    if jd == j # P^x_j
-                        Bprime = cons2 * A * B^((numbetam1 - nu*beta)/numbetam1)
-                        if nd == n # P^n_j
-                            Aprime = -n1dnum1 / m[n] * A^(2-nu)
-                            term += K * (Pprime*A*B + P*Aprime*B + P*A*Bprime)
-                        else # P^n'_j (A' is zero)
-                            term += K * (Pprime*A*B + P*A*Bprime)
-                        end
-                        # This computes the remaining derivative of D^n_j (T'_2 G)
-                        term += cons * K / (1+beta) * Bprime * B^((-nu*beta)/(numbetam1+nu*beta))
-                    elseif jd == k # P^x_k (P' is zero)
-                        Bprime = -cons2 * A * B^((numbetam1 - nu*beta)/numbetam1) # simply the negative
-                        if nd == n # P^n_k
-                            Aprime = n1dnum1 / m[n] * A^(2-nu) # Simply the negative 
-                            term += K * (P*Aprime*B + P*A*Bprime)
-                        else # # P^n'_k (A' is zero)
-                            term += K * P*A*Bprime
-                        end
-                        # This computes the remaining derivative of D^n_j (T'_2 G)
-                        term += cons * K / (1+beta) * Bprime * B^((-nu*beta)/(numbetam1+nu*beta))
+                diff = Pjn[k, n] - Pjn[j, n]
+                if diff >= 0 # Flows in the direction of k
+                    tmp = Qjkn[j, k, n]
+                    PK0 = PCj[j] * (1 + beta) / kappa[j, k]
+                    KPABprimemQjkn = cons * ((Pjn[k, nd] - Pjn[j, nd])/m[nd])^n1dnum1 * Qjk[j, k]^(-nu*beta*n1dnum1) * PK0^(nu*n1dnum1)
+                    if jd == j
+                        KPprimeABmQjkn = m1dbeta * Pjn[j, nd]^(-sigma) * PCj[j]^(sigma-1)
+                        term += tmp * KPprimeABmQjkn # KP'AB
+                        if nd == n
+                            term -= tmp * n1dnum1 / diff   # KPA'B
+                        end 
+                        term += tmp * KPABprimemQjkn # KPAB'
+                        term += Qjk[j, k]^(1+beta) / kappa[j, k] * ((1+beta)*KPprimeABmQjkn + cons2 * KPABprimemQjkn) * G # T'G
+                        term += Qjk[j, k]^(1+beta) / kappa[j, k] * Gprime  # TG'
+                    elseif jd == k
+                        if nd == n
+                            term += tmp * n1dnum1 / diff  # KPA'B [A'(k) has opposite sign]
+                        end 
+                        term -= tmp * KPABprimemQjkn # KPAB' [B'(k) has opposite sign]
+                        term -= Qjk[j, k]^(1+beta) / kappa[j, k] * cons2 * KPABprimemQjkn * G # T'G [B'(k) has opposite sign]
                     end
-                end
-
-                # Computing the right derivative: Q^n_{kj} (other direction -> needs to be subtracted)
-    
-                # Terms with Derivatives
-                if diff < 0
-                    A = (-diff/m[nd])^(1/(nu-1)) # 0 for n' != n
-                    # Also need prices here 
-                    Pk = PDj[k]^m1dbeta
-                    Pkprime = m1dbeta * Pjn[k, nd]^(-sigma) * Pk^(1+beta - beta*sigma)
-
-                    # Constant Terms
-                    K0 = (1 + beta) / kappa[k, j]
-                    PK0 = PDj[k] * K0
-                    K = K0^m1dbeta
-
-                    # Terms with Derivatives..continued
-                    B = (res.Qjk[k, j] * PK0^m1dbeta)^(numbetam1/(nu-1))
-                    # Computing the right derivative: Q^n_{kj}
-                    if jd == k # P^x_k
-                        Bprime = cons2 * A * B^((numbetam1 - nu*beta)/numbetam1)
-                        if nd == n # P^n_k
-                            Aprime = -n1dnum1 / m[n] * A^(2-nu)
-                            term -= K * (Pkprime*A*B + Pk*Aprime*B + Pk*A*Bprime)
-                        else # P^n'_k (A' is zero)
-                            term -= K * (Pkprime*A*B + Pk*A*Bprime)
-                        end
-                    elseif jd == j # P^x_j (P' is zero)
-                        Bprime = -cons2 * A * B^((numbetam1 - nu*beta)/numbetam1) # simply the negative
-                        if nd == n # P^n_j
-                            Aprime = n1dnum1 / m[n] * A^(2-nu) # Simply the negative 
-                            term -= K * (Pk*Aprime*B + Pk*A*Bprime)
-                        else # # P^n'_j (A' is zero)
-                            term -= K * Pk*A*Bprime
-                        end
+                else # Flows in the direction of j
+                    tmp = Qjkn[k, j, n]
+                    PK0 = PCj[k] * (1 + beta) / kappa[k, j]
+                    KPABprimemQjkn = cons * ((Pjn[j, nd] - Pjn[k, nd])/m[nd])^n1dnum1 * Qjk[k, j]^(-nu*beta*n1dnum1) * PK0^(nu*n1dnum1)
+                    if jd == k
+                        KPprimeABmQjkn = m1dbeta * Pjn[k, nd]^(-sigma) * PCj[k]^(sigma-1)
+                        term -= tmp * KPprimeABmQjkn # KP'AB
+                        if nd == n
+                            term += tmp * n1dnum1 / abs(diff)   # KPA'B
+                        end 
+                        term -= tmp * KPABprimemQjkn # KPAB'
+                    elseif jd == j
+                        if nd == n
+                            term -= tmp * n1dnum1 / abs(diff)  # KPA'B [Akj'(j) has opposite sign]
+                        end 
+                        term += tmp * KPABprimemQjkn # KPAB' [Bkj'(j) has opposite sign]
                     end
                 end
             end # End of k loop
@@ -285,7 +244,7 @@ function hessian_duality_cgc(
             end
 
             # Assign result
-            values[ind] = -obj_factor * term
+            values[ind] = -obj_factor * term + 1e-5
         end
     end
     return
@@ -305,7 +264,7 @@ function recover_allocation_duality_cgc(x, auxdata)
 
     # Extract price vectors
     Pjn = reshape(x, (graph.J, param.N))
-    PDj = sum(Pjn .^ (1 - param.sigma), dims=2) .^ (1 / (1 - param.sigma))
+    PCj = sum(Pjn .^ (1 - param.sigma), dims=2) .^ (1 / (1 - param.sigma))
 
     # Calculate labor allocation
     if param.a < 1
@@ -320,14 +279,14 @@ function recover_allocation_duality_cgc(x, auxdata)
     Yjn = graph.Zjn .* (Ljn .^ param.a)
 
     # Calculate aggregate consumption
-    cj = param.alpha * (PDj ./ omegaj) .^ 
+    cj = param.alpha * (PCj ./ omegaj) .^ 
          (-1 / (1 + param.alpha * (param.rho - 1))) .* 
          hj1malpha .^ (-(param.rho - 1)/(1 + param.alpha * (param.rho - 1)))
     Cj = cj .* Lj
         
     # Calculate the aggregate flows Qjk
     Qjk = zeros(graph.J, graph.J)
-    temp = (kappa ./ ((1 + param.beta) * PDj)) .^ (nu/(nu-1))
+    temp = (kappa ./ ((1 + param.beta) * PCj)) .^ (nu/(nu-1))
     temp[nadj] .= 0
     for n in 1:param.N
         Lambda = repeat(Pjn[:, n], 1, graph.J)
@@ -338,7 +297,7 @@ function recover_allocation_duality_cgc(x, auxdata)
 
     # Calculate the flows Qjkn
     Qjkn = zeros(graph.J, graph.J, param.N)
-    temp = kappa ./ ((1 + param.beta) * PDj .* Qjk .^ (1+param.beta-nu))
+    temp = kappa ./ ((1 + param.beta) * PCj .* Qjk .^ (1+param.beta-nu))
     temp[nadj .| isinf.(temp)] .= 0 # Because of the max() clause, Qjk may be zero
     for n in 1:param.N
         Lambda = repeat(Pjn[:, n], 1, graph.J)
@@ -349,9 +308,9 @@ function recover_allocation_duality_cgc(x, auxdata)
     temp = Qjk .^ (1+param.beta) ./ kappa
     temp[nadj] .= 0
     Dj = Cj + sum(temp, dims = 2)
-    Djn = Dj .* (Pjn ./ PDj) .^ (-param.sigma) 
+    Djn = Dj .* (Pjn ./ PCj) .^ (-param.sigma) 
     
-    return (Pjn=Pjn, PDj=PDj, Ljn=Ljn, Yjn=Yjn, cj=cj, Cj=Cj, Dj=Dj, Djn=Djn, Qjk=Qjk, Qjkn=Qjkn)
+    return (Pjn=Pjn, PCj=PCj, Ljn=Ljn, Yjn=Yjn, cj=cj, Cj=Cj, Dj=Dj, Djn=Djn, Qjk=Qjk, Qjkn=Qjkn)
 end
 
 
@@ -382,10 +341,10 @@ end
 #         mat_kappa = repeat(kappa, param.N, param.N)
 #         mN = repeat(param.m, inner = graph.J)
 #         # Rows are the derivatives, columns are P^n_j
-#         PDjN = repeat(res.PDj, param.N)
-#         A = mat_kappa ./ ((1+param.beta) * mN .* PDjN)'
+#         PCjN = repeat(res.PCj, param.N)
+#         A = mat_kappa ./ ((1+param.beta) * mN .* PCjN)'
 #         # Adding term for (block-digonal) elements
-#         temp = diff .* (x .^ (-param.sigma) .* PDjN .^ (param.sigma - 1))' .- 1
+#         temp = diff .* (x .^ (-param.sigma) .* PCjN .^ (param.sigma - 1))' .- 1
 #         temp[Iij .== 0] .= 1
 #         Aprime = A .* temp 
 #         temp = diff .* Inm
@@ -406,7 +365,7 @@ end
 #         # Derivatives of Qjk
 #         # Result should be nedg * N
 #         Qjkprime = zeros(graph.J, graph.J, param.N)
-#         temp = kappa ./ ((1 + param.beta) * res.PDj)
+#         temp = kappa ./ ((1 + param.beta) * res.PCj)
 #         for n in 1:param.N
 #             Lambda = repeat(Pjn[:, n], 1, graph.J)
 #             Qjkprime[:,:,n] = m[n] / param.beta * res.Qjk .^ ((nu-nu*param.beta-1)/(nu-1))
