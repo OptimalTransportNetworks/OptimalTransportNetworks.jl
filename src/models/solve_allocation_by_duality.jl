@@ -210,16 +210,16 @@ function hessian_duality(
                 for k in neighbors
                     if jd == j # P^x_j
                         diff = Pjn[k, n] - Pjn[j, n]
-                        if diff >= 0
+                        if diff >= 0 # Flows in the direction of k
                             term += m1dbeta * (Pjn[k, n] / Pjn[j, n])^2 * Qjkn[j, k, n] / diff
-                        else
+                        else # Flows in the direction of j
                             term += m1dbeta * Qjkn[k, j, n] / abs(diff)
                         end
                     elseif jd == k # P^x_k
                         diff = Pjn[k, n] - Pjn[j, n]
-                        if diff >= 0
+                        if diff >= 0 # Flows in the direction of k
                             term -= m1dbeta * Pjn[k, n] / Pjn[j, n] * Qjkn[j, k, n] / diff
-                        else
+                        else # Flows in the direction of j
                             term -= m1dbeta * Pjn[j, n] / Pjn[k, n] * Qjkn[k, j, n] / abs(diff)
                         end
                     end
