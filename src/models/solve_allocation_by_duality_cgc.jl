@@ -198,7 +198,7 @@ function hessian_duality_cgc(
                     tmp = Qjkn[j, k, n]
                     T = Qjk[j, k]^(1+beta) / kappa[j, k]
                     PK0 = PCj[j] * (1 + beta) / kappa[j, k]
-                    KPABprimemQjkn = cons * ((Pjn[k, nd] - Pjn[j, nd])/m[nd])^n1dnum1 * Qjk[j, k]^(-nu*beta*n1dnum1) * PK0^(-nu*n1dnum1)
+                    KPABprimemQjkn = cons * ((Pjn[k, nd] - Pjn[j, nd])/m[nd])^n1dnum1 * (Qjk[j, k]^beta * PK0)^(-nu*n1dnum1)
                     if jd == j
                         KPprimeABmQjkn = m1dbeta * Pjn[j, nd]^(-sigma) * PCj[j]^(sigma-1)
                         term += tmp * KPprimeABmQjkn # KP'AB
@@ -218,7 +218,7 @@ function hessian_duality_cgc(
                 else # Flows in the direction of j
                     tmp = Qjkn[k, j, n]
                     PK0 = PCj[k] * (1 + beta) / kappa[k, j]
-                    KPABprimemQjkn = cons * ((Pjn[j, nd] - Pjn[k, nd])/m[nd])^n1dnum1 * Qjk[k, j]^(-nu*beta*n1dnum1) * PK0^(-nu*n1dnum1)
+                    KPABprimemQjkn = cons * ((Pjn[j, nd] - Pjn[k, nd])/m[nd])^n1dnum1 * (Qjk[k, j]^beta * PK0)^(-nu*n1dnum1)
                     if jd == k
                         KPprimeABmQjkn = m1dbeta * Pjn[k, nd]^(-sigma) * PCj[k]^(sigma-1)
                         term -= tmp * KPprimeABmQjkn # KP'AB
