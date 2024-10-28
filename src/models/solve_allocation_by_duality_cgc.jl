@@ -194,7 +194,7 @@ function hessian_duality_cgc(
             # Now terms sum_k(Q^n_{jk} - Q^n_{kj}) as well as T'G + TG'
             for k in neighbors
                 diff = Pjn[k, n] - Pjn[j, n]
-                if diff > 0 # Flows in the direction of k
+                if diff >= 0 # Flows in the direction of k
                     tmp = Qjkn[j, k, n]
                     T = Qjk[j, k]^(1+beta) / kappa[j, k]
                     PK0 = PCj[j] * (1 + beta) / kappa[j, k]
@@ -260,6 +260,7 @@ function recover_allocation_duality_cgc(x, auxdata)
     Lj = graph.Lj
     m = param.m
     nu = param.nu
+    beta = param.beta
     hj1malpha = (graph.hj / (1-param.alpha)) .^ (1-param.alpha)
     nadj = .!graph.adjacency
 
@@ -287,26 +288,27 @@ function recover_allocation_duality_cgc(x, auxdata)
         
     # Calculate the aggregate flows Qjk
     Qjk = zeros(graph.J, graph.J)
-    temp = (kappa ./ ((1 + param.beta) * PCj)) .^ (nu/(nu-1))
+    temp = (kappa ./ ((1 + beta) * PCj)) .^ (nu/(nu-1))
     temp[nadj] .= 0
     for n in 1:param.N
         Lambda = repeat(Pjn[:, n], 1, graph.J)
         LL = max.(Lambda' - Lambda, 0) # P^n_k - P^n_j (non-negative flows)
         Qjk += m[n] * (LL / m[n]) .^ (nu/(nu-1))
     end
-    Qjk = (Qjk .* temp) .^ (nu-1)/(nu*param.beta)
+    Qjk = (Qjk .* temp) .^ (nu-1)/(nu*beta)
 
     # Calculate the flows Qjkn
     Qjkn = zeros(graph.J, graph.J, param.N)
-    temp = kappa ./ ((1 + param.beta) * PCj .* Qjk .^ (1+param.beta-nu))
+    temp = kappa ./ ((1 + beta) * PCj .* Qjk .^ (1+beta-nu))
     temp[nadj .| isinf.(temp)] .= 0 # Because of the max() clause, Qjk may be zero
     for n in 1:param.N
         Lambda = repeat(Pjn[:, n], 1, graph.J)
         LL = max.(Lambda' - Lambda, 0) # P^n_k - P^n_j (non-negative flows)
         Qjkn[:, :, n] = ((LL .* temp) / m[n]) .^ (1/(nu-1))
     end
+
     # Now calculating consumption bundle pre-transport cost
-    temp = Qjk .^ (1+param.beta) ./ kappa
+    temp = Qjk .^ (1+beta) ./ kappa
     temp[nadj] .= 0
     Dj = Cj + sum(temp, dims = 2)
     Djn = Dj .* (Pjn ./ PCj) .^ (-param.sigma) 
