@@ -184,7 +184,7 @@ function hessian_duality_cgc(
             G = (Pjn[j, n] / PCj[j])^(-sigma)
             if jd == j # 0 for P^n_k
                 Gprime = sigma * (Pjn[j, n] * Pjn[j, nd])^(-sigma) * PCj[j]^(2*sigma-1) 
-                Cprime = Lj[j]/omegaj[j] * (PCj[j] / Pjn[j, nd])^sigma * param.uprimeinvprime(PCj[j]/omegaj[j], graph.hj[j]) # / param.usecond(res.cj[j], graph.hj[j]) 
+                Cprime = Lj[j]/omegaj[j] * (PCj[j] / Pjn[j, nd])^sigma / param.usecond(res.cj[j], graph.hj[j]) # param.uprimeinvprime(PCj[j]/omegaj[j], graph.hj[j]) # 
                 if nd == n
                     Gprime -= sigma / PCj[j] * G^((sigma+1)/sigma)
                 end
@@ -230,7 +230,7 @@ function hessian_duality_cgc(
             end
 
             # Assign result
-            values[ind] = -obj_factor * term + 1e-5
+            values[ind] = -obj_factor * term + 1e-6
         end
     end
     return
