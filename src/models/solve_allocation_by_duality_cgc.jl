@@ -53,7 +53,7 @@ function solve_allocation_by_duality_cgc(x0, auxdata, verbose=true)
 
     # Set Ipopt options
     Ipopt.AddIpoptStrOption(prob, "hessian_approximation", "exact")
-    Ipopt.AddIpoptIntOption(prob, "max_iter", 1000)
+    Ipopt.AddIpoptIntOption(prob, "max_iter", 3000)
     Ipopt.AddIpoptIntOption(prob, "print_level", verbose ? 5 : 0)
 
     if haskey(param, :optimizer_attr)
@@ -193,65 +193,29 @@ function hessian_duality_cgc(
 
             # Now terms sum_k(Q^n_{jk} - Q^n_{kj}) as well as T'G + TG'
             for k in neighbors
-                diff = Pjn[k, n] - Pjn[j, n]
-                if diff >= 0 # Flows in the direction of k
-                    tmp = Qjkn[j, k, n]
+                if Qjkn[j, k, n] > 0 # Flows in the direction of k
                     T = Qjk[j, k]^(1 + beta) / kappa[j, k]
                     PK0 = PCj[j] * (1 + beta) / kappa[j, k]
-                    diffnd = Pjn[k, nd] - Pjn[j, nd]
-                    if diffnd > 0
-                        KPABprimemQjkn = cons * (diffnd/m[nd])^n1dnum1 * (PK0 * Qjk[j, k]^beta)^(-nu*n1dnum1)
-                        if !isfinite(KPABprimemQjkn)
-                            KPABprimemQjkn = 0
-                        end
-                    end
+                    KPABprime1 = cons * ((Pjn[k, nd] - Pjn[j, nd])/m[nd])^n1dnum1 * (PK0 * Qjk[j, k]^beta)^(-nu*n1dnum1)
+                    KPAprimeB1 = nd == n ? n1dnum1 / (Pjn[k, n] - Pjn[j, n]) : 0.0
                     if jd == j
-                        KPprimeABmQjkn = m1dbeta * Pjn[j, nd]^(-sigma) * PCj[j]^(sigma-1)
-                        term += tmp * KPprimeABmQjkn # KP'AB
-                        if nd == n && diff > 0
-                            term -= tmp * n1dnum1 / diff   # KPA'B
-                        end 
-                        if diffnd > 0
-                            term += tmp * KPABprimemQjkn # KPAB'
-                            term += T * cons2 * KPABprimemQjkn * G # T'G: second part
-                        end
-                        term += T * (1+beta) * KPprimeABmQjkn * G # T'G: first part
-                        term += T * Gprime  # TG'
+                        KPprimeAB1 = m1dbeta * Pjn[j, nd]^(-sigma) * PCj[j]^(sigma-1)
+                        term += Qjkn[j, k, n] * (KPprimeAB1 - KPAprimeB1 + KPABprime1) # Derivative of Qjkn
+                        term += T * (((1+beta) * KPprimeAB1 + cons2 * KPABprime1) * G + Gprime) # T'G + TG'
                     elseif jd == k
-                        if nd == n && diff > 0
-                            term += tmp * n1dnum1 / diff  # KPA'B [A'(k) has opposite sign]
-                        end 
-                        if diffnd > 0
-                            term -= tmp * KPABprimemQjkn # KPAB' [B'(k) has opposite sign]
-                            term -= T * cons2 * KPABprimemQjkn * G # T'G: second part [B'(k) has opposite sign]
-                        end
+                        term += Qjkn[j, k, n] * (KPAprimeB1 - KPABprime1) # Derivative of Qjkn
+                        term -= T * cons2 * KPABprime1 * G # Old T'G: second part [B'(k) has opposite sign]
                     end
-                else # Flows in the direction of j
-                    tmp = Qjkn[k, j, n]
+                end
+                if Qjkn[k, j, n] > 0 # Flows in the direction of j
                     PK0 = PCj[k] * (1 + beta) / kappa[k, j]
-                    diffnd = Pjn[j, nd] - Pjn[k, nd]
-                    if diffnd > 0
-                        KPABprimemQjkn = cons * (diffnd/m[nd])^n1dnum1 * (PK0 * Qjk[k, j]^beta)^(-nu*n1dnum1)
-                        if !isfinite(KPABprimemQjkn)
-                            KPABprimemQjkn = 0
-                        end
-                    end
+                    KPABprime1 = cons * ((Pjn[j, nd] - Pjn[k, nd])/m[nd])^n1dnum1 * (PK0 * Qjk[k, j]^beta)^(-nu*n1dnum1)
+                    KPAprimeB1 = nd == n ? n1dnum1 / (Pjn[j, n] - Pjn[k, n]) : 0.0 
                     if jd == k
-                        KPprimeABmQjkn = m1dbeta * Pjn[k, nd]^(-sigma) * PCj[k]^(sigma-1)
-                        term -= tmp * KPprimeABmQjkn # KP'AB
-                        if nd == n && diff < 0
-                            term += tmp * n1dnum1 / abs(diff)   # KPA'B
-                        end 
-                        if diffnd > 0
-                            term -= tmp * KPABprimemQjkn # KPAB'
-                        end
+                        KPprimeAB1 = m1dbeta * Pjn[k, nd]^(-sigma) * PCj[k]^(sigma-1)
+                        term -= Qjkn[k, j, n] * (KPprimeAB1 - KPAprimeB1 + KPABprime1) # Derivative of Qjkn
                     elseif jd == j
-                        if nd == n && diff < 0
-                            term -= tmp * n1dnum1 / abs(diff)  # KPA'B [Akj'(j) has opposite sign]
-                        end 
-                        if diffnd > 0
-                            term += tmp * KPABprimemQjkn # KPAB' [Bkj'(j) has opposite sign]
-                        end
+                        term -= Qjkn[k, j, n] * (KPAprimeB1 - KPABprime1) # Derivative of Qjkn
                     end
                 end
             end # End of k loop
