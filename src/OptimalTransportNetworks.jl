@@ -75,6 +75,7 @@ module OptimalTransportNetworks
 
 using LinearAlgebra, JuMP, Plots
 using Statistics: mean
+using SparseArrays: sparse, findnz
 # using MathOptInterface: Parameter
 using Dierckx: Spline2D, evaluate
 using NearestNeighbors: KDTree, knn

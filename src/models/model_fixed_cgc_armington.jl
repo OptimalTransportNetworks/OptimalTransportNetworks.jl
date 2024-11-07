@@ -73,7 +73,7 @@ function recover_allocation_fixed_cgc_armington(model, auxdata)
     # Network flows
     Qin_direct = value.(model_dict[:Qin_direct])
     Qin_indirect = value.(model_dict[:Qin_indirect])
-    results[:Qin] = max.(Qin_direct, Qin_indirect) - min.(Qin_direct, Qin_indirect)
+    results[:Qin] = Qin_direct - Qin_indirect # max.(Qin_direct, Qin_indirect) - min.(Qin_direct, Qin_indirect)
     results[:Qjkn] = gen_network_flows(results[:Qin], graph, param.N)
     return results
 end
