@@ -42,7 +42,7 @@ param = init_parameters(K = 10, labor_mobility = true)
 function init_parameters(; alpha = 0.5, beta = 1, gamma = 1, K = 1, sigma = 5, rho = 2, a = 0.8, N = 1, 
                          labor_mobility = false, cross_good_congestion=false, nu = 1.5, m = ones(N), 
                          annealing=true, 
-                         verbose = true, duality = true, warm_start = true, 
+                         verbose = true, duality = false, warm_start = true, 
                          kappa_min = 1e-5, min_iter = 20, max_iter = 200, tol = 1e-5, kwargs...)
     param = Dict()
 
