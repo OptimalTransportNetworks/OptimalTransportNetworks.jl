@@ -166,7 +166,7 @@ function hessian_duality_cgc(
         ind = 0
 
         # https://stackoverflow.com/questions/38901275/inbounds-propagation-rules-in-julia
-        for (jdnd, jn) in zip(hess_str[1], hess_str[2])
+        @inbounds for (jdnd, jn) in zip(hess_str[1], hess_str[2])
             ind += 1
             # First get the indices of the element and the respective derivative 
             j = (jn-1) % J + 1
@@ -204,7 +204,7 @@ function hessian_duality_cgc(
                         term += T * (((1+beta) * KPprimeAB1 + cons2 * KPABprime1) * G + Gprime) # T'G + TG'
                     elseif jd == k
                         term += Qjkn[j, k, n] * (KPAprimeB1 - KPABprime1) # Derivative of Qjkn
-                        term -= T * cons2 * KPABprime1 * G # Old T'G: second part [B'(k) has opposite sign]
+                        term -= T * cons2 * KPABprime1 * G # T'G: second part [B'(k) has opposite sign]
                     end
                 end
                 if Qjkn[k, j, n] > 0 # Flows in the direction of j
@@ -213,9 +213,9 @@ function hessian_duality_cgc(
                     KPAprimeB1 = nd == n ? n1dnum1 / (Pjn[j, n] - Pjn[k, n]) : 0.0 
                     if jd == k
                         KPprimeAB1 = m1dbeta * Pjn[k, nd]^(-sigma) * PCj[k]^(sigma-1)
-                        term -= Qjkn[k, j, n] * (KPprimeAB1 - KPAprimeB1 + KPABprime1) # Derivative of Qjkn
+                        term -= Qjkn[k, j, n] * (KPprimeAB1 - KPAprimeB1 + KPABprime1) # Derivative of Qkjn
                     elseif jd == j
-                        term -= Qjkn[k, j, n] * (KPAprimeB1 - KPABprime1) # Derivative of Qjkn
+                        term -= Qjkn[k, j, n] * (KPAprimeB1 - KPABprime1) # Derivative of Qkjn
                     end
                 end
             end # End of k loop
