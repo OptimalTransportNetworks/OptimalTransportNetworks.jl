@@ -70,7 +70,7 @@ function recover_allocation_fixed_cgc(model, auxdata)
     results[:uj] = value.(model_dict[:uj])
     # Prices
     results[:Pjn] = shadow_price.(model_dict[:Pjn])
-    results[:PCj] = dropdims(sum(results[:Pjn] .^ (1-param.sigma), dims=2), dims = 2) .^ (1/(1-param.sigma))    
+    results[:PCj] = dropdims(sum(abs.(results[:Pjn]) .^ (1-param.sigma), dims=2), dims = 2) .^ (1/(1-param.sigma))    
     # Network flows
     Qin_direct = value.(model_dict[:Qin_direct])
     Qin_indirect = value.(model_dict[:Qin_indirect])

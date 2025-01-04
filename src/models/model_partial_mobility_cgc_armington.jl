@@ -87,7 +87,7 @@ function recover_allocation_partial_mobility_cgc_armington(model, auxdata)
     results[:uj] = param.u.(results[:cj], results[:hj])
     # Prices
     results[:Pjn] = shadow_price.(model_dict[:Pjn])
-    results[:PCj] = dropdims(sum(results[:Pjn] .^ (1-param.sigma), dims=2), dims=2) .^ (1/(1-param.sigma))    
+    results[:PCj] = dropdims(sum(abs.(results[:Pjn]) .^ (1-param.sigma), dims=2), dims=2) .^ (1/(1-param.sigma))    
     # Network flows
     Qin_direct = value.(model_dict[:Qin_direct])
     Qin_indirect = value.(model_dict[:Qin_indirect])
