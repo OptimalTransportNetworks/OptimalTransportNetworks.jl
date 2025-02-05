@@ -49,7 +49,7 @@ Plot a graph visualization with various styling options.
 
 # Examples
 ```julia
-param = init_parameters(K = 10)
+param = init_parameters(K = 10, duality = false)
 graph = create_graph(param)
 graph[:Zjn][51] = 10.0
 results = optimal_network(param, graph)

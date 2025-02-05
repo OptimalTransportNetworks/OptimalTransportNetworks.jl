@@ -37,7 +37,7 @@ Runs the simulated annealing method starting from network `I0`. Only sensible if
 # Examples
 ```julia
 # Nonconvex case, disabling automatic annealing
-param = init_parameters(K = 10, gamma = 2, annealing = false)
+param = init_parameters(K = 10, gamma = 2, annealing = false, duality = false)
 graph = create_graph(param)
 graph[:Zjn][61] = 10.0
 results = optimal_network(param, graph)
