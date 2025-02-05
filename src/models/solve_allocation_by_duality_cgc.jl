@@ -230,7 +230,7 @@ function hessian_duality_cgc(
             end
 
             # Assign result
-            values[ind] = -obj_factor * term + 1e-6
+            values[ind] = -obj_factor * term # + 1e-6
         end
     end
     return
@@ -280,7 +280,7 @@ function recover_allocation_duality_cgc(x, auxdata)
         LL = max.(Lambda' - Lambda, 0) # P^n_k - P^n_j (non-negative flows)
         Qjk += m[n] * (LL / m[n]) .^ (nu/(nu-1))
     end
-    Qjk = (Qjk .* temp) .^ (nu-1)/(nu*beta)
+    Qjk = (Qjk .* temp) .^ ((nu-1)/(nu*beta))
 
     # Calculate the flows Qjkn
     Qjkn = zeros(graph.J, graph.J, param.N)
