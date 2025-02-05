@@ -20,7 +20,7 @@ Returns a `param` dict with the model parameters. These are independent of the g
 - `m::Vector{Float64}=ones(N)`: Vector of weights Nx1 in the cross congestion cost function
 - `annealing::Bool=true`: Switch for the use of annealing at the end of iterations (only if gamma > beta)
 - `verbose::Bool=true`: Switch to turn on/off text output (from Ipopt or other optimizers)
-- `duality::Bool=true`: Switch to turn on/off duality whenever available
+- `duality::Bool=true`: Switch to turn on/off duality whenever available (fixed labor and beta <= 1)
 - `warm_start::Bool=true`: Use the previous solution as a warm start for the next iteration
 - `kappa_min::Float64=1e-5`: Minimum value for road capacities K
 - `min_iter::Int64=20`: Minimum number of iterations
