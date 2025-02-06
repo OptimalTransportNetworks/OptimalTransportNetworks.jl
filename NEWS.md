@@ -1,3 +1,7 @@
+# 0.1.9
+
+* The exact dual solution for the Hessian with `cross_good_congestion = true` does not have good numerical properties in some cases. Therefore, by default now an approximate solution is used which works better for most problems. Users can set `duality = 2` to use the exact solution in the CGC case. 
+
 # 0.1.8
 
 * Fixed dual solution with `cross_good_congestion = true`, and set the default `duality = true` in `init_parameters()`. It is highly recommended to keep `beta <= 1` in fixed labor cases to harness the dual solutions, which yield a tremendous speedup.
