@@ -8,7 +8,7 @@ Fajgelbaum, P. D., & Schaal, E. (2020). Optimal transport networks in spatial eq
 
 The model/software uses duality principles to optimize over the space of networks, nesting an optimal flows problem and a neoclasical general-equilibrium trade model into a global network design problem to derive the optimal (welfare maximizing) transport network (extension) from any primitive set of economic fundamantals [population per location, productivity per location for each of *N* traded goods, endowment of a non-traded good, and (optionally) a pre-existing transport network]. 
 
-For more information about the model see [this folder](https://github.com/SebKrantz/OptimalTransportNetworkToolbox/tree/main/docs/paper_materials) and the [MATLAB User Guide](https://raw.githubusercontent.com/SebKrantz/OptimalTransportNetworkToolbox/main/docs/User%20Guide.pdf). 
+For more information about the model see [this folder](https://github.com/SebKrantz/OptimalTransportNetworkToolbox/tree/main/docs/paper_materials) and the [MATLAB User Guide](https://raw.githubusercontent.com/SebKrantz/OptimalTransportNetworkToolbox/main/docs/User%20Guide.pdf). See also my [blog post](https://sebkrantz.github.io/Rblog/2024/09/22/introducing-optimaltransportnetworks-jl-optimal-transport-networks-in-spatial-equilibrium/) on this software release. 
 
 The model is the first of its kind and a pathbreaking contribution towards the welfare maximizing planning of transport infrastructure. Its creation has been funded by the European Union through an [ERC Research Grant](https://cordis.europa.eu/project/id/804095). The author of this Julia library has no personal connections to the authors, but has used their Matlab library for research purposes and belives that it deserves an accessible open-source implementation. Community efforts to further improve the code are welcome. 
 
@@ -26,9 +26,9 @@ This plot shows the optimal network after 200 iterations, keeping population fix
 
 ## Performance Notes
 
-* The Julia implementation does not provide hard-coded Gradients, Jacobians, and Hessians as the MATLAB implementation does for some model cases, but relies solely on JuMP's automatic differentiation. This has proven ineffective for dual solutions to the model where the objective is quite complex. Thus, at present, duality does not help to speed up computations in Julia, and accordingly the default is `duality = false`. I expect this to change in when [support for detecting nonlinear subexpressions](https://github.com/jump-dev/JuMP.jl/issues/3738) will be added to JuMP.  
+* The Julia implementation does not provide hard-coded Gradients, Jacobians, and Hessians as the MATLAB implementation does for some model cases, but relies solely on JuMP's automatic differentiation. One exception is dual solutions which are implemented directly using Ipopt and hard-coded sparse hessians - they are super fast. By default `duality = true`, and if labor is fixed and `beta <= 1`, users will experience very fast dual solves. I also expect non-dual solutions to speed up when [support for detecting nonlinear subexpressions](https://github.com/jump-dev/JuMP.jl/issues/3738) will be added to JuMP.  
 
-* Symbolic autodifferentiation via [MathOptSymbolicAD.jl](https://github.com/lanl-ansi/MathOptSymbolicAD.jl) can provide significant performance improvements. The symbolic backend can be activated using:
+* Symbolic autodifferentiation via [MathOptSymbolicAD.jl](https://github.com/lanl-ansi/MathOptSymbolicAD.jl) can also provide significant performance improvements for non-dual cases. The symbolic backend can be activated using:
 
 ```julia
 import MathOptInterface as MOI
