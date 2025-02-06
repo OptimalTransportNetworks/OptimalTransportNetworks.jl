@@ -129,7 +129,7 @@ function hessian_duality_cgc(
         graph = auxdata.graph
         nodes = graph.nodes
         kappa = auxdata.kappa
-        inexact_algo = param.duality == 2
+        inexact_algo = param.duality == true # param.duality == 2 for exact algorithm
         beta = param.beta
         m1dbeta = -1 / beta
         sigma = param.sigma
