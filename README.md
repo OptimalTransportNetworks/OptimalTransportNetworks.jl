@@ -31,7 +31,7 @@ This plot shows the optimal network after 200 iterations, keeping population fix
 
 ## Performance Notes
 
-* The Julia implementation does not provide hard-coded Gradients, Jacobians, and Hessians as the MATLAB implementation does for some model cases, but relies solely on JuMP's automatic differentiation. One exception is dual solutions which are implemented directly using Ipopt and hard-coded sparse hessians - they are super fast. By default `duality = true`, and if labor is fixed and `beta <= 1`, users will experience very fast dual solves. I also expect non-dual solutions to speed up when [support for detecting nonlinear subexpressions](https://github.com/jump-dev/JuMP.jl/issues/3738) will be added to JuMP.  
+* The Julia implementation for the most part does not provide hard-coded Gradients, Jacobians, and Hessians as the MATLAB implementation does for some model cases, but relies solely on JuMP's automatic differentiation. One exception is dual solutions which are implemented directly using Ipopt and hard-coded sparse Hessians - they are super fast. By default `duality = true`, and if labor is fixed and `beta <= 1`, users will experience very fast dual solves. I also expect non-dual solutions to speed up when [support for detecting nonlinear subexpressions](https://github.com/jump-dev/JuMP.jl/issues/3738) will be added to JuMP.  
 
 * Symbolic autodifferentiation via [MathOptSymbolicAD.jl](https://github.com/lanl-ansi/MathOptSymbolicAD.jl) can also provide significant performance improvements for non-dual cases. The symbolic backend can be activated using:
 
