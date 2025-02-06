@@ -235,7 +235,7 @@ function hessian_duality_cgc(
             end
 
             # Assign result
-            values[ind] = -obj_factor * term # + 1e-6
+            values[ind] = -obj_factor * term + 1e-6 # Seems to work better with a small tolerance
         end
     end
     return

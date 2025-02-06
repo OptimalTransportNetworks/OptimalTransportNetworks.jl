@@ -236,7 +236,7 @@ function hessian_duality(
             end
 
             # Assign result
-            values[ind] = -obj_factor * term # + 1e-5 # Somehow need this increment to make it work
+            values[ind] = -obj_factor * term + 1e-6 # Somehow need this increment to make it work
         end
     end
     return
