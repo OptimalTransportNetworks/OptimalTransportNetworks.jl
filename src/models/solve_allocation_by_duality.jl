@@ -181,7 +181,7 @@ function hessian_duality(
         ind = 0
         
         # https://stackoverflow.com/questions/38901275/inbounds-propagation-rules-in-julia
-        @inbounds for (jdnd, jn) in zip(hess_str[2], hess_str[1])
+        @inbounds for (jdnd, jn) in zip(hess_str[1], hess_str[2])
             ind += 1
             # First get the indices of the element and the respective derivative 
             j = (jn-1) % J + 1
