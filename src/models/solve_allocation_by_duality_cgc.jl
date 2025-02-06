@@ -277,19 +277,21 @@ function recover_allocation_duality_cgc(x, auxdata)
     Cj = cj .* Lj
         
     # Calculate the aggregate flows Qjk
-    Qjk = zeros(graph.J, graph.J)
-    temp = (kappa ./ ((1 + beta) * PCj)) .^ (nu/(nu-1))
+    temp = kappa ./ ((1 + beta) * PCj)
     temp[nadj] .= 0
+    Qjk = zeros(graph.J, graph.J)
     for n in 1:param.N
         Lambda = repeat(Pjn[:, n], 1, graph.J)
         LL = max.(Lambda' - Lambda, 0) # P^n_k - P^n_j (non-negative flows)
         Qjk += m[n] * (LL / m[n]) .^ (nu/(nu-1))
     end
-    Qjk = (Qjk .* temp) .^ ((nu-1)/(nu*beta))
+    Qjk .^= ((nu-1)/nu)
+    Qjk .*= temp
+    Qjk .^= (1/beta)
 
     # Calculate the flows Qjkn
     Qjkn = zeros(graph.J, graph.J, param.N)
-    temp = kappa ./ ((1 + beta) * PCj .* Qjk .^ (1+beta-nu))
+    temp .= kappa ./ ((1 + beta) * PCj .* Qjk .^ (1+beta-nu))
     temp[nadj .| .!isfinite.(temp)] .= 0 # Because of the max() clause, Qjk may be zero
     for n in 1:param.N
         Lambda = repeat(Pjn[:, n], 1, graph.J)
@@ -298,7 +300,7 @@ function recover_allocation_duality_cgc(x, auxdata)
     end
 
     # Now calculating consumption bundle pre-transport cost
-    temp = Qjk .^ (1+beta) ./ kappa
+    temp .= Qjk .^ (1+beta) ./ kappa
     temp[nadj] .= 0
     Dj = Cj + sum(temp, dims = 2)
     Djn = Dj .* (Pjn ./ PCj) .^ (-param.sigma) 
