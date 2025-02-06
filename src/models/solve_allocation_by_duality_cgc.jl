@@ -245,7 +245,7 @@ function hessian_duality_cgc(
             end
 
             # Assign result
-            values[ind] = -obj_factor * term
+            values[ind] = -obj_factor * term + Random.rand() * 1e-5
         end
     end
     return
