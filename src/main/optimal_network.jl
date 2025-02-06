@@ -21,7 +21,7 @@ Solve for the optimal network by solving the inner problem and the outer problem
 
 # Examples
 ```julia
-param = init_parameters(K = 10)
+param = init_parameters(K = 10, duality = false)
 graph = create_graph(param)
 graph[:Zjn][61] = 10.0
 results = optimal_network(param, graph)

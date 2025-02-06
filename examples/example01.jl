@@ -8,16 +8,14 @@ using OptimalTransportNetworks
 # Set parameters: try with labor mobility: true/false, convex: beta>=gamma,
 # nonconvex: gamma>beta, cross good congestion: true/false
 
-param = init_parameters(labor_mobility = true, K = 10, gamma = 1, beta = 1, verbose = true,
-                        N = 1, cross_good_congestion = false, nu = 1, duality = false)
-
-# tol is the tolerance in distance b/w iterations for road capacity
-# kappa=I^gamma/delta_i, default is 1e-7 but we relax it a bit here
+param = init_parameters(labor_mobility = true, K = 10, gamma = 1, beta = 1, N = 1, 
+                        cross_good_congestion = true)
 
 # ------------
 # Init network
 
-graph = create_graph(param, 11, 11, type = "map") # create a map network of 11x11 nodes located in [0,10]x[0,10]
+# create a map network of 11x11 nodes located in [0,10]x[0,10]
+graph = create_graph(param, 11, 11, type = "map") 
 # note: by default, productivity and population are equalized everywhere
 
 # Customize graph
@@ -33,7 +31,6 @@ graph[:Zjn][Ni, :] .= 1 # central node more productive
 
 
 # Plot the network with the optimal transportation plan
-
 plot_graph(graph, results[:Ijk], node_sizes = results[:Cj])
 
 # The size/shade of the nodes reflects the total consumption at each node
