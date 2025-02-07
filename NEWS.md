@@ -1,6 +1,6 @@
 # 0.2.0
 
-* The reason for the less than ideal numerical problems of the exact dual solution for the Hessian with `cross_good_congestion = true` in v0.1.9 was that the sparse hessian had too few elements. This release fixes the problem by adding some additional off-diagonal elements to the sparse hesssian. The heuristic algorithm is now removed as the exact one always gives better solves (`duality = true` and `duality = 2` both call the exact algorithm now). 
+* The reason for the less than ideal numerical properties of the exact dual solution for the Hessian with `cross_good_congestion = true` in v0.1.9 was that the sparse hessian had too few elements. This release fixes the problem by adding some additional off-diagonal elements to the sparse hesssian. The heuristic algorithm is now removed as the exact one always gives better solves (`duality = true` and `duality = 2` both call the exact algorithm now). 
 
 # 0.1.9
 
