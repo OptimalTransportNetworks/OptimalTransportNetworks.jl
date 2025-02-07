@@ -8,7 +8,7 @@ makedocs(
     format = Documenter.HTML(
         # Add these options for version switching
         prettyurls = get(ENV, "CI", nothing) == "true",
-        canonical = "https://SebKrantz.github.io/OptimalTransportNetworks.jl/stable"
+        canonical = "https://OptimalTransportNetworks.github.io/OptimalTransportNetworks.jl/stable"
     ),
     pages = [
         "Home" => "index.md",
@@ -17,7 +17,7 @@ makedocs(
 )
 
 deploydocs(
-    repo = "github.com/SebKrantz/OptimalTransportNetworks.jl.git",
+    repo = "github.com/OptimalTransportNetworks/OptimalTransportNetworks.jl.git",
     devbranch = "main",
     push_preview = true,
     versions = ["stable" => "v^", "dev" => "main"]
