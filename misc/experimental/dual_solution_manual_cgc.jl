@@ -25,12 +25,20 @@ if map_size == 4
     graph = create_graph(param, 4, 4, type = "map")  
     # Customize graph
     graph[:Zjn] = fill(0.1, graph[:J], param[:N]) 
-    Ni = find_node(graph, 2, 3) 
-    graph[:Zjn][Ni, 1] = 2 
-    Ni = find_node(graph, 2, 1) 
-    graph[:Zjn][Ni, 2] = 1 
-    Ni = find_node(graph, 4, 4) 
-    graph[:Zjn][Ni, 3] = 1 
+    if param[:N] == 3
+        Ni = find_node(graph, 2, 3) 
+        graph[:Zjn][Ni, 1] = 2 
+        Ni = find_node(graph, 2, 1) 
+        graph[:Zjn][Ni, 2] = 1 
+        Ni = find_node(graph, 4, 4) 
+        graph[:Zjn][Ni, 3] = 1 
+    else
+        using Random: rand
+        for i in 1:param[:N]
+            Ni = find_node(graph, rand((1, 2, 3, 4)), rand((1, 2, 3, 4))) 
+            graph[:Zjn][Ni, i] = rand() * 2
+        end
+    end
 end
 if map_size == 3
     graph = create_graph(param, 3, 3, type = "map")  
@@ -172,12 +180,12 @@ sum(abs.(gradient_duality_cgc(x0, auxdata) ./ ForwardDiff.gradient(objective, x0
 
 
 # Now the Hessian 
-function hessian_structure_duality(auxdata)
+function hessian_structure_duality_cgc(auxdata)
     graph = auxdata.graph
     param = auxdata.param
 
     # Create the Hessian structure
-    H_structure = tril(repeat(sparse(I(graph.J)), param.N, param.N) + kron(sparse(I(param.N)), sparse(graph.adjacency)))
+    H_structure = tril(repeat(sparse(I(graph.J)), param.N, param.N) + kron(sparse(ones(Int, param.N, param.N)), sparse(graph.adjacency))) # tril(repeat(sparse(I(graph.J)), param.N, param.N) + kron(sparse(I(param.N)), sparse(graph.adjacency)))
         
     # Get the row and column indices of non-zero elements
     rows, cols, _ = findnz(H_structure)
@@ -318,7 +326,7 @@ function hessian_duality_cgc(
     return values
 end
 
-rows, cols = hessian_structure_duality(auxdata)
+rows, cols = hessian_structure_duality_cgc(auxdata)
 cind = CartesianIndex.(rows, cols)
 values = zeros(length(cind))
 

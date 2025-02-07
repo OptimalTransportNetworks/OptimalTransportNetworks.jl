@@ -141,7 +141,6 @@ function hessian_duality_cgc(
         graph = auxdata.graph
         nodes = graph.nodes
         kappa = auxdata.kappa
-        inexact_algo = param.duality == true # param.duality == 2 for exact algorithm
         beta = param.beta
         m1dbeta = -1 / beta
         sigma = param.sigma
@@ -160,12 +159,9 @@ function hessian_duality_cgc(
         # Constant term: first part of Bprime
         cons = m1dbeta * n1dnum1 * numbetam1
         ## Constant in T'
-        if inexact_algo
-            cons2 = numbetam1 / (numbetam1+nu*beta)
-        else
-            # New: constant in T' -> More accurate!
-            cons3 = m1dbeta * n1dnum1 * (numbetam1+nu*beta) / (1+beta)
-        end
+        # cons2 = numbetam1 / (numbetam1+nu*beta)
+        # New: constant in T' -> More accurate!
+        cons3 = m1dbeta * n1dnum1 * (numbetam1+nu*beta) / (1+beta)
 
         # Precompute elements
         res = recover_allocation_duality_cgc(x, auxdata)
@@ -219,19 +215,13 @@ function hessian_duality_cgc(
                     if jd == j
                         KPprimeAB1 = m1dbeta * Pjn[j, nd]^(-sigma) * PCj[j]^(sigma-1)
                         term += Qjkn[j, k, n] * (KPprimeAB1 - KPAprimeB1 + KPABprime1) # Derivative of Qjkn
-                        if inexact_algo
-                            term += T * (((1+beta) * KPprimeAB1 + cons2 * KPABprime1) * G + Gprime) # T'G + TG'
-                        else
-                            term += T * ((1+beta) * KPprimeAB1 * G + Gprime) # T'G (first part) + TG'
-                            term += cons3 * Qjkn[j, k, nd] / PCj[j] * G # Second part of T'G
-                        end
+                        # term += T * (((1+beta) * KPprimeAB1 + cons2 * KPABprime1) * G + Gprime) # T'G + TG'
+                        term += T * ((1+beta) * KPprimeAB1 * G + Gprime) # T'G (first part) + TG'
+                        term += cons3 * Qjkn[j, k, nd] / PCj[j] * G # Second part of T'G
                     elseif jd == k
                         term += Qjkn[j, k, n] * (KPAprimeB1 - KPABprime1) # Derivative of Qjkn
-                        if inexact_algo
-                            term -= T * cons2 * KPABprime1 * G # T'G: second part [B'(k) has opposite sign]
-                        else
-                            term -= cons3 * Qjkn[j, k, nd] / PCj[j] * G # Second part of T'G 
-                        end
+                        # term -= T * cons2 * KPABprime1 * G # T'G: second part [B'(k) has opposite sign]
+                        term -= cons3 * Qjkn[j, k, nd] / PCj[j] * G # Second part of T'G 
                     end
                 end
                 if Qjkn[k, j, n] > 0 # Flows in the direction of j
@@ -330,97 +320,3 @@ function recover_allocation_duality_cgc(x, auxdata)
     return (Pjn=Pjn, PCj=PCj, Ljn=Ljn, Yjn=Yjn, cj=cj, Cj=Cj, Dj=Dj, Djn=Djn, Qjk=Qjk, Qjkn=Qjkn)
 end
 
-
-
-# # Hessian Experimental:
-#         # These are the lagrange multipliers = prices
-#         Lambda = repeat(x, 1, graph.J * param.N) # P^n_j: each column is a price, the rows should be the derivatives (P^n'_k)
-#         lambda = reshape(x, (graph.J, param.N))
-
-#         # Compute price index
-#         P = sum(lambda .^ (1 - param.sigma), dims=2) .^ (1 / (1 - param.sigma))
-#         mat_P = repeat(P, param.N, param.N * graph.J)
-
-#         # Create masks
-#         # This lets different products in the same location relate
-#         Iij = kron(ones(param.N, param.N), I(graph.J))
-#         # This is adjacency, but only for the same product (n == n')
-#         Inm = kron(I(param.N), graph.adjacency)
-
-#         # Compute Qjkn terms for Hessian
-#         Qjknprime = zeros(graph.J, graph.J, param.N)
-
-
-
-
-
-#         diff = Lambda' - Lambda # P^n'_k - P^n_j
-#         mat_kappa = repeat(kappa, param.N, param.N)
-#         mN = repeat(param.m, inner = graph.J)
-#         # Rows are the derivatives, columns are P^n_j
-#         PCjN = repeat(res.PCj, param.N)
-#         A = mat_kappa ./ ((1+param.beta) * mN .* PCjN)'
-#         # Adding term for (block-digonal) elements
-#         temp = diff .* (x .^ (-param.sigma) .* PCjN .^ (param.sigma - 1))' .- 1
-#         temp[Iij .== 0] .= 1
-#         Aprime = A .* temp 
-#         temp = diff .* Inm
-#         temp[Inm .== 0] .= 1
-#         A .*= temp
-
-#         BA = A .^ (1/(nu-1))
-#         BprimeAAprime = (1/(nu-1)) * A .^ (nu/(1-nu)) .* Aprime
-#         BprimeAAprime[isnan.(BprimeAAprime)] .= 0
-
-#         C = repeat(res.Qjk .^ ((nu-param.beta-1)/(nu-1)), param.N, param.N) 
-#         Cprime = repeat(((nu-param.beta-1)/(nu-1)) * res.Qjk .^ (param.beta/(1-nu)), param.N, param.N)
-
-#         Qjknprime = BA .* Cprime .* BprimeAAprime .* mN # Off-diagonal (n') part
-#         Qjknprime[Inm] += BprimeAAprime[Inm] .* C[Inm]  # Adding diagonal
-#         # Compute Qjkn Sums
-
-#         # Derivatives of Qjk
-#         # Result should be nedg * N
-#         Qjkprime = zeros(graph.J, graph.J, param.N)
-#         temp = kappa ./ ((1 + param.beta) * res.PCj)
-#         for n in 1:param.N
-#             Lambda = repeat(Pjn[:, n], 1, graph.J)
-#             Qjkprime[:,:,n] = m[n] / param.beta * res.Qjk .^ ((nu-nu*param.beta-1)/(nu-1))
-#             LL = Lambda' - Lambda # P^n_k - P^n_j
-#             LL[.!graph.adjacency] .= 0
-#             Qjkprime[:,:,n] .*= ((LL .* temp) / m[n]) .^ (1/(nu-1)) # A^(1/(nu-1))
-#             Qjkprime[:,:,n] .*= temp / m[n] # A'(P^n_k)
-#             tril()
-#         end
-#         Qjk = (Qjk .* temp) .^ (nu-1)/(nu*param.beta)
-
-#         Qjkprime = res.Qjk[graph.adjacency]
-        
-
-#         # This is for Djn, the standard trade part (excluding trade costs)
-#         termA = -param.sigma * (repeat(P, param.N) .^ param.sigma .* x .^ (-(param.sigma + 1)) .* repeat(res.Cj, param.N))
-#         part1 = Iij .* Lambda .^ (-param.sigma) .* Lambda' .^ (-param.sigma) .* mat_P .^ (2 * param.sigma)
-#         termB = param.sigma * part1 ./ mat_P .* repeat(res.Cj, param.N, graph.J * param.N)
-#         termC = part1 .* repeat(graph.Lj ./ (graph.omegaj .* param.usecond.(res.cj, graph.hj)), param.N, graph.J * param.N)
-#         Cjn = Diagonal(termA[:]) + termB + termC 
-
-#         # Now comes the part of Djn relating to trade costs
-#         Djn_costs = 
-
-
-#         Djn = Cjn + Djn_costs
-
-
-#         # This is related to the flows terms in the standard case
-        
-#         # Off-diagonal P^n_k terms
-#         termD = 1 / (param.beta * (1 + param.beta)^(1 / param.beta)) * Inm .* mat_kappa .^ (1 / param.beta) .* 
-#                 abs.(diff) .^ (1 / param.beta - 1) .* 
-#                 ((diff .> 0) .* Lambda' ./ Lambda .^ (1 + 1 / param.beta) + 
-#                 (diff .< 0) .* Lambda ./ Lambda' .^ (1 + 1 / param.beta))
-#         # Diagonal P^n_j terms: sum across kappa
-#         termE = -1 / (param.beta * (1 + param.beta)^(1 / param.beta)) * Inm .* mat_kappa .^ (1 / param.beta) .* 
-#                 abs.(diff) .^ (1 / param.beta - 1) .* 
-#                 ((diff .> 0) .* Lambda' .^ 2 ./ Lambda .^ (2 + 1 / param.beta) + 
-#                 (diff .< 0) ./ Lambda' .^ (1 / param.beta))
-#         termE = sum(termE, dims=2)
