@@ -1,24 +1,20 @@
 using Documenter
 using OptimalTransportNetworks
 
-makedocs(
+makedocs(;
     sitename = "OptimalTransportNetworks.jl",
     modules = [OptimalTransportNetworks],
-    checkdocs = :none,
     format = Documenter.HTML(
         # Add these options for version switching
         prettyurls = get(ENV, "CI", nothing) == "true",
-        canonical = "https://OptimalTransportNetworks.github.io/OptimalTransportNetworks.jl/stable"
+        canonical = "https://OptimalTransportNetworks.github.io/OptimalTransportNetworks.jl"
     ),
     pages = [
         "Home" => "index.md",
         "API" => "api.md"
-    ]
+    ],
+    strict=true,
+    checkdocs = :none,
 )
 
-deploydocs(
-    repo = "github.com/OptimalTransportNetworks/OptimalTransportNetworks.jl.git",
-    devbranch = "main",
-    push_preview = true,
-    versions = ["stable" => "v^", "dev" => "main"]
-)
+deploydocs(; repo="github.com/OptimalTransportNetworks/OptimalTransportNetworks.jl", push_preview=true)
