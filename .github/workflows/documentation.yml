@@ -4,10 +4,9 @@ on:
   workflow_dispatch:
   release:
     types: [published]
-  # push:
-  #   branches:
-  #     - main # update to match your development branch (master, main, dev, trunk, ...)
-  #   tags: '*'
+    branches:
+      - main # update to match your development branch (master, main, dev, trunk, ...)
+    tags: '*'
 
 jobs:
   build:
