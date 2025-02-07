@@ -141,7 +141,6 @@ function hessian_duality_cgc(
         graph = auxdata.graph
         nodes = graph.nodes
         kappa = auxdata.kappa
-        inexact_algo = param.duality == true # param.duality == 2 for exact algorithm
         beta = param.beta
         m1dbeta = -1 / beta
         sigma = param.sigma
@@ -160,12 +159,9 @@ function hessian_duality_cgc(
         # Constant term: first part of Bprime
         cons = m1dbeta * n1dnum1 * numbetam1
         ## Constant in T'
-        if inexact_algo
-            cons2 = numbetam1 / (numbetam1+nu*beta)
-        else
-            # New: constant in T' -> More accurate!
-            cons3 = m1dbeta * n1dnum1 * (numbetam1+nu*beta) / (1+beta)
-        end
+        # cons2 = numbetam1 / (numbetam1+nu*beta)
+        # New: constant in T' -> More accurate!
+        cons3 = m1dbeta * n1dnum1 * (numbetam1+nu*beta) / (1+beta)
 
         # Precompute elements
         res = recover_allocation_duality_cgc(x, auxdata)
@@ -219,19 +215,13 @@ function hessian_duality_cgc(
                     if jd == j
                         KPprimeAB1 = m1dbeta * Pjn[j, nd]^(-sigma) * PCj[j]^(sigma-1)
                         term += Qjkn[j, k, n] * (KPprimeAB1 - KPAprimeB1 + KPABprime1) # Derivative of Qjkn
-                        if inexact_algo
-                            term += T * (((1+beta) * KPprimeAB1 + cons2 * KPABprime1) * G + Gprime) # T'G + TG'
-                        else
-                            term += T * ((1+beta) * KPprimeAB1 * G + Gprime) # T'G (first part) + TG'
-                            term += cons3 * Qjkn[j, k, nd] / PCj[j] * G # Second part of T'G
-                        end
+                        # term += T * (((1+beta) * KPprimeAB1 + cons2 * KPABprime1) * G + Gprime) # T'G + TG'
+                        term += T * ((1+beta) * KPprimeAB1 * G + Gprime) # T'G (first part) + TG'
+                        term += cons3 * Qjkn[j, k, nd] / PCj[j] * G # Second part of T'G
                     elseif jd == k
                         term += Qjkn[j, k, n] * (KPAprimeB1 - KPABprime1) # Derivative of Qjkn
-                        if inexact_algo
-                            term -= T * cons2 * KPABprime1 * G # T'G: second part [B'(k) has opposite sign]
-                        else
-                            term -= cons3 * Qjkn[j, k, nd] / PCj[j] * G # Second part of T'G 
-                        end
+                        # term -= T * cons2 * KPABprime1 * G # T'G: second part [B'(k) has opposite sign]
+                        term -= cons3 * Qjkn[j, k, nd] / PCj[j] * G # Second part of T'G 
                     end
                 end
                 if Qjkn[k, j, n] > 0 # Flows in the direction of j
