@@ -13,7 +13,6 @@ makedocs(;
         "Home" => "index.md",
         "API" => "api.md"
     ],
-    strict=true,
     checkdocs = :none,
 )
 
