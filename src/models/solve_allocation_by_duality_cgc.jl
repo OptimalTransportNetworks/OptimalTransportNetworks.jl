@@ -32,7 +32,7 @@ function solve_allocation_by_duality_cgc(x0, auxdata, verbose=true)
     n = graph.J * param.N
 
     # Get the Hessian structure
-    auxdata = (auxdata..., hess = hessian_structure_duality(auxdata))
+    auxdata = (auxdata..., hess = hessian_structure_duality_cgc(auxdata))
     nnz_hess = length(auxdata.hess[1])
 
     prob = Ipopt.CreateIpoptProblem(
@@ -108,6 +108,18 @@ function gradient_duality_cgc(x::Vector{Float64}, grad_f::Vector{Float64}, auxda
     return
 end
 
+# Hessian structure function
+function hessian_structure_duality_cgc(auxdata)
+    graph = auxdata.graph
+    param = auxdata.param
+
+    # Create the Hessian structure
+    H_structure = tril(repeat(sparse(I(graph.J)), param.N, param.N) + kron(sparse(ones(Int, param.N, param.N)), sparse(graph.adjacency)))
+        
+    # Get the row and column indices of non-zero elements
+    rows, cols, _ = findnz(H_structure)
+    return rows, cols
+end
 
 # Hessian computation function
 function hessian_duality_cgc(
