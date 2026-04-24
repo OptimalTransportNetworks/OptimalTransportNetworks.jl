@@ -3,6 +3,7 @@
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://optimaltransportnetworks.github.io/OptimalTransportNetworks.jl/stable)
 [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://optimaltransportnetworks.github.io/OptimalTransportNetworks.jl/dev)
 [![Julia version](https://juliahub.com/docs/General/OptimalTransportNetworks/stable/version.svg)](https://juliahub.com/ui/Packages/General/OptimalTransportNetworks)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/OptimalTransportNetworks/OptimalTransportNetworks.jl)
 
 **Optimal Transport Networks in Spatial Equilibrium - in Julia**
 
