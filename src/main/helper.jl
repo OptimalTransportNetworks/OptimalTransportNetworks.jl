@@ -221,6 +221,11 @@ function get_model(auxdata)
      graph = auxdata.graph
      optimizer = get(param, :optimizer, Ipopt.Optimizer)
 
+    # Direct-Ipopt solvers are the default for Armington cases (<=1 good per location).
+    # The general multi-good-per-location case, or an explicit param.jump, routes to JuMP.
+    armington = all(sum(graph.Zjn .> 0, dims = 2) .<= 1)
+    use_jump = get(param, :jump, false) || !armington
+
     if haskey(param, :model)
         model = param.model(optimizer, auxdata)
         if !haskey(param, :recover_allocation)
@@ -228,7 +233,10 @@ function get_model(auxdata)
         end
         recover_allocation = param.recover_allocation 
     elseif param.mobility == 1 && param.cong
-        if all(sum(graph.Zjn .> 0, dims = 2) .<= 1) # Armington case
+        if !use_jump # Direct Ipopt (Armington)
+            model = nothing
+            recover_allocation = solve_allocation_mobility_cgc
+        elseif armington
             model = model_mobility_cgc_armington(optimizer, auxdata)
             recover_allocation = recover_allocation_mobility_cgc_armington
         else
@@ -236,7 +244,10 @@ function get_model(auxdata)
             recover_allocation = recover_allocation_mobility_cgc
         end
     elseif param.mobility == 0.5 && param.cong
-        if all(sum(graph.Zjn .> 0, dims = 2) .<= 1) # Armington case
+        if !use_jump # Direct Ipopt (Armington)
+            model = nothing
+            recover_allocation = solve_allocation_partial_mobility_cgc
+        elseif armington
             model = model_partial_mobility_cgc_armington(optimizer, auxdata)
             recover_allocation = recover_allocation_partial_mobility_cgc_armington
         else
@@ -247,7 +258,10 @@ function get_model(auxdata)
         if param.beta <= 1 && param.duality > 0 # && param.a < 1
             model = nothing # model_fixed_duality_cgc(optimizer, auxdata)
             recover_allocation = solve_allocation_by_duality_cgc #recover_allocation_fixed_duality_cgc
-        elseif all(sum(graph.Zjn .> 0, dims = 2) .<= 1) # Armington case
+        elseif !use_jump # Direct Ipopt primal (Armington), e.g. beta > 1 or duality off
+            model = nothing
+            recover_allocation = solve_allocation_cgc
+        elseif armington
             model = model_fixed_cgc_armington(optimizer, auxdata)
             recover_allocation = recover_allocation_fixed_cgc_armington
         else
@@ -255,7 +269,10 @@ function get_model(auxdata)
             recover_allocation = recover_allocation_fixed_cgc
         end
     elseif param.mobility == 1 && !param.cong
-        if all(sum(graph.Zjn .> 0, dims = 2) .<= 1) # Armington case
+        if !use_jump # Direct Ipopt (Armington)
+            model = nothing
+            recover_allocation = solve_allocation_mobility
+        elseif armington
             model = model_mobility_armington(optimizer, auxdata)
             recover_allocation = recover_allocation_mobility_armington
         else
@@ -263,18 +280,24 @@ function get_model(auxdata)
             recover_allocation = recover_allocation_mobility
         end
     elseif param.mobility == 0.5 && !param.cong
-        if all(sum(graph.Zjn .> 0, dims = 2) .<= 1) # Armington case
+        if !use_jump # Direct Ipopt (Armington)
+            model = nothing
+            recover_allocation = solve_allocation_partial_mobility
+        elseif armington
             model = model_partial_mobility_armington(optimizer, auxdata)
-            recover_allocation = recover_allocation_partial_mobility_armington    
+            recover_allocation = recover_allocation_partial_mobility_armington
         else
             model = model_partial_mobility(optimizer, auxdata)
-            recover_allocation = recover_allocation_partial_mobility    
+            recover_allocation = recover_allocation_partial_mobility
         end
     elseif param.mobility == 0 && !param.cong
-        if param.beta <= 1 && param.duality > 0 # && param.a < 1 
+        if param.beta <= 1 && param.duality > 0 # && param.a < 1
             model = nothing # model_fixed_duality(optimizer, auxdata)
             recover_allocation = solve_allocation_by_duality # recover_allocation_fixed_duality
-        elseif all(sum(graph.Zjn .> 0, dims = 2) .<= 1) # Armington case
+        elseif !use_jump # Direct Ipopt primal (Armington), e.g. beta > 1 or duality off
+            model = nothing
+            recover_allocation = solve_allocation_primal
+        elseif armington
             model = model_fixed_armington(optimizer, auxdata)
             recover_allocation = recover_allocation_fixed_armington
         else

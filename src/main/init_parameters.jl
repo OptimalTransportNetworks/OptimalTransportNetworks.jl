@@ -20,7 +20,8 @@ Returns a `param` dict with the model parameters. These are independent of the g
 - `m::Vector{Float64}=ones(N)`: Vector of weights Nx1 in the cross congestion cost function
 - `annealing::Bool=true`: Switch for the use of annealing at the end of iterations (only if gamma > beta)
 - `verbose::Bool=true`: Switch to turn on/off text output (from Ipopt or other optimizers)
-- `duality::Bool=true`: Switch to turn on/off duality whenever available (fixed labor and beta <= 1). 
+- `duality::Bool=true`: Switch to turn on/off duality whenever available (fixed labor and beta <= 1).
+- `jump::Bool=false`: Force the JuMP solver path instead of the direct-Ipopt solvers. The direct solvers are the default for Armington cases (<=1 good per location); the general multi-good-per-location case always uses JuMP regardless of this switch.
 - `warm_start::Bool=true`: Use the previous solution as a warm start for the next iteration
 - `kappa_min::Float64=1e-5`: Minimum value for road capacities K
 - `min_iter::Int64=20`: Minimum number of iterations
@@ -41,8 +42,8 @@ param = init_parameters(K = 10, labor_mobility = true)
 """
 function init_parameters(; alpha = 0.5, beta = 1, gamma = 1, K = 1, sigma = 5, rho = 2, a = 0.8, N = 1, 
                          labor_mobility = false, cross_good_congestion=false, nu = 2, m = ones(N), 
-                         annealing=true, 
-                         verbose = true, duality = true, warm_start = true, 
+                         annealing=true,
+                         verbose = true, duality = true, warm_start = true, jump = false,
                          kappa_min = 1e-5, min_iter = 20, max_iter = 200, tol = 1e-5, kwargs...)
     param = Dict()
 
@@ -76,12 +77,14 @@ function init_parameters(; alpha = 0.5, beta = 1, gamma = 1, K = 1, sigma = 5, r
     end
     if param[:mobility] == true
         param[:rho] = 0;
+        rho = 0; # full mobility uses rho = 0; keep the utility closures below consistent
     end
     param[:cong] = cross_good_congestion
     param[:annealing] = annealing
     param[:verbose] = verbose
     param[:duality] = duality
     param[:warm_start] = warm_start
+    param[:jump] = jump
 
     # Additional parameters for the numerical part
     param[:tol] = tol
