@@ -268,7 +268,7 @@ function recover_allocation_duality_cgc(x, auxdata)
 
     # Extract price vectors
     Pjn = reshape(x, (graph.J, param.N))
-    PCj = sum(Pjn .^ (1 - param.sigma), dims=2) .^ (1 / (1 - param.sigma))
+    PCj = dropdims(sum(Pjn .^ (1 - param.sigma), dims=2) .^ (1 / (1 - param.sigma)), dims=2)
 
     # Calculate labor allocation
     if param.a < 1
@@ -314,7 +314,7 @@ function recover_allocation_duality_cgc(x, auxdata)
     # Now calculating consumption bundle pre-transport cost
     temp .= Qjk .^ (1+beta) ./ kappa
     temp[nadj] .= 0
-    Dj = Cj + sum(temp, dims = 2)
+    Dj = dropdims(sum(temp, dims = 2), dims=2)
     Djn = Dj .* (Pjn ./ PCj) .^ (-param.sigma) 
     
     return (Pjn=Pjn, PCj=PCj, Ljn=Ljn, Yjn=Yjn, cj=cj, Cj=Cj, Dj=Dj, Djn=Djn, Qjk=Qjk, Qjkn=Qjkn)

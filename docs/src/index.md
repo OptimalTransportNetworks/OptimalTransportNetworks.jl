@@ -26,7 +26,9 @@ This plot shows the optimal network after 200 iterations, keeping population fix
 
 ## Performance Notes
 
-* The Julia implementation for the most part does not provide hard-coded Gradients, Jacobians, and Hessians as the MATLAB implementation does for some model cases, but relies solely on JuMP's automatic differentiation. One exception is dual solutions which are implemented directly using Ipopt and hard-coded sparse Hessians - they are super fast. By default `duality = true`, and if labor is fixed and `beta <= 1`, users will experience very fast dual solves. I also expect non-dual solutions to speed up when [support for detecting nonlinear subexpressions](https://github.com/jump-dev/JuMP.jl/issues/3738) will be added to JuMP.  
+* As of v0.3.0, the default solver path calls [Ipopt](https://github.com/jump-dev/Ipopt.jl) directly (via its C interface) with hard-coded sparse gradients, Jacobians, and Hessians — like the original MATLAB toolbox — for **all Armington cases** (at most one good produced per location), across fixed / partial / full labor mobility, with or without cross-good congestion. The Ipopt problem is built once and reused (warm-started) across the network-design iterations. This is several times to an order of magnitude faster than the JuMP path at realistic graph sizes, and the gap widens as the graph grows. The fixed-labor, `beta <= 1` case additionally uses the even-faster **dual** solution (`duality = true` by default).
+
+* JuMP (and its automatic differentiation) is now an opt-in fallback: set `jump = true` in `init_parameters` to force it. The general, non-Armington case (a location producing two or more goods) is not covered by the hand-coded solvers and always uses JuMP, regardless of the `jump` switch.
 
 * Symbolic autodifferentiation via [MathOptSymbolicAD.jl](https://github.com/lanl-ansi/MathOptSymbolicAD.jl) can also provide significant performance improvements for non-dual cases. The symbolic backend can be activated using:
 

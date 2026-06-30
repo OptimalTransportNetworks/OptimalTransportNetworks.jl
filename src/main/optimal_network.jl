@@ -66,7 +66,11 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
     # --------------
     # INITIALIZATION
 
+    # Per-run cache for the direct solvers' Jacobian/Hessian sparsity structures, which depend
+    # only on the graph (not kappa) and so can be computed once and reused across iterations.
+    struct_cache = Dict{Symbol, Any}()
     auxdata = create_auxdata(param, graph, edges, I0)
+    auxdata = (auxdata..., struct_cache = struct_cache)
     model, recover_allocation = get_model(auxdata)
 
     if return_model == 1
@@ -190,6 +194,7 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
             I0 += (1 - weight_old) * I1
             # This creates kappa and updates the model
             auxdata = create_auxdata(param, graph, edges, I0)
+            auxdata = (auxdata..., struct_cache = struct_cache)
             if model !== nothing
                 set_parameter_value.(model[:kappa_ex], auxdata.kappa_ex)
             end
