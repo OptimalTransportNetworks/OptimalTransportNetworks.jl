@@ -1,5 +1,11 @@
 # 0.3.0
 
+## Breaking changes
+
+* As a `0.x` minor-version bump, this is a **breaking** release in the semver sense. The public API is backwards compatible (existing scripts run unchanged), but the **default inner-allocation solver for Armington cases (≤1 good per location) is now a direct Ipopt implementation instead of JuMP**. Results are numerically equivalent — validated against the JuMP path to ~1e-5 — but on the default path (1) the solver and its warm-starting differ, so results can move by optimizer tolerances, and (2) JuMP-specific options no longer take effect: in particular `param[:model_attr]` (e.g. the MathOptSymbolicAD backend) is ignored. `param[:optimizer_attr]` (e.g. the Coin-HSL `linear_solver`) is still honored. **To restore the previous JuMP-based behavior exactly, pass `jump = true` to `init_parameters`.** The general, non-Armington (multi-good-per-location) case still always uses JuMP.
+
+## Other changes
+
 * **Direct-Ipopt primal solvers are now the default for Armington cases (≤1 good per location).** Previously only the dual cases (fixed labor, `beta <= 1`) bypassed JuMP. Now every Armington primal case is solved by a hand-coded `solve_allocation_*` function that calls Ipopt's C interface directly (like the dual solvers), with analytic sparse gradients/Jacobians/Hessians — faster than JuMP. New solvers: `solve_allocation_mobility(_cgc)`, `solve_allocation_partial_mobility(_cgc)`, `solve_allocation_cgc`, `solve_allocation_primal` (fixed labor, `beta > 1`).
 
 * **JuMP is now an opt-in fallback.** Pass `jump = true` to `init_parameters` to force the JuMP path. The general (non-Armington, multi-good-per-location) case still always uses JuMP.
