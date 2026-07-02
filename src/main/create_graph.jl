@@ -267,7 +267,7 @@ function create_triangle(w, h)
 
     nodes = [Vector{Int64}() for _ in 1:J]
 
-    delta = falses(J, J)
+    delta = zeros(J, J)
     x = zeros(J) # Needs to be Float64
     y = zeros(Int64, J)
     for j in 1:rows_outer
@@ -366,7 +366,7 @@ function create_square(w, h)
     J = w * h
     nodes = [Vector{Int64}() for _ in 1:J]
 
-    delta = falses(J, J)
+    delta = zeros(J, J)
     x = zeros(Int64, J)
     y = zeros(Int64, J)
     for i in 1:J

@@ -1,3 +1,11 @@
+# 0.3.1
+
+Bug fixes found in a review of the core code against the reference MATLAB toolbox (`misc/matlab/`):
+
+* **`add_node()` and `remove_node()` were completely broken.** Both functions referenced undefined variables (`dict`/`namedtuple`) when copying the input graph and threw `UndefVarError` on any call. They now correctly copy the passed `graph` (matching the MATLAB `add_node.m`/`remove_node.m`), so nodes can again be added to / removed from a graph.
+
+* **`create_graph(..., type = "square")` and `type = "triangle")` returned `delta_i`/`delta_tau` as a `BitMatrix`** (built with `falses`) instead of a `Float64` matrix. This raised an `InexactError` when `apply_geography()` tried to write real-valued building/traversal costs onto such a graph (elevation or obstacle costs). The two constructors now build the cost matrix with `zeros` like `create_map`/`create_custom` and the reference MATLAB `create_graph.m` (which uses `zeros(J,J)` for every graph type), so `apply_geography()` works on all graph types.
+
 # 0.3.0
 
 ## Breaking changes

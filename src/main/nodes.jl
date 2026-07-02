@@ -17,9 +17,9 @@ The new node is given population 1e-6 and productivity equal to the minimum prod
 function add_node(graph, x, y, neighbors)
 
     if graph isa Dict
-        graph_new = copy(dict)
+        graph_new = copy(graph)
     else
-        graph_new = Dict(pairs(namedtuple))
+        graph_new = Dict(pairs(graph))
     end
 
     # Check validity of neighbors list
@@ -126,9 +126,9 @@ Removes node i from the graph, returning an updated `graph` object.
 function remove_node(graph, i)
 
     if graph isa Dict
-        graph_new = copy(dict)
+        graph_new = copy(graph)
     else
-        graph_new = Dict(pairs(namedtuple))
+        graph_new = Dict(pairs(graph))
     end
 
     if i < 1 || i > graph[:J] || i != floor(i)
