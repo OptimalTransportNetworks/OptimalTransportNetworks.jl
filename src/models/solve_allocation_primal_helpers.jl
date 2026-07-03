@@ -98,6 +98,7 @@ function run_ipopt_primal(cache, key, saux, n, x_L, x_U, m, g_L, g_U, nnz_jac, n
     Ipopt.AddIpoptStrOption(prob, "hessian_approximation", "exact")
     Ipopt.AddIpoptIntOption(prob, "max_iter", max_iter)
     Ipopt.AddIpoptIntOption(prob, "print_level", verbose ? 5 : 0)
+    Ipopt.SetIntermediateCallback(prob, abort_callback) # cooperative abort via ABORT_SOLVE[]
     # Tight warm-start pushes so reused solves start essentially at the previous point.
     Ipopt.AddIpoptNumOption(prob, "warm_start_bound_push", 1e-9)
     Ipopt.AddIpoptNumOption(prob, "warm_start_mult_bound_push", 1e-9)

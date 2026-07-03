@@ -146,6 +146,7 @@ function annealing(param, graph, I0; kwargs...)
         start_values = start_value.(all_vars)
     end
     while T > T_min
+        ABORT_SOLVE[] && error("Optimization aborted by user.")
         accepted = false
 
         if param.verbose
@@ -267,6 +268,7 @@ function annealing(param, graph, I0; kwargs...)
         set_start_value.(all_vars, start_values) 
     end
     while !has_converged && counter < 100
+        ABORT_SOLVE[] && error("Optimization aborted by user.")
         # Update auxdata
         auxdata = create_auxdata(param, graph, edges, I0)
 

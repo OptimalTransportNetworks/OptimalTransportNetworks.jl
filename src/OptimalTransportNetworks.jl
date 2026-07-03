@@ -83,6 +83,20 @@ using NearestNeighbors: KDTree, knn
 import Ipopt, Plots, Random #, MathOptSymbolicAD
 # import MathOptInterface as MOI
 
+"""
+    ABORT_SOLVE :: Ref{Bool}
+
+Cooperative abort flag for long-running solves. Set `OptimalTransportNetworks.ABORT_SOLVE[] = true`
+(e.g. from another task/thread) to stop an ongoing `optimal_network()` / `annealing()` run:
+the direct Ipopt solvers stop at the next Ipopt iteration (via an intermediate callback) and
+the outer loops error with "Optimization aborted by user.". Reset to `false` before starting
+a new solve (done automatically at the top of `optimal_network`).
+"""
+const ABORT_SOLVE = Ref(false)
+
+# Ipopt intermediate callback: returning false stops the solver (status 5, User_Requested_Stop)
+abort_callback(args...) = !ABORT_SOLVE[]
+
 # Function to include all .jl files in a directory
 function include_directory(directory)
     # Use the path of the current file to construct the directory path
