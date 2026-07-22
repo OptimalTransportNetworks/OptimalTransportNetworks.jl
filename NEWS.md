@@ -1,3 +1,7 @@
+# 0.3.2
+
+* **Simulated annealing crashed (all-`NaN` network) whenever the graph has an edge with zero building cost (`delta_i == 0`).** The network-deepening step inside `annealing()` computes `I1 = (delta_tau ./ delta_i .* PQ) .^ (1/(1+gamma))` and then rescales it with `I1 *= K / sum(delta_i .* I1)`. On an edge with `delta_i == 0` the first term is `Inf` (or `NaN`), and `sum(delta_i .* I1)` then contains `0 * Inf = NaN`, which the rescale multiplies across the **entire** `I1` matrix — turning every entry into `NaN` and making the next allocation solve fail (`return flag = -13`, `welfare = 0`). `optimal_network()`'s own FOC step guards against exactly this with `I1[PQ .== 0] .= 0` and `I1[graph.delta_i .== 0] .= 0`, but the two deepening blocks in `annealing.jl` had these two lines commented out. They are now restored, so annealing works on networks with free-to-build (already-maxed) edges. This surfaced on the CEMAC road network (10 edges already at ≥90 km/h have `delta_i = 0`) with `cross_good_congestion = false, annealing = true`.
+
 # 0.3.1
 
 Bug fixes found in a review of the core code against the reference MATLAB toolbox (`misc/matlab/`):

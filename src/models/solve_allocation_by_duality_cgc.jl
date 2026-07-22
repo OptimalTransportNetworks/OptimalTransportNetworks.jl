@@ -55,6 +55,7 @@ function solve_allocation_by_duality_cgc(x0, auxdata, verbose=true)
     Ipopt.AddIpoptStrOption(prob, "hessian_approximation", "exact")
     Ipopt.AddIpoptIntOption(prob, "max_iter", 3000)
     Ipopt.AddIpoptIntOption(prob, "print_level", verbose ? 5 : 0)
+    Ipopt.SetIntermediateCallback(prob, abort_callback) # cooperative abort via ABORT_SOLVE[]
 
     if haskey(param, :optimizer_attr)
         for (key, value) in param.optimizer_attr

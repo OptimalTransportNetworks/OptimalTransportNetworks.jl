@@ -66,6 +66,8 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
     # --------------
     # INITIALIZATION
 
+    ABORT_SOLVE[] = false # reset the cooperative abort flag (see OptimalTransportNetworks.ABORT_SOLVE)
+
     # Per-run cache for the direct solvers' Jacobian/Hessian sparsity structures, which depend
     # only on the graph (not kappa) and so can be computed once and reused across iterations.
     struct_cache = Dict{Symbol, Any}()
@@ -110,6 +112,8 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
             results, status, start_values = recover_allocation(start_values, auxdata, verbose)
             t1 = time()
 
+            ABORT_SOLVE[] && error("Optimization aborted by user.")
+
             if solve_allocation
                 if status != 0
                     @warn "Solver returned with error code $(status))."
@@ -138,6 +142,8 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
             optimize!(model)
             results = recover_allocation(model, auxdata)
             t1 = time()
+
+            ABORT_SOLVE[] && error("Optimization aborted by user.")
 
             if solve_allocation
                 if !is_solved_and_feasible(model, allow_almost = true)
