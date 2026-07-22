@@ -223,8 +223,8 @@ function annealing(param, graph, I0; kwargs...)
                 
                 I1 = (graph.delta_tau ./ graph.delta_i .* PQ) .^ (1 / (1 + param.gamma))
                 I1[graph.adjacency .== 0] .= 0
-                # I1[PQ .== 0] .= 0
-                # I1[graph.delta_i .== 0] .= 0
+                I1[PQ .== 0] .= 0
+                I1[graph.delta_i .== 0] .= 0
                 I1 *= param.K / sum(graph.delta_i .* I1)
                 I1 = rescale_network!(param, graph, I1, Il, Iu)
                 # Print a message if I1 has any missing, negative or infinite values
@@ -319,8 +319,8 @@ function annealing(param, graph, I0; kwargs...)
         
         I1 = (graph.delta_tau ./ graph.delta_i .* PQ) .^ (1 / (1 + param.gamma))
         I1[graph.adjacency .== 0] .= 0
-        # I1[PQ .== 0] .= 0
-        # I1[graph.delta_i .== 0] .= 0
+        I1[PQ .== 0] .= 0
+        I1[graph.delta_i .== 0] .= 0
         I1 *= param.K / sum(graph.delta_i .* I1)
         I1 = rescale_network!(param, graph, I1, Il, Iu)
         # Print a message if I1 has any missing, negative or infinite values
