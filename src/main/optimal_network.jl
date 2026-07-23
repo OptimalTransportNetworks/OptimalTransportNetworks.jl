@@ -227,7 +227,8 @@ function optimal_network(param, graph; I0=nothing, Il=nothing, Iu=nothing, verbo
         end
         results = annealing(param, graph, I0, final_model = model, 
                             recover_allocation = recover_allocation, 
-                            allocation = results, verbose = verbose)
+                            allocation = results, verbose = verbose, 
+                            Il = Il, Iu = Iu)
     end
 
     if return_model == 2

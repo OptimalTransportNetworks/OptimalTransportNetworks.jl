@@ -373,11 +373,16 @@ function retrieve_options_annealing(graph; kwargs...)
         :Il => zeros(graph.J, graph.J)
     )
 
-    # Update options with user-provided values
+    # Update options with user-provided values.
+    # Keys are matched case-insensitively but written back to the canonical key:
+    # lowercasing outright made the documented `Il`/`Iu` options unreachable
+    # (`:il`/`:iu` are not in `options`), so passing them raised
+    # "Unknown parameter: il" instead of setting the bounds.
+    canonical = Dict(Symbol(lowercase(string(kk))) => kk for kk in keys(options))
     for (k, v) in kwargs
         sym_key = Symbol(lowercase(string(k)))  # Convert to lowercase symbol
-        if haskey(options, sym_key)
-            options[sym_key] = v
+        if haskey(canonical, sym_key)
+            options[canonical[sym_key]] = v
         else 
             if !(sym_key in [:model, :final_model, :recover_allocation, :allocation])
                 error("Unknown parameter: $sym_key")
